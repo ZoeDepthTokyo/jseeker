@@ -1,0 +1,61 @@
+# ATS Profile: Greenhouse
+# Market position: Strong #2, used by Airbnb, Pinterest, HubSpot
+# Source: ATS research 2026
+
+platform: greenhouse
+display_name: "Greenhouse"
+market_position: "Strong #2 — mid-large tech"
+typical_users:
+  - "Airbnb"
+  - "Pinterest"
+  - "HubSpot"
+  - "Cloudflare"
+
+detection_patterns:
+  url_patterns:
+    - "greenhouse.io"
+    - "boards.greenhouse.io"
+  page_signals:
+    - "Powered by Greenhouse"
+
+parsing_behavior:
+  pdf_support: true
+  two_column_support: true
+  table_handling: "good"
+  parser_quality: "modern"
+
+recommended_format: "pdf"
+format_reason: "Modern parser handles PDF two-column well"
+
+scoring_rules:
+  keyword_matching:
+    style: "semantic"
+    exact_title_required: false
+    notes: "Handles synonyms reasonably well"
+
+  format_requirements:
+    standard_headers: true
+    max_pages: 3
+    allowed_fonts:
+      - "Arial"
+      - "Calibri"
+      - "Times New Roman"
+      - "Helvetica"
+    font_size_range: [10, 12]
+    date_format: "MM/YYYY"
+    bullet_style: "standard"
+
+  section_weights:
+    summary: 0.15
+    experience: 0.40
+    skills: 0.25
+    education: 0.10
+    awards: 0.05
+    certifications: 0.05
+
+  penalties:
+    missing_summary: -10
+    missing_skills: -15
+    no_quantified_metrics: -10
+    inconsistent_dates: -5
+    graphics_or_icons: -5

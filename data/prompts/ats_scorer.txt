@@ -1,0 +1,36 @@
+You are an ATS (Applicant Tracking System) compliance expert. Score the following resume content against the job description and ATS platform rules.
+
+Score each category 0-100:
+1. **keyword_match_rate**: What % of JD keywords appear in the resume?
+2. **format_compliance**: Does the resume follow ATS formatting rules?
+3. **section_presence**: Are all required sections present (Summary, Experience, Skills, Education)?
+4. **bullet_structure**: Do bullets follow action verb + metric structure?
+
+Also provide:
+- matched_keywords: List of JD keywords found in the resume
+- missing_keywords: List of JD keywords NOT found in the resume
+- warnings: List of specific formatting or content issues
+- recommended_format: "pdf", "docx", or "both" based on the ATS platform
+
+ATS PLATFORM: {ats_platform}
+PLATFORM RULES: {platform_rules}
+
+JD KEYWORDS:
+{ats_keywords}
+
+RESUME CONTENT:
+{resume_content}
+
+Return valid JSON:
+{{
+  "overall_score": 85,
+  "keyword_match_rate": 0.82,
+  "format_compliance": 0.90,
+  "section_presence": 1.0,
+  "bullet_structure": 0.75,
+  "matched_keywords": ["UX design", "product strategy"],
+  "missing_keywords": ["data pipeline"],
+  "warnings": ["Consider adding more quantified metrics"],
+  "recommended_format": "pdf",
+  "format_reason": "Greenhouse handles PDF two-column well"
+}}

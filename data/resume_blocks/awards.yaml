@@ -1,0 +1,22 @@
+# PROTEUS Resume Block: Awards & Recognition
+# Source: Candidate actual resume data
+# Last updated: 2026-02-06
+
+awards:
+  - name: "CES Best in Show"
+    category: "UX / HMI Innovation"
+
+  - name: "Eyes on Design Award"
+    category: "User Experience & Human-Machine Interface"
+
+  - name: "Key Art Award"
+    category: "Visual Storytelling & Creative Excellence"
+
+  - name: "Golden Trailer Award"
+    category: "Motion Graphics & Theatrical Marketing"
+
+  - name: "Best Motion Graphics Award"
+    category: "Creative Leadership"
+
+  - name: "Published in Stash Magazine"
+    category: "Design & Digital Craft"

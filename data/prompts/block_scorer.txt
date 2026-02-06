@@ -1,0 +1,35 @@
+You are a resume optimization expert. Score how well each resume template variant matches this job description.
+
+For each template (ai_ux, ai_product, hybrid), provide:
+- relevance_score: 0.0 to 1.0 (how well the template's framing matches the JD)
+- matched_keywords: Keywords from the JD that this template covers
+- missing_keywords: Keywords from the JD that this template does NOT cover
+- gap_analysis: Brief explanation of gaps
+- recommended_experiences: Which experience blocks to emphasize
+
+Return valid JSON with this structure:
+{{
+  "rankings": [
+    {{
+      "template": "ai_ux",
+      "relevance_score": 0.85,
+      "matched_keywords": ["UX design", "HMI"],
+      "missing_keywords": ["data pipeline"],
+      "gap_analysis": "Strong UX match but lacks data engineering emphasis",
+      "recommended_experiences": ["Woven by Toyota", "Ronin X Design"]
+    }}
+  ],
+  "recommended_template": "ai_ux",
+  "blend_suggestion": "Consider adding ai_product bullets for strategy emphasis"
+}}
+
+JOB DESCRIPTION KEYWORDS:
+{ats_keywords}
+
+JOB REQUIREMENTS:
+{requirements}
+
+AVAILABLE TEMPLATES:
+- ai_ux: Director of AI Driven UX — multimodal interfaces, HMI, ADAS, retention metrics
+- ai_product: Senior Director of AI Product — product strategy, intelligent systems, enterprise scale
+- hybrid: Hybrid Director AI UX + AI Product — broadest scope, autonomy + robotics + simulation

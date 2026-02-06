@@ -1,0 +1,37 @@
+You are a job description analyzer. Parse the following job description into structured JSON.
+
+Extract the following fields:
+- title: Job title as written
+- company: Company name
+- seniority: Level (e.g., "Director", "Senior Manager", "VP", "Lead")
+- location: City/State or Remote
+- remote_policy: "remote", "hybrid", "onsite", or "not_specified"
+- salary_range: If mentioned, otherwise empty string
+- hard_requirements: Array of required skills/qualifications with keywords
+- soft_requirements: Array of preferred/nice-to-have qualifications
+- ats_keywords: Array of the top 20 most important keywords for ATS matching
+- culture_signals: Array of company culture indicators (e.g., "fast-paced", "collaborative")
+
+Return ONLY valid JSON. No markdown, no commentary.
+
+Example output format:
+{{
+  "title": "Director of Product Design",
+  "company": "Acme Corp",
+  "seniority": "Director",
+  "location": "San Francisco, CA",
+  "remote_policy": "hybrid",
+  "salary_range": "$180,000 - $220,000",
+  "hard_requirements": [
+    {{"text": "8+ years of product design experience", "keywords": ["product design", "UX design"]}},
+    {{"text": "Experience leading teams of 10+", "keywords": ["team leadership", "people management"]}}
+  ],
+  "soft_requirements": [
+    {{"text": "Experience with autonomous vehicles preferred", "keywords": ["autonomous vehicles", "self-driving"]}}
+  ],
+  "ats_keywords": ["product design", "UX", "team leadership", "design systems"],
+  "culture_signals": ["fast-paced", "collaborative", "data-driven"]
+}}
+
+JOB DESCRIPTION:
+{pruned_jd}

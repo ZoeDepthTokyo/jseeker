@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="single_column.css">
+</head>
+<body>
+<div class="resume-single">
+  <div class="header">
+    <h1>{{ name }}</h1>
+    <h2>{{ target_title }}</h2>
+    <p class="contact-line">
+      {{ email }} | {{ phone }}
+      {% for loc in locations %} | {{ loc }}{% endfor %}
+    </p>
+    <p class="links-line">
+      {% if website %}{{ website }}{% endif %}
+      {% if linkedin %} | {{ linkedin }}{% endif %}
+    </p>
+  </div>
+
+  <div class="section">
+    <h3>SUMMARY</h3>
+    <p>{{ summary }}</p>
+  </div>
+
+  <div class="section">
+    <h3>EXPERIENCE</h3>
+    {% for exp in experiences %}
+    <div class="exp-entry">
+      <div class="exp-header">
+        <strong>{{ exp.role }}</strong> — {{ exp.company }}
+        <span class="dates">{{ exp.start_display }} – {{ exp.end_display }}</span>
+      </div>
+      {% if exp.location %}<div class="exp-location">{{ exp.location }}</div>{% endif %}
+      <ul>
+        {% for bullet in exp.bullets %}
+        <li>{{ bullet }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="section">
+    <h3>SKILLS</h3>
+    {% for group in skills %}
+    <p><strong>{{ group.category }}:</strong> {{ group.skills | join(', ') }}</p>
+    {% endfor %}
+  </div>
+
+  <div class="section">
+    <h3>EDUCATION</h3>
+    {% for edu in education %}
+    <p><strong>{{ edu.degree }} {{ edu.field }}</strong> — {{ edu.institution }} ({{ edu.start }}–{{ edu.end }})</p>
+    {% endfor %}
+  </div>
+
+  {% if awards %}
+  <div class="section">
+    <h3>AWARDS</h3>
+    <ul>
+      {% for award in awards %}
+      <li>{{ award.name }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if certifications %}
+  <div class="section">
+    <h3>CERTIFICATIONS</h3>
+    <p>{{ certifications | map(attribute='name') | join(', ') }}</p>
+  </div>
+  {% endif %}
+
+  {% if early_career %}
+  <div class="section">
+    <h3>EARLY CAREER</h3>
+    {% for entry in early_career %}
+    <p><strong>{{ entry.role }}</strong> — {{ entry.company }}</p>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+</body>
+</html>

@@ -1,0 +1,61 @@
+# ATS Profile: iCIMS
+# Market position: Legacy leader in enterprise/healthcare/finance
+# Source: ATS research 2026
+
+platform: icims
+display_name: "iCIMS"
+market_position: "Legacy leader — enterprise/healthcare/finance"
+typical_users:
+  - "Johnson & Johnson"
+  - "UnitedHealth Group"
+  - "Goldman Sachs"
+
+detection_patterns:
+  url_patterns:
+    - "icims.com"
+    - "careers-"
+  page_signals:
+    - "Powered by iCIMS"
+
+parsing_behavior:
+  pdf_support: true
+  two_column_support: false
+  table_handling: "struggles"
+  parser_quality: "legacy"
+
+recommended_format: "docx"
+format_reason: "Struggles with columns — needs simplest format"
+
+scoring_rules:
+  keyword_matching:
+    style: "exact"
+    exact_title_required: true
+    notes: "Needs exact keyword matching, simple formatting"
+
+  format_requirements:
+    standard_headers: true
+    max_pages: 2
+    allowed_fonts:
+      - "Arial"
+      - "Calibri"
+      - "Times New Roman"
+    font_size_range: [10, 12]
+    date_format: "MM/YYYY"
+    bullet_style: "simple"
+
+  section_weights:
+    summary: 0.10
+    experience: 0.45
+    skills: 0.25
+    education: 0.15
+    awards: 0.03
+    certifications: 0.02
+
+  penalties:
+    missing_summary: -5
+    missing_skills: -20
+    no_quantified_metrics: -10
+    inconsistent_dates: -10
+    graphics_or_icons: -20
+    two_column_layout: -25
+    nested_tables: -30

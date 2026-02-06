@@ -1,0 +1,180 @@
+# PROTEUS Resume Block: Professional Experience
+# Source: Candidate actual resume data (all roles, all template variants)
+# Last updated: 2026-02-06
+
+experience:
+  - company: "Quetzal AI"
+    role: "Fractional Product and Experience Leader"
+    start: "2025-08"
+    end: null  # Present
+    location: "CDMX Mexico"
+    tags:
+      - "ai_ux"
+      - "ai_product"
+      - "hybrid"
+    bullets:
+      ai_ux:
+        - "Defined experience strategy for AI-powered tools in fintech and mobility pilots"
+        - "Designed frameworks integrating explainable AI and user trust models"
+        - "Established early KPIs for AI performance including usability and behavioral metrics"
+        - "Translated complex AI capabilities into clear and actionable interaction models"
+      ai_product:
+        - "Defined experience strategy for AI-powered tools in fintech and mobility pilots"
+        - "Designed frameworks integrating explainable AI and user trust models"
+        - "Established early KPIs for AI performance including usability and behavioral metrics"
+        - "Translated complex AI capabilities into clear and actionable interaction models"
+      hybrid:
+        - "Defined experience strategy for AI-powered tools in fintech and mobility pilots"
+        - "Designed frameworks integrating explainable AI and user trust models"
+        - "Established early KPIs for AI performance including usability and behavioral metrics"
+        - "Translated complex AI capabilities into clear and actionable interaction models"
+
+  - company: "Woven by Toyota"
+    role: "Director, Advanced AI Driven UX"
+    start: "2020-12"
+    end: "2025-07"
+    location: "Tokyo Japan"
+    tags:
+      - "ai_ux"
+      - "ai_product"
+      - "hybrid"
+    bullets:
+      ai_ux:
+        - "Increased global user retention from 12% to 45% across 10M+ vehicles"
+        - "Reduced UX iteration cycles by 50% through unified product-engineering-design workflows"
+        - "Built real-time multimodal HMI frameworks supporting L4 autonomy and system intent communication"
+        - "Delivered perception-driven UX, adaptive state models, and voice agent interfaces for advanced mobility"
+        - "Built a high-performing organization with 92% satisfaction score"
+      ai_product:
+        - "Increased global user retention from 12% to 45% across 10M+ vehicles"
+        - "Cut iteration timelines by 50% by integrating product, design, and engineering workflows"
+        - "Established multimodal HMI architecture for autonomy programs including adaptive state management"
+        - "Oversaw development of AI-driven features: voice agents, driver recognition, real-time perception UX"
+        - "Built a high-performing design and product team with 92% satisfaction score"
+      hybrid:
+        - "Increased global user retention from 12% to 45% across 10M+ vehicles"
+        - "Reduced UX iteration cycles by 50% through unified product-engineering-design workflows"
+        - "Built real-time multimodal HMI frameworks supporting L4 autonomy and system intent communication"
+        - "Delivered perception-driven UX, adaptive state models, and voice agent interfaces for advanced mobility"
+        - "Built a high-performing organization with 92% satisfaction score"
+
+  - company: "Fantasy Interactive"
+    role: "Design Director"
+    start: "2020-05"
+    end: "2020-12"
+    location: "San Francisco CA"
+    tags:
+      - "ai_ux"
+      - "ai_product"
+      - "hybrid"
+    bullets:
+      ai_ux:
+        - "Directed UX workstreams for mobility and emerging technology ecosystems"
+        - "Mentored global teams (NY, London, Ukraine) delivering high-impact design solutions"
+        - "Enhanced user engagement for mobility clients through clear interaction models"
+        - "Led UX and UI design teams across global teams: Europe, USA, China"
+      ai_product:
+        - "Directed UX workstreams for mobility and emerging technology ecosystems"
+        - "Mentored global teams (NY, London, Ukraine) delivering high-impact design solutions"
+        - "Enhanced user engagement for mobility clients through clear interaction models"
+        - "Led UX and UI design teams across global teams: Europe, USA, China"
+      hybrid:
+        - "Directed UX workstreams for mobility and emerging technology ecosystems"
+        - "Mentored global teams (NY, London, Ukraine) delivering high-impact design solutions"
+        - "Enhanced user engagement for mobility clients through clear interaction models"
+        - "Led UX and UI design teams across global teams: Europe, USA, China"
+
+  - company: "Ronin X Design"
+    role: "Founder & Principal Consultant"
+    start: "2009-07"
+    end: "2020-07"
+    location: "Los Angeles CA"
+    tags:
+      - "ai_ux"
+      - "ai_product"
+      - "hybrid"
+    bullets:
+      ai_ux:
+        - "Directed future mobility and HMI programs for Mercedes-Benz R&D, Infiniti, and Nissan"
+        - "Delivered high-fidelity prototypes and experience frameworks adopted by executive leaders"
+        - "Managed a 25-person team across UX, research, and prototyping"
+        - "Led 20+ projects per year across mobility, tech, and enterprise sectors"
+        - "Reduced overhead by 20% through systemized UX operations"
+      ai_product:
+        - "Directed product strategy for future mobility, HMI, and autonomy concepts across major OEMs"
+        - "Delivered prototypes and frameworks that informed long-term product roadmaps"
+        - "Managed a team of 25 across UX, research, and prototyping disciplines"
+        - "Oversaw 20+ projects per year across mobility and enterprise platforms"
+        - "Reduced delivery risk and operational overhead by 20%"
+      hybrid:
+        - "Directed future mobility and HMI programs for Mercedes-Benz R&D, Infiniti, and Nissan"
+        - "Delivered high-fidelity prototypes and experience frameworks adopted by executive leaders"
+        - "Managed a 25-person team across UX, research, and prototyping"
+        - "Led 20+ projects per year across mobility, tech, and enterprise sectors"
+        - "Reduced overhead by 20% through systemized UX operations"
+    additional_bullets:
+      - "Achieved 100% adoption of high-fidelity prototypes into production cycles within 6 months"
+      - "Built and managed a 35-person team"
+      - "Advised executive stakeholders on product direction and innovation roadmaps"
+
+  - company: "BMW Group Designworks"
+    role: "Senior UI/UX Creative"
+    start: "2015-09"
+    end: "2017-02"
+    location: "Thousand Oaks CA"
+    tags:
+      - "ai_ux"
+      - "hybrid"
+    bullets:
+      ai_ux:
+        - "Confidential work in UX and culturally relevant solutions"
+        - "Utilized cognitive science, environmental design, information design, brand strategy, interaction, service design"
+        - "Worked on XD, UX, UI, AR and VR"
+      hybrid:
+        - "Confidential work in UX and culturally relevant solutions"
+        - "Utilized cognitive science, environmental design, information design, brand strategy, interaction, service design"
+        - "Worked on XD, UX, UI, AR and VR"
+
+  - company: "Beachbody"
+    role: "Creative Director UX"
+    start: "2013-10"
+    end: "2014-04"
+    location: "Santa Monica CA"
+    tags:
+      - "early_career"
+    bullets:
+      early_career:
+        - "Art direction and team management for multiple product lines across several media"
+
+  - company: "Cimarron Group"
+    role: "Associate Creative Director"
+    start: "2008-05"
+    end: "2008-12"
+    location: "Los Angeles CA"
+    tags:
+      - "early_career"
+    bullets:
+      early_career:
+        - "In charge of motion graphics department for theatrical and home entertainment marketing campaigns"
+
+  - company: "Create Advertising Group"
+    role: "Art Director"
+    start: "2005-03"
+    end: "2007-03"
+    location: "Culver City CA"
+    tags:
+      - "early_career"
+    bullets:
+      early_career:
+        - "Visual effects, concepts and design for theatrical marketing campaigns"
+
+  - company: "Petrol Advertising"
+    role: "Art Director"
+    start: "2000"
+    end: "2005"
+    location: ""
+    tags:
+      - "early_career"
+    bullets:
+      early_career:
+        - "Created print and interactive marketing campaigns for AAA video game titles"

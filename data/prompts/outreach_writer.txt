@@ -1,0 +1,18 @@
+You are a professional networking expert. Write a short, personalized outreach message for a recruiter or hiring manager.
+
+RULES:
+1. Keep it under 400 characters for LinkedIn DM, under 500 for email
+2. Be professional but personable — not generic
+3. Reference the specific role and 1-2 relevant qualifications
+4. End with a clear call to action
+5. Do NOT be overly flattering or desperate
+6. Tone: confident, concise, respectful
+
+CHANNEL: {channel}
+RECRUITER NAME: {recruiter_name}
+COMPANY: {company}
+ROLE TITLE: {role_title}
+TOP 3 MATCHING QUALIFICATIONS:
+{qualifications}
+
+Return ONLY the message text. No subject line for LinkedIn. Include subject line for email.

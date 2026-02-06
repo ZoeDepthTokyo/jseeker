@@ -1,0 +1,199 @@
+"""PROTEUS LLM wrapper — Claude API with model routing, caching, and cost tracking."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import time
+from pathlib import Path
+from typing import Optional
+
+import anthropic
+
+from config import settings
+from proteus.models import APICost
+
+# Model pricing per 1M tokens (input/output) — updated 2026
+MODEL_PRICING = {
+    "claude-haiku-4-5-20251001": {"input": 0.80, "output": 4.00, "cache_read": 0.08},
+    "claude-sonnet-4-5-20250929": {"input": 3.00, "output": 15.00, "cache_read": 0.30},
+}
+
+
+class ProteusLLM:
+    """Claude API wrapper with Haiku/Sonnet routing, prompt caching, and cost tracking."""
+
+    def __init__(self):
+        self._client: Optional[anthropic.Anthropic] = None
+        self._session_costs: list[APICost] = []
+        self._local_cache: dict[str, str] = {}
+        self._cache_dir = settings.local_cache_dir
+
+    @property
+    def client(self) -> anthropic.Anthropic:
+        if self._client is None:
+            api_key = settings.anthropic_api_key
+            if not api_key:
+                raise ValueError(
+                    "ANTHROPIC_API_KEY not set. Add it to .env or environment."
+                )
+            self._client = anthropic.Anthropic(api_key=api_key)
+        return self._client
+
+    def call(
+        self,
+        prompt: str,
+        *,
+        task: str = "general",
+        model: str = "haiku",
+        system: str = "",
+        temperature: float = 0.3,
+        max_tokens: int = 4096,
+        cache_system: bool = False,
+        use_local_cache: bool = True,
+    ) -> str:
+        """Call Claude API with model routing and cost tracking.
+
+        Args:
+            prompt: User message content.
+            task: Task name for cost tracking (e.g., "jd_parse", "adapt_bullets").
+            model: "haiku" or "sonnet" — routes to correct model ID.
+            system: System prompt content.
+            temperature: Generation temperature.
+            max_tokens: Max output tokens.
+            cache_system: If True, adds cache_control to system prompt.
+            use_local_cache: If True, checks/stores local SHA256 cache.
+
+        Returns:
+            Assistant response text.
+        """
+        model_id = (
+            settings.sonnet_model if model == "sonnet" else settings.haiku_model
+        )
+
+        # Local cache check
+        if use_local_cache and settings.enable_local_cache:
+            cache_key = self._cache_key(model_id, system, prompt)
+            cached = self._get_cached(cache_key)
+            if cached is not None:
+                return cached
+
+        # Build messages
+        messages = [{"role": "user", "content": prompt}]
+
+        # Build system with optional prompt caching
+        system_blocks = []
+        if system:
+            block = {"type": "text", "text": system}
+            if cache_system and settings.enable_prompt_cache:
+                block["cache_control"] = {"type": "ephemeral"}
+            system_blocks.append(block)
+
+        # API call
+        start_time = time.time()
+        response = self.client.messages.create(
+            model=model_id,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            system=system_blocks if system_blocks else [],
+            messages=messages,
+        )
+        duration_ms = int((time.time() - start_time) * 1000)
+
+        # Extract text
+        result_text = ""
+        for block in response.content:
+            if block.type == "text":
+                result_text += block.text
+
+        # Track cost
+        usage = response.usage
+        cost = self._calculate_cost(
+            model_id,
+            getattr(usage, "input_tokens", 0),
+            getattr(usage, "output_tokens", 0),
+            getattr(usage, "cache_read_input_tokens", 0),
+        )
+        self._session_costs.append(
+            APICost(
+                model=model_id,
+                task=task,
+                input_tokens=getattr(usage, "input_tokens", 0),
+                output_tokens=getattr(usage, "output_tokens", 0),
+                cache_tokens=getattr(usage, "cache_read_input_tokens", 0),
+                cost_usd=cost,
+            )
+        )
+
+        # Local cache store
+        if use_local_cache and settings.enable_local_cache:
+            cache_key = self._cache_key(model_id, system, prompt)
+            self._set_cached(cache_key, result_text)
+
+        return result_text
+
+    def call_haiku(self, prompt: str, *, task: str = "general", system: str = "", **kwargs) -> str:
+        """Convenience: call Haiku (cheap tasks)."""
+        return self.call(prompt, task=task, model="haiku", system=system, **kwargs)
+
+    def call_sonnet(self, prompt: str, *, task: str = "general", system: str = "", **kwargs) -> str:
+        """Convenience: call Sonnet (quality tasks)."""
+        return self.call(prompt, task=task, model="sonnet", system=system, **kwargs)
+
+    def get_session_costs(self) -> list[APICost]:
+        """Return all costs tracked this session."""
+        return self._session_costs
+
+    def get_total_session_cost(self) -> float:
+        """Return total USD spent this session."""
+        return sum(c.cost_usd for c in self._session_costs)
+
+    # ── Private Helpers ────────────────────────────────────────────────
+
+    @staticmethod
+    def _calculate_cost(
+        model_id: str,
+        input_tokens: int,
+        output_tokens: int,
+        cache_tokens: int = 0,
+    ) -> float:
+        """Calculate cost in USD."""
+        pricing = MODEL_PRICING.get(model_id, {"input": 3.0, "output": 15.0, "cache_read": 0.3})
+        input_cost = (input_tokens / 1_000_000) * pricing["input"]
+        output_cost = (output_tokens / 1_000_000) * pricing["output"]
+        cache_cost = (cache_tokens / 1_000_000) * pricing.get("cache_read", 0)
+        return round(input_cost + output_cost + cache_cost, 6)
+
+    @staticmethod
+    def _cache_key(model: str, system: str, prompt: str) -> str:
+        """Generate SHA256 cache key."""
+        raw = f"{model}|{system}|{prompt}"
+        return hashlib.sha256(raw.encode()).hexdigest()
+
+    def _get_cached(self, key: str) -> Optional[str]:
+        """Check local cache (memory first, then disk)."""
+        if key in self._local_cache:
+            return self._local_cache[key]
+        cache_file = self._cache_dir / f"{key}.json"
+        if cache_file.exists():
+            try:
+                data = json.loads(cache_file.read_text(encoding="utf-8"))
+                self._local_cache[key] = data["response"]
+                return data["response"]
+            except (json.JSONDecodeError, KeyError):
+                return None
+        return None
+
+    def _set_cached(self, key: str, response: str) -> None:
+        """Store in local cache (memory + disk)."""
+        self._local_cache[key] = response
+        self._cache_dir.mkdir(parents=True, exist_ok=True)
+        cache_file = self._cache_dir / f"{key}.json"
+        cache_file.write_text(
+            json.dumps({"response": response}, ensure_ascii=False),
+            encoding="utf-8",
+        )
+
+
+# Module-level singleton
+llm = ProteusLLM()

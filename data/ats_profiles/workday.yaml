@@ -1,0 +1,63 @@
+# ATS Profile: Workday
+# Market position: Market leader, used by Amazon, Walmart, Target
+# Source: ATS research 2026
+
+platform: workday
+display_name: "Workday"
+market_position: "Market leader — large enterprise"
+typical_users:
+  - "Amazon"
+  - "Walmart"
+  - "Target"
+  - "Bank of America"
+
+detection_patterns:
+  url_patterns:
+    - "myworkdayjobs.com"
+    - "workday.com"
+    - "wd5.myworkdayjobs.com"
+  page_signals:
+    - "Powered by Workday"
+
+parsing_behavior:
+  pdf_support: true
+  two_column_support: false
+  table_handling: "poor"
+  parser_quality: "strict"
+
+recommended_format: "docx"
+format_reason: "Strict keyword matching — DOCX single-column parses best"
+
+scoring_rules:
+  keyword_matching:
+    style: "exact"
+    exact_title_required: true
+    notes: "Strict keyword matching, exact title matches valued"
+
+  format_requirements:
+    standard_headers: true
+    max_pages: 2
+    allowed_fonts:
+      - "Arial"
+      - "Calibri"
+      - "Times New Roman"
+    font_size_range: [10, 12]
+    date_format: "MM/YYYY"
+    bullet_style: "standard"
+
+  section_weights:
+    summary: 0.10
+    experience: 0.45
+    skills: 0.25
+    education: 0.15
+    awards: 0.03
+    certifications: 0.02
+
+  penalties:
+    missing_summary: -5
+    missing_skills: -20
+    no_quantified_metrics: -15
+    inconsistent_dates: -10
+    graphics_or_icons: -15
+    two_column_layout: -20
+    floating_text_boxes: -25

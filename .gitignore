@@ -1,0 +1,36 @@
+# PROTEUS .gitignore
+
+# Environment
+.env
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Output
+output/
+data/proteus.db
+data/.cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Build
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Testing
+.pytest_cache/
+htmlcov/
+.coverage

@@ -1,0 +1,211 @@
+# PROTEUS Resume Block: Skills
+# Source: Consolidated from all 3 resume templates with ATS keyword variants
+# Last updated: 2026-02-06
+
+skills:
+  ai_and_intelligent_systems:
+    display_name: "AI & Intelligent Systems"
+    items:
+      - name: "AI Driven UX"
+        ats_keywords:
+          - "AI-Driven UX"
+          - "AI UX"
+          - "Artificial Intelligence UX"
+          - "AI User Experience"
+          - "Machine Learning UX"
+
+      - name: "LLM UX and Agent Interfaces"
+        ats_keywords:
+          - "LLM UX"
+          - "Large Language Model UX"
+          - "Agent Interfaces"
+          - "Conversational AI"
+          - "AI Agent Design"
+          - "LLM Interface Design"
+
+      - name: "Multimodal Interaction Design"
+        ats_keywords:
+          - "Multimodal Design"
+          - "Multimodal UX"
+          - "Multimodal Interaction"
+          - "Multi-Modal Interfaces"
+          - "Voice + Visual UX"
+
+      - name: "Human Centered AI"
+        ats_keywords:
+          - "Human-Centered AI"
+          - "Human Centered AI"
+          - "HCAI"
+          - "Responsible AI"
+          - "Ethical AI Design"
+          - "Explainable AI"
+
+      - name: "HMI for ADAS and Autonomy"
+        ats_keywords:
+          - "HMI"
+          - "Human-Machine Interface"
+          - "ADAS UX"
+          - "Autonomous Vehicle UX"
+          - "Autonomy UX"
+          - "L4 Autonomy"
+          - "Advanced Driver Assistance Systems"
+
+  product_and_strategy:
+    display_name: "Product & Strategy"
+    items:
+      - name: "AI Product Strategy"
+        ats_keywords:
+          - "AI Product Strategy"
+          - "AI Product Management"
+          - "AI Product Direction"
+          - "Product Strategy"
+          - "AI-Powered Product"
+
+      - name: "Digital Product Innovation"
+        ats_keywords:
+          - "Digital Product Innovation"
+          - "Digital Product"
+          - "Product Innovation"
+          - "Digital Transformation"
+          - "Product Development"
+
+      - name: "Agile Product Development"
+        ats_keywords:
+          - "Agile"
+          - "Agile Product Development"
+          - "Scrum"
+          - "Agile Methodology"
+          - "Iterative Development"
+
+      - name: "Product Roadmapping"
+        ats_keywords:
+          - "Product Roadmap"
+          - "Product Roadmapping"
+          - "Roadmap Planning"
+          - "Strategic Roadmap"
+          - "Product Planning"
+
+      - name: "Intelligent Mobility Platforms"
+        ats_keywords:
+          - "Intelligent Mobility"
+          - "Mobility Platforms"
+          - "Connected Vehicles"
+          - "Smart Mobility"
+          - "Automotive Platforms"
+          - "Future Mobility"
+
+  design_and_craft:
+    display_name: "Design & Craft"
+    items:
+      - name: "Design Systems and Scaled Craft Operations"
+        ats_keywords:
+          - "Design Systems"
+          - "Design Ops"
+          - "DesignOps"
+          - "Scaled Design"
+          - "Design Operations"
+          - "Component Libraries"
+
+      - name: "Experiential and Immersive Design"
+        ats_keywords:
+          - "Experiential Design"
+          - "Immersive Design"
+          - "AR"
+          - "VR"
+          - "XR Design"
+          - "Augmented Reality"
+          - "Virtual Reality"
+          - "Spatial Design"
+
+      - name: "Simulation and Prototyping"
+        ats_keywords:
+          - "Simulation"
+          - "Prototyping"
+          - "Rapid Prototyping"
+          - "High-Fidelity Prototyping"
+          - "Interactive Prototyping"
+          - "Simulation-Based Validation"
+
+      - name: "User Research and Behavioral Insights"
+        ats_keywords:
+          - "User Research"
+          - "UX Research"
+          - "Behavioral Insights"
+          - "Usability Testing"
+          - "User Testing"
+          - "Behavioral Analytics"
+          - "Customer Research"
+
+  leadership:
+    display_name: "Leadership"
+    items:
+      - name: "Team Mentorship and Culture Building"
+        ats_keywords:
+          - "Team Mentorship"
+          - "Mentoring"
+          - "Culture Building"
+          - "Team Development"
+          - "People Management"
+          - "Talent Development"
+
+      - name: "Organizational Scaling"
+        ats_keywords:
+          - "Organizational Scaling"
+          - "Org Scaling"
+          - "Team Scaling"
+          - "Organization Building"
+          - "Scaling Teams"
+          - "Growth Leadership"
+
+      - name: "Cross Functional and Cross Cultural Collaboration"
+        ats_keywords:
+          - "Cross-Functional Collaboration"
+          - "Cross-Cultural"
+          - "Cross Functional"
+          - "Stakeholder Collaboration"
+          - "Global Collaboration"
+          - "International Teams"
+
+      - name: "Executive Communication and Storytelling"
+        ats_keywords:
+          - "Executive Communication"
+          - "Executive Presentation"
+          - "Storytelling"
+          - "C-Suite Communication"
+          - "Strategic Communication"
+          - "Leadership Communication"
+
+  communication:
+    display_name: "Communication"
+    items:
+      - name: "Strategic Communication"
+        ats_keywords:
+          - "Strategic Communication"
+          - "Communication Strategy"
+          - "Strategic Messaging"
+          - "Stakeholder Communication"
+
+      - name: "Brand Storytelling"
+        ats_keywords:
+          - "Brand Storytelling"
+          - "Brand Narrative"
+          - "Brand Strategy"
+          - "Brand Communication"
+          - "Brand Identity"
+
+      - name: "Pitch Leadership and Executive Presentation"
+        ats_keywords:
+          - "Pitch Leadership"
+          - "Executive Presentation"
+          - "Pitch Deck"
+          - "Client Presentations"
+          - "Business Development"
+          - "Pitch Strategy"
+
+      - name: "Cultural Insight and Narrative Development"
+        ats_keywords:
+          - "Cultural Insight"
+          - "Narrative Development"
+          - "Cultural Strategy"
+          - "Content Strategy"
+          - "Cultural Intelligence"

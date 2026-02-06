@@ -1,0 +1,24 @@
+# PROTEUS Resume Block: Contact Information
+# Source: Candidate actual resume data
+# Last updated: 2026-02-06
+
+contact:
+  full_name: "Federico Ponce"
+  display_name: "Fede Ponce"
+  email: "federimanu@gmail.com"
+  phone: "+1 626 823 7454"
+  locations:
+    - "San Diego CA"
+    - "CDMX Mexico"
+  website: "fedeponce.com"
+  linkedin: "linkedin.com/in/fedeponce"
+  youtube: "youtube.com/channel/UC3KhmutlOaW1ouZPx25sB_A"
+  languages:
+    - lang: "English"
+      level: "native"
+    - lang: "Spanish"
+      level: "native"
+    - lang: "Italian"
+      level: "elementary"
+    - lang: "Japanese"
+      level: "elementary"

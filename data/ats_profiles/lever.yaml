@@ -1,0 +1,60 @@
+# ATS Profile: Lever
+# Market position: Growth player, used by Netflix, Spotify, Eventbrite
+# Source: ATS research 2026
+
+platform: lever
+display_name: "Lever"
+market_position: "Growth player — modern tech"
+typical_users:
+  - "Netflix"
+  - "Spotify"
+  - "Eventbrite"
+
+detection_patterns:
+  url_patterns:
+    - "lever.co"
+    - "jobs.lever.co"
+  page_signals:
+    - "Powered by Lever"
+
+parsing_behavior:
+  pdf_support: true
+  two_column_support: true
+  table_handling: "good"
+  parser_quality: "forgiving"
+
+recommended_format: "pdf"
+format_reason: "Forgiving parser, good with clean formatting"
+
+scoring_rules:
+  keyword_matching:
+    style: "flexible"
+    exact_title_required: false
+    notes: "Forgiving parser, handles various formats well"
+
+  format_requirements:
+    standard_headers: true
+    max_pages: 3
+    allowed_fonts:
+      - "Arial"
+      - "Calibri"
+      - "Times New Roman"
+      - "Helvetica"
+    font_size_range: [10, 12]
+    date_format: "MM/YYYY"
+    bullet_style: "standard"
+
+  section_weights:
+    summary: 0.15
+    experience: 0.40
+    skills: 0.20
+    education: 0.10
+    awards: 0.05
+    certifications: 0.10
+
+  penalties:
+    missing_summary: -5
+    missing_skills: -10
+    no_quantified_metrics: -5
+    inconsistent_dates: -3
+    graphics_or_icons: -3

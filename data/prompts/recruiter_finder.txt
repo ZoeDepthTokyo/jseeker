@@ -1,0 +1,12 @@
+Generate a LinkedIn search query to find the recruiter or hiring manager for this role.
+
+COMPANY: {company}
+ROLE TITLE: {role_title}
+LOCATION: {location}
+
+Return a JSON object:
+{{
+  "linkedin_search_url": "https://www.linkedin.com/search/results/people/?keywords=...",
+  "search_query": "recruiter {company} {role_title}",
+  "suggested_titles": ["Technical Recruiter", "Talent Acquisition", "Hiring Manager"]
+}}

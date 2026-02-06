@@ -1,0 +1,28 @@
+# PROTEUS Resume Block: Education
+# Source: Candidate actual resume and LinkedIn data
+# Last updated: 2026-02-06
+
+education:
+  - institution: "MIT Sloan School of Management"
+    degree: "Associate's Degree"
+    field: "Neuroscience"
+    start: "2022-06"
+    end: "2022-09"
+
+  - institution: "Massachusetts Institute of Technology"
+    degree: null
+    field: "Innovation, Industrial and Product Design"
+    start: "2020"
+    end: "2021"
+
+  - institution: "UCLA Extension"
+    degree: "Master's Degree"
+    field: "Finance and Financial Management Services"
+    start: "2016"
+    end: "2018"
+
+  - institution: "Art Center College of Design"
+    degree: "Bachelor of Art"
+    field: "Entertainment Design"
+    start: "1999"
+    end: "2003"

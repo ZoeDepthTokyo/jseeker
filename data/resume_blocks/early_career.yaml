@@ -1,0 +1,25 @@
+# PROTEUS Resume Block: Early Career (Condensed)
+# Source: Candidate actual resume data
+# Used when early career roles are collapsed into a single section
+# Last updated: 2026-02-06
+
+early_career:
+  header: "Early Career (Condensed)"
+  entries:
+    - role: "Senior UI/UX Creative"
+      company: "BMW Group Designworks"
+
+    - role: "UX and Product Consultant"
+      company: "Mercedes-Benz R&D"
+
+    - role: "Creative Director, UX"
+      company: "Beachbody"
+
+    - role: "Associate Creative Director"
+      company: "Cimarron Group"
+
+    - role: "Art Director"
+      company: "Create Advertising Group"
+
+    - role: "Art Director"
+      company: "Petrol Advertising"

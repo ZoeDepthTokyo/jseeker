@@ -1,0 +1,60 @@
+# ATS Profile: Ashby
+# Market position: Rising fast — YC startups, high-growth tech
+# Source: ATS research 2026
+
+platform: ashby
+display_name: "Ashby"
+market_position: "Rising fast — YC startups, high-growth tech"
+typical_users:
+  - "YC companies"
+  - "High-growth startups"
+
+detection_patterns:
+  url_patterns:
+    - "ashbyhq.com"
+    - "jobs.ashbyhq.com"
+  page_signals:
+    - "Powered by Ashby"
+
+parsing_behavior:
+  pdf_support: true
+  two_column_support: true
+  table_handling: "good"
+  parser_quality: "modern"
+
+recommended_format: "pdf"
+format_reason: "Modern parser, startup-friendly, handles PDF well"
+
+scoring_rules:
+  keyword_matching:
+    style: "semantic"
+    exact_title_required: false
+    notes: "Modern parser, startup-friendly formatting"
+
+  format_requirements:
+    standard_headers: true
+    max_pages: 3
+    allowed_fonts:
+      - "Arial"
+      - "Calibri"
+      - "Times New Roman"
+      - "Helvetica"
+      - "Inter"
+    font_size_range: [10, 12]
+    date_format: "MM/YYYY"
+    bullet_style: "standard"
+
+  section_weights:
+    summary: 0.15
+    experience: 0.40
+    skills: 0.20
+    education: 0.10
+    awards: 0.05
+    certifications: 0.10
+
+  penalties:
+    missing_summary: -5
+    missing_skills: -10
+    no_quantified_metrics: -5
+    inconsistent_dates: -3
+    graphics_or_icons: -3

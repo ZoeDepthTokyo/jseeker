@@ -1,4 +1,4 @@
-"""MNEMIS bridge — Pattern memory storage for PROTEUS (Phase 3+).
+"""MNEMIS bridge — Pattern memory storage for jSeeker (Phase 3+).
 
 Stores successful resume patterns in MNEMIS PROJECT tier.
 Promotes proven patterns to GAIA tier for cross-project reuse.
@@ -28,7 +28,7 @@ def store_pattern(
         from rag_intelligence.memory import MnemisClient
         client = MnemisClient()
         return client.store(
-            component="proteus",
+            component="jseeker",
             pattern_type=pattern_type,
             data=pattern_data,
             tier=tier,
@@ -50,7 +50,7 @@ def recall_patterns(
         from rag_intelligence.memory import MnemisClient
         client = MnemisClient()
         return client.recall(
-            component="proteus",
+            component="jseeker",
             pattern_type=pattern_type,
             limit=limit,
         )

@@ -1,0 +1,84 @@
+Job seeker:
+X:\Projects\jSeeker
+
+// V1: addressed
+ARGUS:
+Memory State
+Memory data unavailable: MNEMIS data directory not found
+autorefresh 5 seconds
+ARGUS dashboard still lists PROTEUS as component, But job seeker is project not a service.
+
+
+PROTEUS align name change on UI, its JSEEKER.
+
+FUTURE Desired functionality:
+1. Extract Job Description from URL. If not possible, fallback to Copy paste.
+2. Dashboard can intake several links, can generate several Resumes.
+
+Current state:
+
+Resume Library:
+1. Resume library shows location of Resume on disk.
+2. Front end edits work! Ensure they persist, (changes happen on back end)
+
+Application tracker, is great
+How does the Job status monitor work?
+
+Job discovery:
+Active Market tags dont work, they dont bring back results, dont get registered. 
+Filter by status new does not show new jobs
+Looks like search function is not working properly.
+
+I need a section that shows which resumes are being referenced as base, A,B,C and LinkedIn Profile PDF,
+this in case I need to update them or change, I can do that from the front end
+
+Error:
+Step 2/5: Matching resume templates...
+Generation failed: No template matches found.
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\ui\pages\2_new_resume.py", line 91, in <module>
+    raise ValueError("No template matches found.")
+ValueError: No template matches found.
+
+also need better debug and TTD practices.
+//
+
+// v2: new:
+
+Base Resume References
+Track which source files are used as Base A/B/C and LinkedIn PDF.
+Current Status:
+base_a: Not configured
+base_b: Not configured
+base_c: Not configured
+linkedin_pdf: Not configured
+Base Resume A
+Base Resume B
+Base Resume C
+LinkedIn Profile PDF
+This whole section is empty. It should have the resumes loaded from:
+"X:\Projects\jSeeker\docs\Resume References"
+And all new custom created resumes here:
+"X:\Projects\jSeeker\docs\Resume Library"
+Application Tracker deleted previous tracker which was working well.
+
+New resume module crashed:
+ImportError: cannot import name 'extract_jd_from_url' from 'jseeker.jd_parser' (X:\Projects\jSeeker\jseeker\jd_parser.py)
+Traceback:
+File "X:\Projects\jSeeker\ui\pages\2_new_resume.py", line 15, in <module>
+    from jseeker.jd_parser import extract_jd_from_url, process_jd
+Dashbard crashed:
+ImportError: cannot import name 'extract_jd_from_url' from 'jseeker.jd_parser' (X:\Projects\jSeeker\jseeker\jd_parser.py)
+Traceback:
+File "X:\Projects\jSeeker\ui\pages\1_dashboard.py", line 12, in <module>
+    from jseeker.jd_parser import extract_jd_from_url
+
+In job discovery, search tags were deleted
+TypeError: TrackerDB.list_discoveries() got an unexpected keyword argument 'search'
+Traceback:
+File "X:\Projects\jSeeker\ui\pages\5_job_discovery.py", line 126, in <module>
+    discoveries = tracker_db.list_discoveries(status=status_value, search=search_query)
+No active search tags. Add and activate tags first.
+
+Overall thhis version is a massive regression many modules collapsed and a lot of previously registered info was deleted. 
+

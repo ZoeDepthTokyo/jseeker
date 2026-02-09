@@ -1,5 +1,5 @@
-# GAIA/MYCEL (already available)
-rag-intelligence>=0.3.1
+# GAIA/MYCEL (local editable install — not on PyPI)
+# rag-intelligence>=0.3.1  # install via: pip install -e X:\Projects\_GAIA\_MYCEL
 
 # Core dependencies
 pyyaml>=6.0

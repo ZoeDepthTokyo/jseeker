@@ -9,7 +9,7 @@
   <!-- LEFT COLUMN -->
   <div class="left-column">
     <div class="contact-section">
-      <h3>CONTACT</h3>
+      <h3>{{ section_labels.contact | default("CONTACT") }}</h3>
       <p>{{ email }}</p>
       <p>{{ phone }}</p>
       {% for loc in locations %}
@@ -18,13 +18,13 @@
     </div>
 
     <div class="links-section">
-      <h3>ONLINE</h3>
+      <h3>{{ section_labels.online | default("ONLINE") }}</h3>
       {% if website %}<p>{{ website }}</p>{% endif %}
       {% if linkedin %}<p>{{ linkedin }}</p>{% endif %}
     </div>
 
     <div class="skills-section">
-      <h3>SKILLS</h3>
+      <h3>{{ section_labels.skills | default("SKILLS") }}</h3>
       {% for group in skills %}
       <div class="skill-group">
         <h4>{{ group.category }}</h4>
@@ -38,7 +38,7 @@
     </div>
 
     <div class="education-section">
-      <h3>EDUCATION</h3>
+      <h3>{{ section_labels.education | default("EDUCATION") }}</h3>
       {% for edu in education %}
       <div class="edu-entry">
         <p class="edu-school">{{ edu.institution }}</p>
@@ -50,7 +50,7 @@
 
     {% if certifications %}
     <div class="cert-section">
-      <h3>CERTIFICATIONS</h3>
+      <h3>{{ section_labels.certifications | default("CERTIFICATIONS") }}</h3>
       <ul>
         {% for cert in certifications %}
         <li>{{ cert.name }}</li>
@@ -61,7 +61,7 @@
 
     {% if awards %}
     <div class="awards-section">
-      <h3>AWARDS</h3>
+      <h3>{{ section_labels.awards | default("AWARDS") }}</h3>
       <ul>
         {% for award in awards %}
         <li>{{ award.name }}</li>
@@ -72,7 +72,7 @@
 
     {% if languages %}
     <div class="languages-section">
-      <h3>LANGUAGES</h3>
+      <h3>{{ section_labels.languages | default("LANGUAGES") }}</h3>
       <ul>
         {% for lang in languages %}
         <li>{{ lang.lang }} ({{ lang.level }})</li>
@@ -90,12 +90,12 @@
     </div>
 
     <div class="summary-section">
-      <h3>SUMMARY</h3>
+      <h3>{{ section_labels.summary | default("SUMMARY") }}</h3>
       <p>{{ summary }}</p>
     </div>
 
     <div class="experience-section">
-      <h3>EXPERIENCE</h3>
+      <h3>{{ section_labels.experience | default("EXPERIENCE") }}</h3>
       {% for exp in experiences %}
       <div class="exp-entry">
         <div class="exp-header">
@@ -114,7 +114,7 @@
 
     {% if early_career %}
     <div class="early-career-section">
-      <h3>EARLY CAREER</h3>
+      <h3>{{ section_labels.early_career | default("EARLY CAREER") }}</h3>
       {% for entry in early_career %}
       <p><strong>{{ entry.role }}</strong> — {{ entry.company }}</p>
       {% endfor %}

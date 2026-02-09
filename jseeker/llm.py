@@ -1,9 +1,10 @@
-"""PROTEUS LLM wrapper — Claude API with model routing, caching, and cost tracking."""
+"""jSeeker LLM wrapper — Claude API with model routing, caching, and cost tracking."""
 
 from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import time
 from pathlib import Path
 from typing import Optional
@@ -11,7 +12,9 @@ from typing import Optional
 import anthropic
 
 from config import settings
-from proteus.models import APICost
+from jseeker.models import APICost
+
+logger = logging.getLogger(__name__)
 
 # Model pricing per 1M tokens (input/output) — updated 2026
 MODEL_PRICING = {
@@ -20,7 +23,12 @@ MODEL_PRICING = {
 }
 
 
-class ProteusLLM:
+class BudgetExceededError(Exception):
+    """Raised when monthly API budget is exceeded."""
+    pass
+
+
+class JseekerLLM:
     """Claude API wrapper with Haiku/Sonnet routing, prompt caching, and cost tracking."""
 
     def __init__(self):
@@ -89,6 +97,17 @@ class ProteusLLM:
                 block["cache_control"] = {"type": "ephemeral"}
             system_blocks.append(block)
 
+        # Budget enforcement
+        try:
+            from jseeker.tracker import tracker_db
+            monthly_cost = tracker_db.get_monthly_cost()
+            if monthly_cost >= settings.max_monthly_budget_usd:
+                raise BudgetExceededError(
+                    f"Monthly budget exceeded: ${monthly_cost:.2f} / ${settings.max_monthly_budget_usd:.2f}"
+                )
+        except ImportError:
+            pass  # tracker not available yet
+
         # API call
         start_time = time.time()
         response = self.client.messages.create(
@@ -108,22 +127,39 @@ class ProteusLLM:
 
         # Track cost
         usage = response.usage
+        input_tokens = getattr(usage, "input_tokens", 0)
+        output_tokens = getattr(usage, "output_tokens", 0)
+        cache_tokens = getattr(usage, "cache_read_input_tokens", 0)
         cost = self._calculate_cost(
             model_id,
-            getattr(usage, "input_tokens", 0),
-            getattr(usage, "output_tokens", 0),
-            getattr(usage, "cache_read_input_tokens", 0),
+            input_tokens,
+            output_tokens,
+            cache_tokens,
         )
+
+        logger.info(
+            f"API call completed | model={model_id} | task={task} | "
+            f"input_tokens={input_tokens} | output_tokens={output_tokens} | "
+            f"cache_tokens={cache_tokens} | cost_usd=${cost:.6f} | duration_ms={duration_ms}"
+        )
+
         self._session_costs.append(
             APICost(
                 model=model_id,
                 task=task,
-                input_tokens=getattr(usage, "input_tokens", 0),
-                output_tokens=getattr(usage, "output_tokens", 0),
-                cache_tokens=getattr(usage, "cache_read_input_tokens", 0),
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                cache_tokens=cache_tokens,
                 cost_usd=cost,
             )
         )
+
+        # Auto-persist to DB
+        try:
+            from jseeker.tracker import tracker_db
+            tracker_db.log_cost(self._session_costs[-1])
+        except Exception:
+            pass  # DB not available or error — don't break the pipeline
 
         # Local cache store
         if use_local_cache and settings.enable_local_cache:
@@ -196,4 +232,4 @@ class ProteusLLM:
 
 
 # Module-level singleton
-llm = ProteusLLM()
+llm = JseekerLLM()

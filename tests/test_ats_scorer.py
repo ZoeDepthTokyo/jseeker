@@ -1,8 +1,8 @@
 """Tests for ATS scorer module."""
 
 import pytest
-from proteus.ats_scorer import recommend_format, local_format_score
-from proteus.models import ATSPlatform, AdaptedResume, ContactInfo
+from jseeker.ats_scorer import recommend_format, local_format_score
+from jseeker.models import ATSPlatform, AdaptedResume, ContactInfo
 
 
 class TestRecommendFormat:

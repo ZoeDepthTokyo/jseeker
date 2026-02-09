@@ -1,6 +1,8 @@
-"""PROTEUS test configuration and fixtures."""
+"""jSeeker test configuration and fixtures."""
 
 import sys
+import tempfile
+import uuid
 from pathlib import Path
 
 import pytest
@@ -46,9 +48,24 @@ def sample_jd_url():
 
 
 @pytest.fixture
+def tmp_path():
+    """Dedicated temp path to avoid default pytest temp permission issues."""
+    import shutil
+
+    base = Path(tempfile.gettempdir()) / "jseeker_pytest_tmp"
+    base.mkdir(parents=True, exist_ok=True)
+    path = base / f"tmp_{uuid.uuid4().hex}"
+    path.mkdir(parents=True, exist_ok=True)
+    try:
+        yield path
+    finally:
+        shutil.rmtree(path, ignore_errors=True)
+
+
+@pytest.fixture
 def tmp_db(tmp_path):
     """Create a temporary database for testing."""
-    db_path = tmp_path / "test_proteus.db"
-    from proteus.tracker import init_db
+    db_path = tmp_path / "test_jseeker.db"
+    from jseeker.tracker import init_db
     init_db(db_path)
     return db_path

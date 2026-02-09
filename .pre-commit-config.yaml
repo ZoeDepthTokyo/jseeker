@@ -1,0 +1,40 @@
+# GAIA Ecosystem Pre-Commit Configuration
+# Copy this file to your project root as .pre-commit-config.yaml
+# Install: pip install pre-commit && pre-commit install
+
+repos:
+  # WARDEN - GAIA Governance Validation
+  - repo: local
+    hooks:
+      - id: warden-validate
+        name: WARDEN Governance Validation
+        entry: python -m warden.cli validate --project .
+        language: system
+        pass_filenames: false
+        always_run: true
+
+  # Standard pre-commit hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+        args: ['--maxkb=500']
+
+  # Black formatter
+  - repo: https://github.com/psf/black
+    rev: 24.1.1
+    hooks:
+      - id: black
+        language_version: python3.11
+        args: ['--line-length=100']
+
+  # Ruff linter
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.2.0
+    hooks:
+      - id: ruff
+        args: ['--fix', '--exit-non-zero-on-fix']

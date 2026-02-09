@@ -1,4 +1,4 @@
-"""PROTEUS Job Monitor — Job URL status monitoring (active/closed/expired)."""
+"""jSeeker Job Monitor — Job URL status monitoring (active/closed/expired)."""
 
 from __future__ import annotations
 
@@ -7,8 +7,8 @@ from datetime import datetime, timedelta
 
 import requests
 
-from proteus.models import JobStatus
-from proteus.tracker import tracker_db
+from jseeker.models import JobStatus
+from jseeker.tracker import tracker_db
 
 
 # Signals that a job is closed/filled

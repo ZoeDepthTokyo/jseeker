@@ -1,4 +1,4 @@
-"""PROTEUS ATS Scorer — Platform-aware ATS compliance scoring."""
+"""jSeeker ATS Scorer — Platform-aware ATS compliance scoring."""
 
 from __future__ import annotations
 
@@ -8,8 +8,8 @@ from pathlib import Path
 
 import yaml
 
-from proteus.llm import llm
-from proteus.models import ATSPlatform, ATSScore, AdaptedResume, ParsedJD
+from jseeker.llm import llm
+from jseeker.models import ATSPlatform, ATSScore, AdaptedResume, ParsedJD
 
 
 def _load_prompt(name: str) -> str:

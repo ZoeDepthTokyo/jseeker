@@ -1,4 +1,4 @@
-"""PROTEUS configuration — inherits from GAIA GaiaSettings."""
+"""JSEEKER configuration - inherits from GAIA GaiaSettings."""
 
 from __future__ import annotations
 
@@ -18,8 +18,8 @@ except ImportError:
 _PROJECT_ROOT = Path(__file__).parent
 
 
-class ProteusSettings(_BaseSettings):
-    """PROTEUS configuration with GAIA ecosystem integration."""
+class JseekerSettings(_BaseSettings):
+    """JSEEKER configuration with GAIA ecosystem integration."""
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -28,14 +28,14 @@ class ProteusSettings(_BaseSettings):
     )
 
     # --- Identity ---
-    app_name: str = "PROTEUS"
-    app_version: str = "0.1.0"
+    app_name: str = "JSEEKER"
+    app_version: str = "0.2.0"
 
     # --- Paths (computed from project root) ---
-    proteus_root: Path = _PROJECT_ROOT
+    jseeker_root: Path = _PROJECT_ROOT
     data_dir: Path = _PROJECT_ROOT / "data"
     output_dir: Path = _PROJECT_ROOT / "output"
-    db_path: Path = _PROJECT_ROOT / "data" / "proteus.db"
+    db_path: Path = _PROJECT_ROOT / "data" / "jseeker.db"
     local_cache_dir: Path = _PROJECT_ROOT / "data" / ".cache"
 
     # --- API Keys ---
@@ -55,12 +55,21 @@ class ProteusSettings(_BaseSettings):
 
     # --- GAIA Integration ---
     gaia_root: Path = Path("X:/Projects/_GAIA")
-    argus_log_path: Path = Path("X:/Projects/_GAIA/logs/proteus_build.jsonl")
+    argus_log_path: Path = Path("X:/Projects/_GAIA/logs/jseeker_build.jsonl")
 
     @model_validator(mode="after")
     def _resolve_api_key(self):
         if self.anthropic_api_key is None:
             self.anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
+        return self
+
+    @model_validator(mode="after")
+    def _migrate_db(self):
+        """Auto-migrate proteus.db -> jseeker.db if needed."""
+        old_db = self.data_dir / "proteus.db"
+        new_db = self.data_dir / "jseeker.db"
+        if old_db.exists() and not new_db.exists():
+            old_db.rename(new_db)
         return self
 
     @property
@@ -81,4 +90,4 @@ class ProteusSettings(_BaseSettings):
 
 
 # Singleton
-settings = ProteusSettings()
+settings = JseekerSettings()

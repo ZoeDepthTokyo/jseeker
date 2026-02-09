@@ -1,8 +1,8 @@
 """Tests for block manager module."""
 
 import pytest
-from proteus.block_manager import BlockManager
-from proteus.models import TemplateType
+from jseeker.block_manager import BlockManager
+from jseeker.models import TemplateType
 
 
 class TestBlockManager:
@@ -15,7 +15,7 @@ class TestBlockManager:
 
         assert corpus.contact.full_name == "Federico Ponce"
         assert corpus.contact.email == "federimanu@gmail.com"
-        assert len(corpus.summaries) == 3
+        assert len(corpus.summaries) == 6  # 3 English + 3 Spanish (v0.2 bilingual)
         assert len(corpus.experience) > 0
         assert len(corpus.skills) > 0
         assert len(corpus.awards) > 0

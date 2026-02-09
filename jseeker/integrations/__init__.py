@@ -1,0 +1,1 @@
+# jSeeker GAIA integration bridges

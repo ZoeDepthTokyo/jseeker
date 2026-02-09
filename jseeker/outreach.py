@@ -1,12 +1,12 @@
-"""PROTEUS Outreach — Recruiter finder + message generator."""
+"""jSeeker Outreach — Recruiter finder + message generator."""
 
 from __future__ import annotations
 
 import json
 import re
 
-from proteus.llm import llm
-from proteus.models import OutreachMessage, ParsedJD
+from jseeker.llm import llm
+from jseeker.models import OutreachMessage, ParsedJD
 
 
 def _load_prompt(name: str) -> str:

@@ -1,4 +1,4 @@
-"""PROTEUS Pydantic v2 data models."""
+"""jSeeker Pydantic v2 data models."""
 
 from __future__ import annotations
 
@@ -86,6 +86,8 @@ class ParsedJD(BaseModel):
     culture_signals: list[str] = Field(default_factory=list)
     detected_ats: ATSPlatform = ATSPlatform.UNKNOWN
     jd_url: str = ""
+    language: str = "en"  # "en" or "es" — auto-detected from JD
+    market: str = "us"    # "us", "mx", "ca", "uk", "es", "dk", "fr"
 
 
 # ── Resume Block Models ────────────────────────────────────────────────
@@ -181,6 +183,22 @@ class AdaptedResume(BaseModel):
     early_career: list[dict] = Field(default_factory=list)
     target_title: str = ""
     template_used: TemplateType = TemplateType.HYBRID
+
+
+class PipelineResult(BaseModel):
+    """Complete pipeline output — all intermediate results for traceability."""
+    parsed_jd: ParsedJD
+    match_result: MatchResult
+    adapted_resume: AdaptedResume
+    ats_score: ATSScore
+    pdf_path: str = ""
+    docx_path: str = ""
+    company: str = ""
+    role: str = ""
+    language: str = "en"  # "en" or "es" — auto-detected from JD
+    market: str = "us"    # "us", "mx", "ca", "uk", "es", "dk", "fr"
+    total_cost: float = 0.0
+    generation_timestamp: Optional[datetime] = None
 
 
 # ── ATS Scoring ────────────────────────────────────────────────────────

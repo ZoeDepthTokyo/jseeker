@@ -1,4 +1,4 @@
-# PROTEUS Resume Block: Professional Summaries
+# jSeeker Resume Block: Professional Summaries
 # Source: Candidate actual resume templates (3 variants)
 # Last updated: 2026-02-06
 
@@ -29,3 +29,32 @@ summaries:
     Specialized in defining product direction for AI powered interfaces, autonomy,
     multimodal systems, simulation based validation, and data intensive
     environments.
+
+  ai_ux_es: >-
+    Director de Productos Impulsados por IA y UX con mas de quince anos
+    liderando equipos globales en Estados Unidos, Japon, Europa y Mexico.
+    Experimentado en iniciativas avanzadas de inteligencia artificial, modelos
+    de interaccion multimodal y plataformas de alta complejidad. Especializado
+    en convertir sistemas de IA y datos complejos en experiencias de usuario
+    claras e intuitivas que escalan a millones de usuarios. Reconocido por
+    unificar ingenieria, producto y diseno para lograr resultados medibles
+    en retencion, rendimiento y velocidad de entrega.
+
+  ai_product_es: >-
+    Director Senior de Producto con mas de quince anos liderando estrategia
+    de producto impulsada por IA, UX multimodal y diseno de sistemas complejos
+    en Estados Unidos, Japon, Europa y Mexico. Experimentado en definir la
+    direccion integral de producto para plataformas impulsadas por IA, sistemas
+    de movilidad inteligente y tecnologia a escala empresarial. Especializado
+    en unificar ingenieria, diseno y stakeholders ejecutivos para entregar
+    resultados medibles en rendimiento, adopcion y eficiencia operativa.
+
+  hybrid_es: >-
+    Director Hibrido con una combinacion unica de liderazgo en UX impulsado
+    por IA, estrategia de producto y experiencia en sistemas inteligentes.
+    Quince anos construyendo productos globales en Estados Unidos, Japon,
+    Europa y Mexico para organizaciones lideres incluyendo Toyota, Mercedes
+    Benz, BMW y startups avanzadas de IA. Especializado en definir la
+    direccion de producto para interfaces impulsadas por IA, autonomia,
+    sistemas multimodales, validacion basada en simulacion y entornos
+    intensivos en datos.

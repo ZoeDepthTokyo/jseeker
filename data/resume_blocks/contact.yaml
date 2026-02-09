@@ -1,4 +1,4 @@
-# PROTEUS Resume Block: Contact Information
+# jSeeker Resume Block: Contact Information
 # Source: Candidate actual resume data
 # Last updated: 2026-02-06
 
@@ -22,3 +22,13 @@ contact:
       level: "elementary"
     - lang: "Japanese"
       level: "elementary"
+
+  # Location adaptation by market (used by adapter.py)
+  locations_by_market:
+    us: "San Diego, CA"
+    mx: "Ciudad de Mexico"
+    ca: "Remote"
+    uk: "Remote / Open to relocation"
+    es: "Remote / Open to relocation"
+    dk: "Remote / Open to relocation"
+    fr: "Remote / Open to relocation"

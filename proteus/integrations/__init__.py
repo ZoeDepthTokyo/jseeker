@@ -1,1 +1,0 @@
-# PROTEUS GAIA integration bridges

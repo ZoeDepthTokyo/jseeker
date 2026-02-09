@@ -1,7 +1,7 @@
 """Tests for Pydantic data models."""
 
 import pytest
-from proteus.models import (
+from jseeker.models import (
     ParsedJD, MatchResult, AdaptedResume, ATSScore,
     Application, Company, Resume, JobDiscovery, SearchTag,
     TemplateType, ResumeStatus, ApplicationStatus, JobStatus,

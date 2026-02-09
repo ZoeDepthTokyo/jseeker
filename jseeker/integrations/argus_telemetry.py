@@ -1,4 +1,4 @@
-"""ARGUS telemetry — build and runtime monitoring for PROTEUS."""
+"""ARGUS telemetry — build and runtime monitoring for jSeeker."""
 
 from __future__ import annotations
 
@@ -53,12 +53,12 @@ def log_runtime_event(
     details: str = "",
 ) -> None:
     """Log a runtime API call event for cost monitoring."""
-    log_path = settings.gaia_root / "logs" / "proteus_runtime.jsonl"
+    log_path = settings.gaia_root / "logs" / "jseeker_runtime.jsonl"
     log_path.parent.mkdir(parents=True, exist_ok=True)
 
     entry = {
         "ts": datetime.now(timezone.utc).isoformat(),
-        "component": "proteus",
+        "component": "jseeker",
         "task": task,
         "model": model,
         "cost_usd": cost_usd,

@@ -1,4 +1,4 @@
-"""PROTEUS Tracker — SQLite CRUD for applications with 3 status pipelines."""
+"""jSeeker Tracker — SQLite CRUD for applications with 3 status pipelines."""
 
 from __future__ import annotations
 
@@ -7,12 +7,35 @@ from datetime import datetime, date
 from pathlib import Path
 from typing import Optional
 
-from proteus.models import Application, Company, Resume, APICost, JobDiscovery, SearchTag
+from jseeker.models import (
+    APICost,
+    Application,
+    Company,
+    DiscoveryStatus,
+    JobDiscovery,
+    Resume,
+    SearchTag,
+)
 
 
 def _get_db_path() -> Path:
     from config import settings
     return settings.db_path
+
+
+def _normalize_discovery_status(status: str | DiscoveryStatus | None) -> str:
+    """Normalize discovery status values for consistent filtering."""
+    allowed = {s.value for s in DiscoveryStatus}
+    if isinstance(status, DiscoveryStatus):
+        normalized = status.value
+    else:
+        normalized = str(status or DiscoveryStatus.NEW.value).strip().lower()
+    return normalized if normalized in allowed else DiscoveryStatus.NEW.value
+
+
+def _normalize_search_tag(tag: str) -> str:
+    """Normalize a search tag by trimming and collapsing whitespace."""
+    return " ".join((tag or "").strip().split())
 
 
 def init_db(db_path: Path = None) -> None:
@@ -119,12 +142,44 @@ def init_db(db_path: Path = None) -> None:
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )""")
 
+    c.execute("""CREATE TABLE IF NOT EXISTS learned_patterns (
+        id INTEGER PRIMARY KEY,
+        pattern_type TEXT NOT NULL,
+        source_text TEXT NOT NULL,
+        target_text TEXT NOT NULL,
+        jd_context TEXT,
+        frequency INTEGER DEFAULT 1,
+        confidence REAL DEFAULT 1.0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        last_used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(pattern_type, source_text, jd_context)
+    )""")
+
+    c.execute("CREATE INDEX IF NOT EXISTS idx_pattern_type ON learned_patterns(pattern_type)")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_frequency ON learned_patterns(frequency DESC)")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_last_used ON learned_patterns(last_used_at DESC)")
+
+    c.execute("""CREATE TABLE IF NOT EXISTS jd_cache (
+        id INTEGER PRIMARY KEY,
+        pruned_text_hash TEXT UNIQUE NOT NULL,
+        parsed_json TEXT NOT NULL,
+        title TEXT,
+        company TEXT,
+        ats_keywords TEXT,
+        hit_count INTEGER DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        last_used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )""")
+
+    c.execute("CREATE INDEX IF NOT EXISTS idx_jd_cache_title ON jd_cache(title)")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_jd_cache_hits ON jd_cache(hit_count DESC)")
+
     conn.commit()
     conn.close()
 
 
 class TrackerDB:
-    """CRUD operations for the PROTEUS application tracker."""
+    """CRUD operations for the jSeeker application tracker."""
 
     def __init__(self, db_path: Path = None):
         if db_path is None:
@@ -164,6 +219,19 @@ class TrackerDB:
         row_id = c.lastrowid
         conn.close()
         return row_id
+
+    def update_company_name(self, company_id: int, name: str) -> None:
+        """Update company name.
+
+        Args:
+            company_id: Company ID to update
+            name: New company name
+        """
+        conn = self._conn()
+        c = conn.cursor()
+        c.execute("UPDATE companies SET name = ? WHERE id = ?", (name, company_id))
+        conn.commit()
+        conn.close()
 
     # ── Applications ──────────────────────────────────────────────
 
@@ -206,7 +274,8 @@ class TrackerDB:
     ) -> list[dict]:
         conn = self._conn()
         c = conn.cursor()
-        query = """SELECT a.*, c.name as company_name
+        query = """SELECT a.*, c.name as company_name,
+            (SELECT MAX(r.ats_score) FROM resumes r WHERE r.application_id = a.id) as ats_score
             FROM applications a
             LEFT JOIN companies c ON a.company_id = c.id
             WHERE 1=1"""
@@ -324,6 +393,7 @@ class TrackerDB:
     def add_discovery(self, discovery: JobDiscovery) -> Optional[int]:
         conn = self._conn()
         c = conn.cursor()
+        normalized_status = _normalize_discovery_status(discovery.status)
         try:
             c.execute("""INSERT INTO job_discoveries
                 (title, company, location, salary_range, url, source,
@@ -332,7 +402,7 @@ class TrackerDB:
                 (discovery.title, discovery.company, discovery.location,
                  discovery.salary_range, discovery.url, discovery.source,
                  str(discovery.posting_date) if discovery.posting_date else None,
-                 discovery.search_tags, discovery.status.value),
+                 discovery.search_tags, normalized_status),
             )
             conn.commit()
             row_id = c.lastrowid
@@ -341,31 +411,63 @@ class TrackerDB:
         conn.close()
         return row_id
 
-    def list_discoveries(self, status: str = None) -> list[dict]:
+    def list_discoveries(self, status: str = None, search: str = "") -> list[dict]:
         conn = self._conn()
         c = conn.cursor()
+        query = "SELECT * FROM job_discoveries WHERE 1=1"
+        params: list[str] = []
+
         if status:
-            c.execute("SELECT * FROM job_discoveries WHERE status = ? ORDER BY discovered_at DESC", (status,))
-        else:
-            c.execute("SELECT * FROM job_discoveries ORDER BY discovered_at DESC")
+            normalized = _normalize_discovery_status(status)
+            query += " AND LOWER(TRIM(status)) = LOWER(TRIM(?))"
+            params.append(normalized)
+
+        normalized_search = (search or "").strip().lower()
+        if normalized_search:
+            like = f"%{normalized_search}%"
+            query += (
+                " AND ("
+                "LOWER(COALESCE(title, '')) LIKE ? OR "
+                "LOWER(COALESCE(company, '')) LIKE ? OR "
+                "LOWER(COALESCE(location, '')) LIKE ? OR "
+                "LOWER(COALESCE(source, '')) LIKE ? OR "
+                "LOWER(COALESCE(search_tags, '')) LIKE ? OR "
+                "LOWER(COALESCE(url, '')) LIKE ?"
+                ")"
+            )
+            params.extend([like, like, like, like, like, like])
+
+        query += " ORDER BY discovered_at DESC"
+        c.execute(query, params)
         rows = c.fetchall()
         conn.close()
         return [dict(r) for r in rows]
 
     def update_discovery_status(self, discovery_id: int, status: str) -> None:
+        normalized = _normalize_discovery_status(status)
         conn = self._conn()
         c = conn.cursor()
-        c.execute("UPDATE job_discoveries SET status = ? WHERE id = ?", (status, discovery_id))
+        c.execute("UPDATE job_discoveries SET status = ? WHERE id = ?", (normalized, discovery_id))
         conn.commit()
         conn.close()
 
     # ── Search Tags ────────────────────────────────────────────────
 
     def add_search_tag(self, tag: str) -> Optional[int]:
+        normalized_tag = _normalize_search_tag(tag)
+        if not normalized_tag:
+            return None
+
         conn = self._conn()
         c = conn.cursor()
+
+        c.execute("SELECT id FROM search_tags WHERE LOWER(tag) = LOWER(?)", (normalized_tag,))
+        if c.fetchone():
+            conn.close()
+            return None
+
         try:
-            c.execute("INSERT INTO search_tags (tag) VALUES (?)", (tag,))
+            c.execute("INSERT INTO search_tags (tag, active) VALUES (?, 1)", (normalized_tag,))
             conn.commit()
             row_id = c.lastrowid
         except sqlite3.IntegrityError:
@@ -377,9 +479,16 @@ class TrackerDB:
         conn = self._conn()
         c = conn.cursor()
         if active_only:
-            c.execute("SELECT * FROM search_tags WHERE active = TRUE ORDER BY tag")
+            c.execute(
+                "SELECT * FROM search_tags "
+                "WHERE COALESCE(CAST(active AS INTEGER), 1) = 1 "
+                "ORDER BY LOWER(tag)"
+            )
         else:
-            c.execute("SELECT * FROM search_tags ORDER BY tag")
+            c.execute(
+                "SELECT * FROM search_tags ORDER BY "
+                "COALESCE(CAST(active AS INTEGER), 1) DESC, LOWER(tag)"
+            )
         rows = c.fetchall()
         conn.close()
         return [dict(r) for r in rows]
@@ -387,9 +496,141 @@ class TrackerDB:
     def toggle_search_tag(self, tag_id: int, active: bool) -> None:
         conn = self._conn()
         c = conn.cursor()
-        c.execute("UPDATE search_tags SET active = ? WHERE id = ?", (active, tag_id))
+        c.execute("UPDATE search_tags SET active = ? WHERE id = ?", (1 if active else 0, tag_id))
         conn.commit()
         conn.close()
+
+    # ── Pipeline Integration ───────────────────────────────────────
+
+    def create_from_pipeline(self, result) -> dict:
+        """Create application, resume, and company from a PipelineResult.
+
+        Args:
+            result: PipelineResult from pipeline.run_pipeline()
+
+        Returns:
+            Dict with company_id, application_id, resume_id
+        """
+        import json
+        from jseeker.models import Application, Resume, ResumeStatus, ApplicationStatus, JobStatus
+
+        # Get or create company
+        company_id = self.get_or_create_company(result.company or "Unknown")
+
+        # Create application with defaults
+        app = Application(
+            company_id=company_id,
+            role_title=result.role or "Unknown",
+            jd_text=result.parsed_jd.raw_text,
+            jd_url=result.parsed_jd.jd_url,
+            location=result.parsed_jd.location,
+            remote_policy=result.parsed_jd.remote_policy,
+            salary_range=result.parsed_jd.salary_range,
+            relevance_score=result.match_result.relevance_score,
+            resume_status=ResumeStatus.GENERATED,
+            application_status=ApplicationStatus.NOT_APPLIED,
+            job_status=JobStatus.ACTIVE,
+        )
+        app_id = self.add_application(app)
+
+        # Create resume entry
+        resume = Resume(
+            application_id=app_id,
+            template_used=result.match_result.template_type.value,
+            content_json=json.dumps(result.adapted_resume.model_dump(), default=str),
+            pdf_path=result.pdf_path,
+            docx_path=result.docx_path,
+            ats_score=result.ats_score.overall_score,
+            ats_platform=result.parsed_jd.detected_ats.value,
+            generation_cost=result.total_cost,
+        )
+        resume_id = self.add_resume(resume)
+
+        return {"company_id": company_id, "application_id": app_id, "resume_id": resume_id}
+
+    def list_all_resumes(self) -> list[dict]:
+        """List all resumes with application and company info.
+
+        Returns:
+            List of dicts containing resume data with joined application and company info
+        """
+        conn = self._conn()
+        c = conn.cursor()
+        c.execute("""SELECT r.*, a.role_title, a.jd_url, a.company_id, c.name as company_name
+            FROM resumes r
+            LEFT JOIN applications a ON r.application_id = a.id
+            LEFT JOIN companies c ON a.company_id = c.id
+            ORDER BY r.created_at DESC""")
+        rows = c.fetchall()
+        conn.close()
+        return [dict(r) for r in rows]
+
+    def get_next_resume_version(self, application_id: int) -> int:
+        """Get next version number for a resume.
+
+        Args:
+            application_id: Application ID to get next version for
+
+        Returns:
+            Next version number (1 if no resumes exist)
+        """
+        conn = self._conn()
+        c = conn.cursor()
+        c.execute("SELECT MAX(version) as max_v FROM resumes WHERE application_id = ?", (application_id,))
+        row = c.fetchone()
+        conn.close()
+        return (row["max_v"] or 0) + 1
+
+    def delete_resume(self, resume_id: int) -> bool:
+        """Delete a resume and its files from disk.
+
+        Args:
+            resume_id: Resume ID to delete
+
+        Returns:
+            True if deleted, False if not found
+        """
+        conn = self._conn()
+        c = conn.cursor()
+        c.execute("SELECT pdf_path, docx_path FROM resumes WHERE id = ?", (resume_id,))
+        row = c.fetchone()
+        if not row:
+            conn.close()
+            return False
+
+        # Delete files
+        from pathlib import Path
+        for path_str in [row["pdf_path"], row["docx_path"]]:
+            if path_str:
+                p = Path(path_str)
+                p.unlink(missing_ok=True)
+
+        c.execute("DELETE FROM resumes WHERE id = ?", (resume_id,))
+        conn.commit()
+        conn.close()
+        return True
+
+    def is_url_known(self, url: str) -> bool:
+        """Check if a URL exists in job_discoveries or applications.
+
+        Args:
+            url: URL to check
+
+        Returns:
+            True if URL exists in either table, False otherwise
+        """
+        if not url:
+            return False
+        conn = self._conn()
+        c = conn.cursor()
+        c.execute("SELECT 1 FROM job_discoveries WHERE url = ?", (url,))
+        if c.fetchone():
+            conn.close()
+            return True
+        c.execute("SELECT 1 FROM applications WHERE jd_url = ?", (url,))
+        result = c.fetchone() is not None
+        conn.close()
+        return result
 
     # ── Stats ──────────────────────────────────────────────────────
 

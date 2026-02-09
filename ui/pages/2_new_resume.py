@@ -1,170 +1,194 @@
-"""PROTEUS New Resume — JD paste → adapted resume → export."""
+"""JSEEKER New Resume - One-click JD to adapted resume to export."""
 
-import sys
 import json
+import sys
+from datetime import datetime
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import streamlit as st
-from proteus.models import TemplateType, ResumeStatus, ApplicationStatus
-from proteus.tracker import tracker_db
+
+from config import settings
+from jseeker.adapter import adapt_resume
+from jseeker.ats_scorer import score_resume
+from jseeker.jd_parser import extract_jd_from_url, process_jd
+from jseeker.llm import BudgetExceededError, llm
+from jseeker.matcher import match_templates
+from jseeker.models import (
+    Application,
+    ApplicationStatus,
+    PipelineResult,
+    Resume,
+    ResumeStatus,
+)
+from jseeker.renderer import generate_output
+from jseeker.tracker import tracker_db
+
 
 st.title("New Resume")
 
+# --- Budget Display and Check ---
+try:
+    monthly_cost = tracker_db.get_monthly_cost()
+    session_cost = llm.get_total_session_cost()
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Monthly Cost", f"${monthly_cost:.2f}", f"of ${settings.max_monthly_budget_usd:.2f}")
+    col2.metric("Session Cost", f"${session_cost:.3f}")
+    col3.metric("Budget Remaining", f"${max(0, settings.max_monthly_budget_usd - monthly_cost):.2f}")
+
+    if monthly_cost >= settings.max_monthly_budget_usd:
+        st.error(
+            f"Monthly budget exceeded (${monthly_cost:.2f} / "
+            f"${settings.max_monthly_budget_usd:.2f}). Generation disabled."
+        )
+        budget_exceeded = True
+    elif monthly_cost >= settings.cost_warning_threshold_usd:
+        st.warning(
+            f"Approaching monthly budget limit: ${monthly_cost:.2f} / "
+            f"${settings.max_monthly_budget_usd:.2f}"
+        )
+        budget_exceeded = False
+    else:
+        budget_exceeded = False
+except Exception:
+    budget_exceeded = False
+
+st.markdown("---")
+
 # --- Step 1: JD Input ---
-st.subheader("Step 1: Paste Job Description")
+st.subheader("Job Description")
 
 jd_text = st.text_area(
     "Paste the full job description here:",
     height=300,
     placeholder="Copy and paste the complete job description...",
+    key="jd_text_input",
 )
 
 jd_url = st.text_input(
-    "Job URL (optional — helps detect ATS platform):",
+    "Job URL (optional - helps detect ATS platform):",
     placeholder="https://boards.greenhouse.io/company/jobs/12345",
+    key="jd_url_input",
 )
 
-if st.button("Analyze JD", disabled=not jd_text):
-    with st.spinner("Pruning boilerplate and parsing JD..."):
-        from proteus.jd_parser import process_jd
-        parsed_jd = process_jd(jd_text, jd_url)
-        st.session_state["parsed_jd"] = parsed_jd
+st.caption("Paste JD text, or provide only a job URL and jSeeker will try to extract the JD.")
 
-# --- Step 2: JD Analysis ---
-if "parsed_jd" in st.session_state:
-    parsed_jd = st.session_state["parsed_jd"]
-    st.markdown("---")
-    st.subheader("Step 2: JD Analysis")
+st.markdown("---")
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown(f"**Title:** {parsed_jd.title}")
-        st.markdown(f"**Company:** {parsed_jd.company}")
-        st.markdown(f"**Seniority:** {parsed_jd.seniority}")
-        st.markdown(f"**Location:** {parsed_jd.location}")
-        st.markdown(f"**ATS Platform:** {parsed_jd.detected_ats.value}")
+# --- Step 2: Generate Resume (One Click) ---
+jd_text_clean = jd_text.strip()
+jd_url_clean = jd_url.strip()
+generate_disabled = (not jd_text_clean and not jd_url_clean) or budget_exceeded
+generate_button = st.button(
+    "Generate Resume",
+    type="primary",
+    disabled=generate_disabled,
+    use_container_width=True,
+)
 
-    with col2:
-        st.markdown("**Top ATS Keywords:**")
-        keyword_str = ", ".join(parsed_jd.ats_keywords[:15])
-        st.code(keyword_str, language=None)
+if generate_button:
+    try:
+        with st.status("Generating resume...", expanded=True) as status:
+            progress = st.progress(0, text="Initializing pipeline...")
+            cost_before = llm.get_total_session_cost()
 
-    with st.expander("View Pruned JD"):
-        st.text(parsed_jd.pruned_text)
+            # Step 1: Load or extract JD and parse
+            source_jd_text = jd_text_clean
+            if not source_jd_text and jd_url_clean:
+                progress.progress(5, text="Step 1/5: Fetching job description from URL...")
+                source_jd_text = extract_jd_from_url(jd_url_clean)
+                if not source_jd_text:
+                    raise ValueError(
+                        "Could not extract job description from URL. Paste the JD text and try again."
+                    )
+                progress.progress(12, text="Step 1/5: Job description extracted from URL.")
+            else:
+                progress.progress(12, text="Step 1/5: Using pasted job description.")
 
-    # --- Step 3: Template Matching ---
-    if st.button("Match Templates"):
-        with st.spinner("Scoring template relevance via Sonnet..."):
-            from proteus.matcher import match_templates
-            results = match_templates(parsed_jd)
-            st.session_state["match_results"] = results
+            progress.progress(15, text="Step 1/5: Parsing job description...")
+            parsed_jd = process_jd(source_jd_text, jd_url=jd_url_clean)
+            progress.progress(20, text="Step 1/5: Job description parsed.")
 
-if "match_results" in st.session_state:
-    results = st.session_state["match_results"]
-    parsed_jd = st.session_state["parsed_jd"]
-
-    st.markdown("---")
-    st.subheader("Step 3: Template Match")
-
-    for i, result in enumerate(results):
-        icon = "1st" if i == 0 else ("2nd" if i == 1 else "3rd")
-        with st.expander(f"{icon}: {result.template_type.value} — {result.relevance_score:.0%} match", expanded=(i == 0)):
-            st.markdown(f"**Matched Keywords:** {', '.join(result.matched_keywords[:10])}")
-            st.markdown(f"**Missing Keywords:** {', '.join(result.missing_keywords[:10])}")
-            st.markdown(f"**Gap Analysis:** {result.gap_analysis}")
-
-    selected_template = st.selectbox(
-        "Select template:",
-        options=[r.template_type.value for r in results],
-        index=0,
-    )
-
-    # --- Step 4: Adapt ---
-    if st.button("Adapt Resume"):
-        with st.spinner("Adapting summary and bullets via Sonnet (~20 sec)..."):
-            from proteus.adapter import adapt_resume
-            template_type = TemplateType(selected_template)
-            match_result = next(r for r in results if r.template_type == template_type)
-            adapted = adapt_resume(match_result, parsed_jd)
-            st.session_state["adapted_resume"] = adapted
-
-if "adapted_resume" in st.session_state:
-    adapted = st.session_state["adapted_resume"]
-    parsed_jd = st.session_state["parsed_jd"]
-
-    st.markdown("---")
-    st.subheader("Step 4: Adapted Resume Preview")
-
-    st.markdown("**Summary:**")
-    st.info(adapted.summary)
-
-    for exp in adapted.experience_blocks:
-        end = exp.get("end") or "Present"
-        st.markdown(f"**{exp['role']}** — {exp['company']} ({exp['start']} – {end})")
-        for bullet in exp.get("bullets", []):
-            st.markdown(f"- {bullet}")
-
-    # --- Step 5: ATS Score ---
-    if st.button("Score ATS Compliance"):
-        with st.spinner("Scoring ATS compliance..."):
-            from proteus.ats_scorer import score_resume
-            ats_score = score_resume(adapted, parsed_jd)
-            st.session_state["ats_score"] = ats_score
-
-if "ats_score" in st.session_state:
-    ats_score = st.session_state["ats_score"]
-    adapted = st.session_state["adapted_resume"]
-    parsed_jd = st.session_state["parsed_jd"]
-
-    st.markdown("---")
-    st.subheader("Step 5: ATS Score")
-
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Overall Score", f"{ats_score.overall_score}/100")
-    col2.metric("Keyword Match", f"{ats_score.keyword_match_rate:.0%}")
-    col3.metric("Format", ats_score.recommended_format.upper())
-
-    if ats_score.missing_keywords:
-        st.warning(f"Missing keywords: {', '.join(ats_score.missing_keywords[:10])}")
-    if ats_score.warnings:
-        for w in ats_score.warnings:
-            st.caption(f"Warning: {w}")
-
-    st.markdown(f"**Recommended format:** {ats_score.recommended_format} — {ats_score.format_reason}")
-
-    # --- Step 6: Export ---
-    st.markdown("---")
-    st.subheader("Step 6: Export")
-
-    export_formats = st.multiselect(
-        "Export formats:",
-        options=["pdf", "docx"],
-        default=["pdf", "docx"],
-    )
-
-    if st.button("Generate & Export"):
-        with st.spinner("Rendering PDF and DOCX..."):
-            from proteus.renderer import generate_output
-
-            outputs = generate_output(
-                adapted,
-                company=parsed_jd.company,
-                role=parsed_jd.title,
-                formats=export_formats,
+            st.caption(
+                f"Parsed: {parsed_jd.title or 'Unknown role'} at {parsed_jd.company or 'Unknown'} | "
+                f"{len(parsed_jd.ats_keywords)} keywords | "
+                f"{len(parsed_jd.requirements)} requirements | "
+                f"Language: {parsed_jd.language} | Market: {parsed_jd.market}"
             )
 
-            # Save to tracker
-            company_id = tracker_db.get_or_create_company(parsed_jd.company)
-            from proteus.models import Application, Resume
+            # Step 2: Match templates
+            progress.progress(25, text="Step 2/5: Matching resume templates...")
+            match_results = match_templates(parsed_jd)
+            if not match_results:
+                diag = (
+                    f"No template matches found.\n"
+                    f"JD Title: {parsed_jd.title or 'N/A'}\n"
+                    f"JD Company: {parsed_jd.company or 'N/A'}\n"
+                    f"ATS Keywords found: {len(parsed_jd.ats_keywords)}\n"
+                    f"Keywords: {', '.join(parsed_jd.ats_keywords[:10]) if parsed_jd.ats_keywords else 'NONE'}\n"
+                    f"Requirements: {len(parsed_jd.requirements)}\n"
+                    f"This usually means the JD parser couldn't extract keywords. "
+                    f"Try pasting a more complete job description."
+                )
+                raise ValueError(diag)
+            match_result = match_results[0]
+            progress.progress(40, text="Step 2/5: Templates matched.")
+
+            # Step 3: Adapt resume
+            progress.progress(45, text="Step 3/5: Adapting resume content...")
+            adapted = adapt_resume(match_result, parsed_jd)
+            progress.progress(60, text="Step 3/5: Resume adapted.")
+
+            # Step 4: Score ATS
+            progress.progress(65, text="Step 4/5: Scoring ATS compliance...")
+            ats_score = score_resume(adapted, parsed_jd)
+            progress.progress(80, text="Step 4/5: ATS scored.")
+
+            # Step 5: Render files
+            progress.progress(85, text="Step 5/5: Rendering PDF and DOCX...")
+            company = parsed_jd.company or "Unknown"
+            role = parsed_jd.title or "Role"
+            outputs = generate_output(
+                adapted,
+                company,
+                role,
+                output_dir=settings.output_dir,
+                language=parsed_jd.language,
+            )
+            progress.progress(95, text="Step 5/5: Files rendered.")
+
+            total_cost = llm.get_total_session_cost() - cost_before
+            pdf_path = str(outputs.get("pdf", ""))
+            docx_path = str(outputs.get("docx", ""))
+
+            result = PipelineResult(
+                parsed_jd=parsed_jd,
+                match_result=match_result,
+                adapted_resume=adapted,
+                ats_score=ats_score,
+                pdf_path=pdf_path,
+                docx_path=docx_path,
+                company=company,
+                role=role,
+                language=parsed_jd.language,
+                market=parsed_jd.market,
+                total_cost=total_cost,
+                generation_timestamp=datetime.now(),
+            )
+
+            st.session_state["pipeline_result"] = result
+
+            company_id = tracker_db.get_or_create_company(result.company)
             app = Application(
                 company_id=company_id,
-                role_title=parsed_jd.title,
-                jd_text=parsed_jd.raw_text,
-                jd_url=parsed_jd.jd_url,
-                location=parsed_jd.location,
-                remote_policy=parsed_jd.remote_policy,
-                salary_range=parsed_jd.salary_range,
+                role_title=result.role,
+                jd_text=result.parsed_jd.raw_text,
+                jd_url=jd_url_clean,
+                location=result.parsed_jd.location,
+                remote_policy=result.parsed_jd.remote_policy,
+                salary_range=result.parsed_jd.salary_range,
                 resume_status=ResumeStatus.EXPORTED,
                 application_status=ApplicationStatus.NOT_APPLIED,
             )
@@ -172,32 +196,126 @@ if "ats_score" in st.session_state:
 
             resume = Resume(
                 application_id=app_id,
-                template_used=adapted.template_used.value,
-                content_json=json.dumps(adapted.model_dump(), default=str),
-                pdf_path=str(outputs.get("pdf", "")),
-                docx_path=str(outputs.get("docx", "")),
-                ats_score=ats_score.overall_score,
-                ats_platform=ats_score.platform.value,
+                template_used=result.adapted_resume.template_used.value,
+                content_json=json.dumps(result.adapted_resume.model_dump(), default=str),
+                pdf_path=result.pdf_path,
+                docx_path=result.docx_path,
+                ats_score=result.ats_score.overall_score,
+                ats_platform=result.ats_score.platform.value,
+                generation_cost=result.total_cost,
             )
             tracker_db.add_resume(resume)
 
-            # Log costs
-            from proteus.llm import llm
-            for cost in llm.get_session_costs():
-                tracker_db.log_cost(cost)
+            progress.progress(100, text="Complete. Resume generated successfully.")
+            status.update(label="Resume generated successfully.", state="complete", expanded=False)
+            st.success(f"Resume generated for {company} - {role} (Application #{app_id})")
 
-            st.success(f"Resume exported! Application saved (ID: {app_id})")
+    except BudgetExceededError as exc:
+        st.error(f"Budget exceeded: {exc}")
+    except Exception as exc:
+        st.error(f"Generation failed: {exc}")
+        import traceback
 
-            for fmt, path in outputs.items():
-                st.markdown(f"**{fmt.upper()}:** `{path}`")
+        st.code(traceback.format_exc())
 
-            # Download buttons
-            for fmt, path in outputs.items():
-                if Path(path).exists():
-                    with open(path, "rb") as f:
-                        st.download_button(
-                            f"Download {fmt.upper()}",
-                            data=f.read(),
-                            file_name=Path(path).name,
-                            mime="application/pdf" if fmt == "pdf" else "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                        )
+# --- Step 3: Display Results ---
+if "pipeline_result" in st.session_state:
+    result = st.session_state["pipeline_result"]
+
+    st.markdown("---")
+
+    with st.expander("ATS Score Card", expanded=True):
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Overall Score", f"{result.ats_score.overall_score}/100")
+        col2.metric("Keyword Match", f"{result.ats_score.keyword_match_rate:.0%}")
+        col3.metric("Recommended Format", result.ats_score.recommended_format.upper())
+
+        if result.ats_score.missing_keywords:
+            st.warning(f"Missing keywords: {', '.join(result.ats_score.missing_keywords[:10])}")
+
+        if result.ats_score.warnings:
+            for warning in result.ats_score.warnings:
+                st.caption(f"[warning] {warning}")
+
+        st.markdown(f"**Format Reason:** {result.ats_score.format_reason}")
+
+    with st.expander("Export", expanded=True):
+        default_name = Path(result.pdf_path).stem if result.pdf_path else "resume"
+        custom_name = st.text_input("Filename:", value=default_name, key="custom_filename")
+
+        col1, col2 = st.columns(2)
+
+        if result.pdf_path and Path(result.pdf_path).exists():
+            with col1:
+                with open(result.pdf_path, "rb") as handle:
+                    st.download_button(
+                        "Download PDF",
+                        data=handle.read(),
+                        file_name=f"{custom_name}.pdf",
+                        mime="application/pdf",
+                        use_container_width=True,
+                    )
+
+        if result.docx_path and Path(result.docx_path).exists():
+            with col2:
+                with open(result.docx_path, "rb") as handle:
+                    st.download_button(
+                        "Download DOCX",
+                        data=handle.read(),
+                        file_name=f"{custom_name}.docx",
+                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        use_container_width=True,
+                    )
+
+    with st.expander("JD Analysis", expanded=False):
+        parsed_jd = result.parsed_jd
+
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown(f"**Title:** {parsed_jd.title}")
+            st.markdown(f"**Company:** {parsed_jd.company}")
+            st.markdown(f"**Seniority:** {parsed_jd.seniority}")
+            st.markdown(f"**Location:** {parsed_jd.location}")
+
+        with col2:
+            st.markdown(f"**ATS Platform:** {parsed_jd.detected_ats.value}")
+            st.markdown(f"**Remote Policy:** {parsed_jd.remote_policy}")
+            st.markdown(f"**Language:** {parsed_jd.language.upper()}")
+            st.markdown(f"**Market:** {parsed_jd.market.upper()}")
+
+        st.markdown("**Top ATS Keywords:**")
+        st.code(", ".join(parsed_jd.ats_keywords[:15]), language=None)
+
+        with st.expander("View Pruned JD"):
+            st.text(parsed_jd.pruned_text)
+
+    with st.expander("Template Match", expanded=False):
+        match = result.match_result
+
+        st.metric("Relevance Score", f"{match.relevance_score:.0%}")
+        st.markdown(f"**Template Used:** {match.template_type.value}")
+
+        st.markdown("**Matched Keywords:**")
+        st.code(", ".join(match.matched_keywords[:15]), language=None)
+
+        st.markdown("**Missing Keywords:**")
+        st.code(", ".join(match.missing_keywords[:15]), language=None)
+
+        st.markdown("**Gap Analysis:**")
+        st.info(match.gap_analysis)
+
+    with st.expander("Adaptation Details", expanded=False):
+        adapted = result.adapted_resume
+
+        st.markdown("**Summary:**")
+        st.info(adapted.summary)
+
+        st.markdown("**Experience Blocks:**")
+        for exp in adapted.experience_blocks:
+            end = exp.get("end") or "Present"
+            st.markdown(f"**{exp['role']}** - {exp['company']} ({exp['start']} to {end})")
+            for bullet in exp.get("bullets", []):
+                st.markdown(f"- {bullet}")
+
+    st.markdown("---")
+    st.caption(f"**Cost:** ${result.total_cost:.4f}")

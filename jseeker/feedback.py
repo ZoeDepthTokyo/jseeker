@@ -1,4 +1,4 @@
-"""PROTEUS Feedback — Edit capture + preference learning."""
+"""jSeeker Feedback — Edit capture + preference learning."""
 
 from __future__ import annotations
 
@@ -12,10 +12,20 @@ def capture_edit(
     field: str,
     original_value: str,
     new_value: str,
+    jd_context: Optional[dict] = None,
 ) -> None:
-    """Record a user edit event for preference learning."""
-    from proteus.tracker import tracker_db
+    """Record a user edit event and learn adaptation pattern.
 
+    Args:
+        resume_id: Resume ID being edited.
+        field: Field name (e.g., 'summary', 'experience_bullet_0').
+        original_value: Original generated value.
+        new_value: User-edited value.
+        jd_context: Optional JD context (ParsedJD as dict) for pattern learning.
+    """
+    from jseeker.tracker import tracker_db
+
+    # Record edit event
     conn = tracker_db._conn()
     c = conn.cursor()
     c.execute("""INSERT INTO feedback_events
@@ -26,10 +36,56 @@ def capture_edit(
     conn.commit()
     conn.close()
 
+    # Learn pattern for content-level fields
+    _learn_from_edit(field, original_value, new_value, jd_context)
+
+
+def _learn_from_edit(
+    field: str,
+    original: str,
+    edited: str,
+    jd_context: Optional[dict],
+) -> None:
+    """Extract and store adaptation pattern from user edit."""
+    if not original or not edited or original == edited:
+        return
+
+    # Classify edit type
+    pattern_type = _classify_edit_type(field)
+    if not pattern_type:
+        return  # Not a learnable field
+
+    # Store pattern
+    from jseeker.pattern_learner import learn_pattern
+    learn_pattern(
+        pattern_type=pattern_type,
+        source_text=original,
+        target_text=edited,
+        jd_context=jd_context,
+    )
+
+
+def _classify_edit_type(field: str) -> Optional[str]:
+    """Map field name to pattern type for learning.
+
+    Returns:
+        Pattern type string or None if field is not learnable.
+    """
+    field_lower = field.lower()
+
+    if "summary" in field_lower:
+        return "summary_adaptation"
+    elif "bullet" in field_lower or "experience" in field_lower:
+        return "bullet_adaptation"
+    elif "skill" in field_lower:
+        return "skill_adaptation"
+    else:
+        return None  # Not a learnable field (e.g., contact info)
+
 
 def get_edit_history(limit: int = 50) -> list[dict]:
     """Get recent edit events."""
-    from proteus.tracker import tracker_db
+    from jseeker.tracker import tracker_db
 
     conn = tracker_db._conn()
     c = conn.cursor()

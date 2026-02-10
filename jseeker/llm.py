@@ -6,15 +6,93 @@ import hashlib
 import json
 import logging
 import time
+from functools import wraps
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional, TypeVar
 
 import anthropic
+from anthropic import (
+    APIConnectionError,
+    APITimeoutError,
+    InternalServerError,
+    RateLimitError,
+)
 
 from config import settings
 from jseeker.models import APICost
 
 logger = logging.getLogger(__name__)
+
+# Type variable for decorator
+F = TypeVar("F", bound=Callable)
+
+
+def retry_on_transient_errors(
+    max_retries: int = 2,
+    initial_delay: float = 1.0,
+    backoff_factor: float = 2.0,
+) -> Callable[[F], F]:
+    """Decorator to retry on transient API errors with exponential backoff.
+
+    Retries on:
+    - RateLimitError (429)
+    - APITimeoutError (timeout/connection interrupted)
+    - APIConnectionError (network issues)
+    - InternalServerError (500)
+
+    Does NOT retry on:
+    - AuthenticationError (401) - invalid API key
+    - PermissionDeniedError (403) - insufficient permissions
+    - BadRequestError (400) - malformed request
+    - Other non-transient errors
+
+    Args:
+        max_retries: Maximum number of retry attempts (default: 2).
+        initial_delay: Initial delay in seconds before first retry (default: 1.0).
+        backoff_factor: Multiplier for delay after each retry (default: 2.0).
+
+    Returns:
+        Decorated function with retry logic.
+    """
+
+    def decorator(func: F) -> F:
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            delay = initial_delay
+            last_exception = None
+
+            for attempt in range(max_retries + 1):
+                try:
+                    return func(*args, **kwargs)
+                except (
+                    RateLimitError,
+                    APITimeoutError,
+                    APIConnectionError,
+                    InternalServerError,
+                ) as e:
+                    last_exception = e
+                    if attempt < max_retries:
+                        logger.warning(
+                            f"Transient API error on attempt {attempt + 1}/{max_retries + 1}: "
+                            f"{type(e).__name__}: {str(e)[:100]}. "
+                            f"Retrying in {delay:.1f}s..."
+                        )
+                        time.sleep(delay)
+                        delay *= backoff_factor
+                    else:
+                        logger.error(
+                            f"Max retries ({max_retries}) exceeded for {type(e).__name__}. Giving up."
+                        )
+                        raise
+
+            # This should never be reached, but keeps type checker happy
+            if last_exception:
+                raise last_exception
+
+        return wrapper  # type: ignore
+
+    return decorator
+
 
 # Model pricing per 1M tokens (input/output) — updated 2026
 MODEL_PRICING = {
@@ -108,10 +186,10 @@ class JseekerLLM:
         except ImportError:
             pass  # tracker not available yet
 
-        # API call
+        # API call with retry logic
         start_time = time.time()
-        response = self.client.messages.create(
-            model=model_id,
+        response = self._call_anthropic(
+            model_id=model_id,
             max_tokens=max_tokens,
             temperature=temperature,
             system=system_blocks if system_blocks else [],
@@ -185,6 +263,28 @@ class JseekerLLM:
         return sum(c.cost_usd for c in self._session_costs)
 
     # ── Private Helpers ────────────────────────────────────────────────
+
+    @retry_on_transient_errors(max_retries=2, initial_delay=1.0, backoff_factor=2.0)
+    def _call_anthropic(
+        self,
+        model_id: str,
+        max_tokens: int,
+        temperature: float,
+        system: list,
+        messages: list,
+    ):
+        """Make the actual API call to Anthropic with retry logic.
+
+        This method is decorated with retry_on_transient_errors to handle
+        transient failures like rate limits, timeouts, and connection errors.
+        """
+        return self.client.messages.create(
+            model=model_id,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            system=system,
+            messages=messages,
+        )
 
     @staticmethod
     def _calculate_cost(

@@ -462,3 +462,190 @@ class TestTrackerDB:
         assert result["notes"] == "test note"
         assert result["location"] == "SF"
         assert result["salary_range"] == "$150k - $200k"
+
+
+class TestTrackerConcurrency:
+    """Test connection pooling and concurrency management."""
+
+    def test_connection_pooling_enabled(self, tmp_db):
+        """Test that connection pooling is properly configured."""
+        db = TrackerDB(tmp_db)
+
+        # Get connection should be configured with timeout and thread safety
+        conn = db._get_conn()
+
+        # Connection should be usable (health check passed)
+        cursor = conn.cursor()
+        cursor.execute("SELECT 1")
+        result = cursor.fetchone()
+        assert result[0] == 1
+
+        # Verify connection can be used again (not closed after health check)
+        cursor.execute("SELECT 2")
+        result2 = cursor.fetchone()
+        assert result2[0] == 2
+
+        conn.close()
+
+    def test_connection_health_check(self, tmp_db):
+        """Test that _get_conn performs health check on connections."""
+        db = TrackerDB(tmp_db)
+
+        # First connection should work
+        conn1 = db._get_conn()
+        assert conn1 is not None
+        cursor1 = conn1.cursor()
+        cursor1.execute("SELECT 1")
+        assert cursor1.fetchone()[0] == 1
+        conn1.close()
+
+        # Second connection should also work (health check passes)
+        conn2 = db._get_conn()
+        assert conn2 is not None
+        cursor2 = conn2.cursor()
+        cursor2.execute("SELECT 1")
+        assert cursor2.fetchone()[0] == 1
+        conn2.close()
+
+    def test_transaction_context_manager(self, tmp_db):
+        """Test atomic transaction context manager."""
+        db = TrackerDB(tmp_db)
+        company_id = db.get_or_create_company("TestCorp")
+
+        # Use transaction context for atomic operations
+        with db._transaction() as (conn, cursor):
+            cursor.execute(
+                "INSERT INTO applications (company_id, role_title) VALUES (?, ?)",
+                (company_id, "Test Role")
+            )
+            app_id = cursor.lastrowid
+
+        # Verify the insert was committed
+        app = db.get_application(app_id)
+        assert app is not None
+        assert app["role_title"] == "Test Role"
+
+    def test_transaction_rollback_on_error(self, tmp_db):
+        """Test that transaction rolls back on error."""
+        db = TrackerDB(tmp_db)
+        company_id = db.get_or_create_company("TestCorp")
+
+        # Count initial applications
+        initial_apps = db.list_applications()
+        initial_count = len(initial_apps)
+
+        # Try a transaction that will fail
+        try:
+            with db._transaction() as (conn, cursor):
+                cursor.execute(
+                    "INSERT INTO applications (company_id, role_title) VALUES (?, ?)",
+                    (company_id, "Test Role")
+                )
+                # Force an error by inserting invalid data
+                cursor.execute(
+                    "INSERT INTO applications (company_id, role_title) VALUES (?, ?)",
+                    (999999, None)  # Invalid company_id and NULL role_title
+                )
+        except Exception:
+            pass  # Expected to fail
+
+        # Verify rollback - count should be unchanged
+        final_apps = db.list_applications()
+        assert len(final_apps) == initial_count
+
+    def test_concurrent_updates_no_lock_error(self, tmp_db):
+        """Test that concurrent updates don't cause 'database is locked' errors."""
+        import threading
+        from concurrent.futures import ThreadPoolExecutor
+
+        db = TrackerDB(tmp_db)
+        company_id = db.get_or_create_company("TestCorp")
+
+        # Create an application
+        app = Application(company_id=company_id, role_title="Test Role")
+        app_id = db.add_application(app)
+
+        errors = []
+
+        def update_app(field_val):
+            """Update application from thread."""
+            try:
+                db.update_application(app_id, notes=f"Update {field_val}")
+            except Exception as e:
+                errors.append(str(e))
+
+        # Run 10 concurrent updates
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            futures = [executor.submit(update_app, i) for i in range(10)]
+            for future in futures:
+                future.result()
+
+        # Verify no "database is locked" errors
+        locked_errors = [e for e in errors if "database is locked" in e.lower()]
+        assert len(locked_errors) == 0, f"Found lock errors: {locked_errors}"
+
+        # Verify application still exists
+        result = db.get_application(app_id)
+        assert result is not None
+
+    def test_server_side_timestamps(self, tmp_db):
+        """Test that timestamps use SQLite CURRENT_TIMESTAMP, not Python datetime."""
+        db = TrackerDB(tmp_db)
+        company_id = db.get_or_create_company("TestCorp")
+
+        # Add application (should use CURRENT_TIMESTAMP for created_at)
+        app = Application(company_id=company_id, role_title="Test Role")
+        app_id = db.add_application(app)
+
+        # Get raw timestamp from database
+        conn = db._get_conn()
+        cursor = conn.cursor()
+        cursor.execute("SELECT created_at, updated_at FROM applications WHERE id = ?", (app_id,))
+        row = cursor.fetchone()
+        conn.close()
+
+        # Timestamps should be in SQLite format (YYYY-MM-DD HH:MM:SS)
+        # Not Python isoformat with 'T' separator
+        created_at = row["created_at"]
+        updated_at = row["updated_at"]
+
+        assert created_at is not None
+        assert updated_at is not None
+
+        # SQLite timestamps should have space separator, not 'T'
+        # and should not have microseconds
+        import re
+        sqlite_timestamp_pattern = r'^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$'
+        assert re.match(sqlite_timestamp_pattern, created_at), \
+            f"created_at '{created_at}' doesn't match SQLite timestamp format"
+        assert re.match(sqlite_timestamp_pattern, updated_at), \
+            f"updated_at '{updated_at}' doesn't match SQLite timestamp format"
+
+    def test_update_uses_server_timestamp(self, tmp_db):
+        """Test that update_application_status uses SQLite CURRENT_TIMESTAMP."""
+        import time
+
+        db = TrackerDB(tmp_db)
+        company_id = db.get_or_create_company("TestCorp")
+        app = Application(company_id=company_id, role_title="Test Role")
+        app_id = db.add_application(app)
+
+        # Get initial timestamp
+        app1 = db.get_application(app_id)
+        initial_updated = app1["updated_at"]
+
+        # Wait 1+ seconds for timestamp to change (SQLite has 1-second resolution)
+        time.sleep(1.1)
+        db.update_application_status(app_id, "application_status", "applied")
+
+        # Get new timestamp
+        app2 = db.get_application(app_id)
+        new_updated = app2["updated_at"]
+
+        # Verify timestamp changed and is in SQLite format
+        assert new_updated != initial_updated, \
+            f"Timestamp should have changed: {initial_updated} -> {new_updated}"
+        import re
+        sqlite_timestamp_pattern = r'^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$'
+        assert re.match(sqlite_timestamp_pattern, new_updated), \
+            f"updated_at '{new_updated}' doesn't match SQLite timestamp format"

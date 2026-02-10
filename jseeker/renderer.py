@@ -5,13 +5,14 @@ from __future__ import annotations
 import subprocess
 import sys
 import tempfile
+import time
 import yaml
 from datetime import datetime
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
-from jseeker.models import AdaptedResume
+from jseeker.models import AdaptedResume, RenderError
 
 # Section labels for bilingual support
 SECTION_LABELS = {
@@ -122,15 +123,53 @@ def _format_date(date_str: str) -> str:
     return date_str
 
 
+def _log_render_error(output_path: Path, attempt: int, stderr: str, stdout: str) -> None:
+    """Log detailed rendering error to file for debugging.
+
+    Args:
+        output_path: Intended PDF output path.
+        attempt: Attempt number.
+        stderr: Full stderr from subprocess.
+        stdout: Full stdout from subprocess.
+    """
+    from config import settings
+    error_log_dir = settings.gaia_root / "logs" / "jseeker_render_errors"
+    error_log_dir.mkdir(parents=True, exist_ok=True)
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    error_log_path = error_log_dir / f"render_error_{timestamp}_attempt{attempt}.log"
+
+    with open(error_log_path, "w", encoding="utf-8") as f:
+        f.write(f"Render Error Log\n")
+        f.write(f"================\n\n")
+        f.write(f"Timestamp: {datetime.now().isoformat()}\n")
+        f.write(f"Attempt: {attempt}\n")
+        f.write(f"Output Path: {output_path}\n\n")
+        f.write(f"STDERR (full, not truncated):\n")
+        f.write(f"{'-' * 80}\n")
+        f.write(stderr)
+        f.write(f"\n{'-' * 80}\n\n")
+        f.write(f"STDOUT:\n")
+        f.write(f"{'-' * 80}\n")
+        f.write(stdout)
+        f.write(f"\n{'-' * 80}\n")
+
+
 def _html_to_pdf_sync(html: str, output_path: Path) -> Path:
-    """Convert HTML to PDF using Playwright in a subprocess.
+    """Convert HTML to PDF using Playwright in a subprocess with retry logic.
 
     Playwright's sync/async APIs both conflict with Streamlit's event loop
     on Windows, so we spawn a separate Python process to do the rendering.
 
     DEPRECATED: Use browser_manager.html_to_pdf_fast() for 90% faster rendering.
     This function kept for backwards compatibility.
+
+    Retries: 3 attempts with exponential backoff (2s, 4s, 8s).
+    Raises: RenderError if all retries fail.
     """
+    max_attempts = 3
+    backoff_delays = [2, 4, 8]  # seconds
+
     # Write HTML to a temp file
     html_tmp = Path(tempfile.mktemp(suffix=".html"))
     html_tmp.write_text(html, encoding="utf-8")
@@ -153,19 +192,79 @@ with sync_playwright() as p:
     browser.close()
 """
 
+    last_error = None
+    error_details = []
+
     try:
-        result = subprocess.run(
-            [sys.executable, "-c", script],
-            capture_output=True,
-            text=True,
-            timeout=60,
+        for attempt in range(1, max_attempts + 1):
+            try:
+                result = subprocess.run(
+                    [sys.executable, "-c", script],
+                    capture_output=True,
+                    text=True,
+                    timeout=60,
+                )
+
+                if result.returncode == 0:
+                    # Success
+                    from jseeker.integrations.argus_telemetry import log_runtime_event
+                    log_runtime_event(
+                        task="pdf_render",
+                        model="playwright",
+                        cost_usd=0.0,
+                        details=f"Success on attempt {attempt}/{max_attempts}"
+                    )
+                    return output_path
+                else:
+                    # Non-zero return code
+                    error_msg = f"Attempt {attempt}/{max_attempts} failed (returncode={result.returncode})"
+                    error_details.append({
+                        "attempt": attempt,
+                        "returncode": result.returncode,
+                        "stderr": result.stderr,
+                        "stdout": result.stdout,
+                    })
+                    last_error = result.stderr
+
+                    # Log detailed error
+                    _log_render_error(output_path, attempt, result.stderr, result.stdout)
+
+                    if attempt < max_attempts:
+                        delay = backoff_delays[attempt - 1]
+                        time.sleep(delay)
+
+            except subprocess.TimeoutExpired as e:
+                error_msg = f"Attempt {attempt}/{max_attempts} timeout after {e.timeout}s"
+                error_details.append({
+                    "attempt": attempt,
+                    "error": "TimeoutExpired",
+                    "timeout": e.timeout,
+                })
+                last_error = f"Subprocess timeout after {e.timeout}s"
+
+                # Log timeout error
+                _log_render_error(output_path, attempt, f"TimeoutExpired: {e}", "")
+
+                if attempt < max_attempts:
+                    delay = backoff_delays[attempt - 1]
+                    time.sleep(delay)
+
+        # All retries exhausted
+        from jseeker.integrations.argus_telemetry import log_runtime_event
+        log_runtime_event(
+            task="pdf_render",
+            model="playwright",
+            cost_usd=0.0,
+            details=f"Failed after {max_attempts} attempts"
         )
-        if result.returncode != 0:
-            raise RuntimeError(f"PDF generation failed: {result.stderr[:500]}")
+
+        raise RenderError(
+            f"PDF generation failed after {max_attempts} attempts. "
+            f"Last error: {last_error}"
+        )
+
     finally:
         html_tmp.unlink(missing_ok=True)
-
-    return output_path
 
 
 def _html_to_pdf_fast(html: str, output_path: Path) -> Path:
@@ -388,7 +487,11 @@ def render_docx(adapted: AdaptedResume, output_path: Path, language: str = "en")
     # Languages
     if hasattr(adapted.contact, 'languages') and adapted.contact.languages:
         _add_section_header(doc, section_labels["languages"])
-        lang_para = doc.add_paragraph(", ".join(adapted.contact.languages))
+        lang_strs = [
+            f"{lang['lang']} ({lang['level']})" if isinstance(lang, dict) else str(lang)
+            for lang in adapted.contact.languages
+        ]
+        lang_para = doc.add_paragraph(", ".join(lang_strs))
         lang_para.paragraph_format.space_before = Pt(0)
         lang_para.paragraph_format.space_after = Pt(4)
 

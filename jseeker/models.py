@@ -9,6 +9,18 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 
+# ── Custom Exceptions ──────────────────────────────────────────────
+
+class AdaptationError(Exception):
+    """Raised when resume adaptation fails (JSON parse, validation, etc.)."""
+    pass
+
+
+class RenderError(Exception):
+    """Raised when PDF or DOCX rendering fails after retries."""
+    pass
+
+
 # ── Enums ──────────────────────────────────────────────────────────────
 
 class TemplateType(str, Enum):

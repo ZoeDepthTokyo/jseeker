@@ -9,7 +9,7 @@ from pathlib import Path
 
 from jseeker.block_manager import block_manager
 from jseeker.llm import llm
-from jseeker.models import AdaptedResume, MatchResult, ParsedJD, TemplateType
+from jseeker.models import AdaptationError, AdaptedResume, MatchResult, ParsedJD, TemplateType
 
 logger = logging.getLogger(__name__)
 
@@ -229,22 +229,79 @@ Output format: [["bullet1", "bullet2", ...], ["bullet1", "bullet2", ...], ...]
 
     # Parse JSON array of arrays
     json_str = raw.strip()
+
+    # Check for empty response
+    if not json_str:
+        from jseeker.integrations.argus_telemetry import log_runtime_event
+        log_runtime_event(
+            task="bullet_adapt_batch",
+            model="sonnet",
+            cost_usd=0.0,
+            details="ERROR: Empty LLM response",
+        )
+        logger.error("adapt_bullets_batch | empty LLM response")
+        raise AdaptationError(
+            "LLM returned empty response for bullet adaptation. "
+            f"Affected experiences: {', '.join(exp.get('company', 'Unknown') for exp in experience_blocks)}"
+        )
+
+    # Strip markdown code fences if present
     if json_str.startswith("```"):
         json_str = re.sub(r"^```(?:json)?\n?", "", json_str)
         json_str = re.sub(r"\n?```$", "", json_str)
 
     try:
         llm_results = json.loads(json_str)
-        if not isinstance(llm_results, list) or len(llm_results) != len(experience_blocks):
-            # Malformed response: return original bullets
-            logger.warning("adapt_bullets_batch | malformed LLM response | using originals")
-            llm_results = [exp.get("bullets", []) for exp in experience_blocks]
-        else:
-            logger.info(f"adapt_bullets_batch | LLM returned {len(llm_results)} bullet sets")
-    except json.JSONDecodeError:
-        # Fallback: return originals
-        logger.error("adapt_bullets_batch | JSON parse failed | using originals")
-        llm_results = [exp.get("bullets", []) for exp in experience_blocks]
+    except json.JSONDecodeError as e:
+        from jseeker.integrations.argus_telemetry import log_runtime_event
+        log_runtime_event(
+            task="bullet_adapt_batch",
+            model="sonnet",
+            cost_usd=0.0,
+            details=f"ERROR: JSON parse failed - {str(e)[:100]}",
+        )
+        logger.error(f"adapt_bullets_batch | JSON parse failed | error={e}")
+        companies = ", ".join(exp.get('company', 'Unknown') for exp in experience_blocks)
+        raise AdaptationError(
+            f"Failed to parse LLM response as JSON for bullet adaptation. "
+            f"Affected experiences: {companies}. "
+            f"Parse error: {str(e)}. "
+            f"Raw response (first 200 chars): {raw[:200]}"
+        )
+
+    # Validate response structure
+    if not isinstance(llm_results, list):
+        from jseeker.integrations.argus_telemetry import log_runtime_event
+        log_runtime_event(
+            task="bullet_adapt_batch",
+            model="sonnet",
+            cost_usd=0.0,
+            details=f"ERROR: Expected array, got {type(llm_results).__name__}",
+        )
+        logger.error(f"adapt_bullets_batch | malformed response | type={type(llm_results).__name__}")
+        raise AdaptationError(
+            f"Expected array of bullet arrays from LLM, got {type(llm_results).__name__}. "
+            f"Raw response (first 200 chars): {raw[:200]}"
+        )
+
+    if len(llm_results) != len(experience_blocks):
+        from jseeker.integrations.argus_telemetry import log_runtime_event
+        log_runtime_event(
+            task="bullet_adapt_batch",
+            model="sonnet",
+            cost_usd=0.0,
+            details=f"ERROR: Array length mismatch - expected {len(experience_blocks)}, got {len(llm_results)}",
+        )
+        logger.error(
+            f"adapt_bullets_batch | array length mismatch | "
+            f"expected={len(experience_blocks)} got={len(llm_results)}"
+        )
+        raise AdaptationError(
+            f"LLM returned {len(llm_results)} bullet sets, but expected {len(experience_blocks)}. "
+            f"Affected experiences: {', '.join(exp.get('company', 'Unknown') for exp in experience_blocks)}"
+        )
+
+    logger.info(f"adapt_bullets_batch | LLM returned {len(llm_results)} bullet sets")
 
     # If we used pattern matching, merge cached + LLM results
     if use_learned_patterns and results is not None:

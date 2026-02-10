@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
+from contextlib import contextmanager
 from datetime import datetime, date
 from pathlib import Path
 from typing import Optional
@@ -188,9 +189,62 @@ class TrackerDB:
         init_db(db_path)
 
     def _conn(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(str(self.db_path))
+        """Legacy method for backward compatibility - use _get_conn instead."""
+        return self._get_conn()
+
+    def _get_conn(self) -> sqlite3.Connection:
+        """Get a database connection with proper timeout and configuration.
+
+        Configured with:
+        - 30 second timeout to prevent "database is locked" errors
+        - check_same_thread=False for thread safety
+        - Row factory for dict-like access
+        """
+        conn = sqlite3.connect(
+            str(self.db_path),
+            timeout=30.0,
+            check_same_thread=False
+        )
         conn.row_factory = sqlite3.Row
+
+        # Health check: verify connection is usable
+        try:
+            conn.execute("SELECT 1")
+        except sqlite3.Error:
+            conn.close()
+            # Retry once if health check fails
+            conn = sqlite3.connect(
+                str(self.db_path),
+                timeout=30.0,
+                check_same_thread=False
+            )
+            conn.row_factory = sqlite3.Row
+
         return conn
+
+    @contextmanager
+    def _transaction(self):
+        """Context manager for atomic transactions.
+
+        Yields:
+            Tuple of (connection, cursor) for use within the transaction
+
+        Usage:
+            with db._transaction() as (conn, cursor):
+                cursor.execute("INSERT INTO ...")
+                cursor.execute("UPDATE ...")
+            # Auto-commits on success, rolls back on exception
+        """
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        try:
+            yield conn, cursor
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
 
     # ── Companies ──────────────────────────────────────────────────
 
@@ -304,8 +358,8 @@ class TrackerDB:
         conn = self._conn()
         c = conn.cursor()
         c.execute(
-            f"UPDATE applications SET {field} = ?, updated_at = ? WHERE id = ?",
-            (value, datetime.now().isoformat(), app_id),
+            f"UPDATE applications SET {field} = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (value, app_id),
         )
         conn.commit()
         conn.close()
@@ -330,8 +384,7 @@ class TrackerDB:
         for key, val in kwargs.items():
             sets.append(f"{key} = ?")
             vals.append(val)
-        sets.append("updated_at = ?")
-        vals.append(datetime.now().isoformat())
+        sets.append("updated_at = CURRENT_TIMESTAMP")
         vals.append(app_id)
         c.execute(f"UPDATE applications SET {', '.join(sets)} WHERE id = ?", vals)
         conn.commit()

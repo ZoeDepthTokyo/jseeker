@@ -31,42 +31,49 @@ MARKET_CONFIG = {
         "indeed_url": "https://www.indeed.com/jobs?q={query}&l={location}&sort=date&fromage=14",
         "linkedin_location": "United States",
         "language_filter": None,  # No filter needed - English by default
+        "location": "",  # Empty - let Indeed return national results
     },
     "mx": {
         "name": "Mexico",
         "indeed_url": "https://www.indeed.com.mx/jobs?q={query}&l={location}&sort=date&fromage=14",
         "linkedin_location": "Mexico",
         "language_filter": "en",  # English JDs only
+        "location": "Ciudad de Mexico",
     },
     "ca": {
         "name": "Canada",
         "indeed_url": "https://ca.indeed.com/jobs?q={query}&l={location}&sort=date&fromage=14",
         "linkedin_location": "Canada",
         "language_filter": None,  # English by default
+        "location": "Toronto",
     },
     "uk": {
         "name": "United Kingdom",
         "indeed_url": "https://www.indeed.co.uk/jobs?q={query}&l={location}&sort=date&fromage=14",
         "linkedin_location": "United Kingdom",
         "language_filter": "en",
+        "location": "London",
     },
     "es": {
         "name": "Spain",
         "indeed_url": "https://www.indeed.es/jobs?q={query}&l={location}&sort=date&fromage=14",
         "linkedin_location": "Spain",
         "language_filter": "en",
+        "location": "Madrid",
     },
     "dk": {
         "name": "Denmark",
         "indeed_url": "https://dk.indeed.com/jobs?q={query}&l={location}&sort=date&fromage=14",
         "linkedin_location": "Denmark",
         "language_filter": "en",
+        "location": "Copenhagen",
     },
     "fr": {
         "name": "France",
         "indeed_url": "https://www.indeed.fr/jobs?q={query}&l={location}&sort=date&fromage=14",
         "linkedin_location": "France",
         "language_filter": "en",
+        "location": "Paris",
     },
 }
 
@@ -106,7 +113,9 @@ def search_jobs(
             for source in sources:
                 try:
                     logger.info("Searching tag=%s market=%s source=%s", tag, market, source)
-                    results = _search_source(tag, location, source, market)
+                    # Use market-specific location default
+                    market_location = MARKET_CONFIG.get(market, {}).get("location", "")
+                    results = _search_source(tag, market_location, source, market)
                     logger.info("Found %d results for tag=%s market=%s source=%s", len(results), tag, market, source)
                     for result in results:
                         result.search_tags = tag
@@ -195,6 +204,14 @@ def _search_source(
         response = requests.get(url, headers=HEADERS, timeout=15)
         response.raise_for_status()
         logger.info("Response status: %d, content length: %d", response.status_code, len(response.text))
+    except requests.HTTPError as e:
+        # Gracefully handle 403 Forbidden (anti-bot protection)
+        if response.status_code == 403:
+            logger.debug("403 blocked by %s (anti-bot) for market=%s", source, market)
+            return []
+        # Re-raise other HTTP errors
+        logger.exception("HTTP error for URL: %s", url)
+        return []
     except requests.RequestException:
         logger.exception("Request failed for URL: %s", url)
         return []

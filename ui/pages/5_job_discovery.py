@@ -132,40 +132,63 @@ if discoveries:
     )
 
 if discoveries:
-    for disc in discoveries:
-        with st.container():
-            col1, col2, col3 = st.columns([4, 2, 2])
-            col1.markdown(f"**{disc['title']}** - {disc.get('company', '')}")
-            col2.caption(disc.get("location", ""))
-            posting_date = disc.get("posting_date", "")
-            source = disc.get("source", "")
-            status = str(disc.get("status", "new")).strip().lower()
-            col3.caption(f"{posting_date} | {source} | {status}")
+    # Group discoveries by market
+    from collections import defaultdict
+    by_market = defaultdict(list)
+    for d in discoveries:
+        by_market[d.get("market", "unknown")].append(d)
 
-            action_cols = st.columns(4)
+    # Market display names
+    MARKET_NAMES = {
+        "us": "United States",
+        "mx": "Mexico",
+        "ca": "Canada",
+        "uk": "United Kingdom",
+        "es": "Spain",
+        "dk": "Denmark",
+        "fr": "France",
+    }
 
-            if status == "new":
-                if action_cols[0].button("Star", key=f"star_{disc['id']}"):
-                    tracker_db.update_discovery_status(disc["id"], "starred")
-                    st.rerun()
-                if action_cols[1].button("Dismiss", key=f"dismiss_{disc['id']}"):
-                    tracker_db.update_discovery_status(disc["id"], "dismissed")
-                    st.rerun()
+    # Display each market group
+    for market_code in sorted(by_market.keys()):
+        market_name = MARKET_NAMES.get(market_code, market_code.upper())
+        market_jobs = by_market[market_code]
 
-            if status in ("new", "starred"):
-                if action_cols[2].button("Import to Tracker", key=f"import_{disc['id']}"):
-                    from jseeker.job_discovery import import_discovery_to_application
+        with st.expander(f"{market_name} ({len(market_jobs)} jobs)", expanded=True):
+            for disc in market_jobs:
+                with st.container():
+                    col1, col2, col3 = st.columns([4, 2, 2])
+                    col1.markdown(f"**{disc['title']}** - {disc.get('company', '')}")
+                    col2.caption(disc.get("location", ""))
+                    posting_date = disc.get("posting_date", "")
+                    source = disc.get("source", "")
+                    status = str(disc.get("status", "new")).strip().lower()
+                    col3.caption(f"{posting_date} | {source} | {status}")
 
-                    app_id = import_discovery_to_application(disc["id"])
-                    if app_id:
-                        st.success(f"Imported as application #{app_id}")
-                    else:
-                        st.error("Failed to import")
-                    st.rerun()
+                    action_cols = st.columns(4)
 
-            if disc.get("url"):
-                action_cols[3].markdown(f"[View Job]({disc['url']})")
+                    if status == "new":
+                        if action_cols[0].button("Star", key=f"star_{disc['id']}"):
+                            tracker_db.update_discovery_status(disc["id"], "starred")
+                            st.rerun()
+                        if action_cols[1].button("Dismiss", key=f"dismiss_{disc['id']}"):
+                            tracker_db.update_discovery_status(disc["id"], "dismissed")
+                            st.rerun()
 
-            st.markdown("---")
+                    if status in ("new", "starred"):
+                        if action_cols[2].button("Import to Tracker", key=f"import_{disc['id']}"):
+                            from jseeker.job_discovery import import_discovery_to_application
+
+                            app_id = import_discovery_to_application(disc["id"])
+                            if app_id:
+                                st.success(f"Imported as application #{app_id}")
+                            else:
+                                st.error("Failed to import")
+                            st.rerun()
+
+                    if disc.get("url"):
+                        action_cols[3].markdown(f"[View Job]({disc['url']})")
+
+                    st.markdown("---")
 else:
     st.info("No discovered jobs match your current filters. Run a search above.")

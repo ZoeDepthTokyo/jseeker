@@ -85,7 +85,7 @@ generate_button = st.button(
     "Generate Resume",
     type="primary",
     disabled=generate_disabled,
-    use_container_width=True,
+    width="stretch",
 )
 
 if generate_button:
@@ -253,7 +253,7 @@ if "pipeline_result" in st.session_state:
                         data=handle.read(),
                         file_name=f"{custom_name}.pdf",
                         mime="application/pdf",
-                        use_container_width=True,
+                        width="stretch",
                     )
 
         if result.docx_path and Path(result.docx_path).exists():
@@ -264,7 +264,7 @@ if "pipeline_result" in st.session_state:
                         data=handle.read(),
                         file_name=f"{custom_name}.docx",
                         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                        use_container_width=True,
+                        width="stretch",
                     )
 
     with st.expander("JD Analysis", expanded=False):

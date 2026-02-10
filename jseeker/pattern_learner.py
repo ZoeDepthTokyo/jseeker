@@ -54,9 +54,9 @@ def _extract_jd_context(jd_dict: dict) -> dict:
         Simplified context dict for pattern matching.
     """
     return {
-        "role": jd_dict.get("title", "").lower(),
-        "keywords": sorted([kw.lower() for kw in jd_dict.get("ats_keywords", [])[:10]]),
-        "industry": jd_dict.get("industry", "").lower() if "industry" in jd_dict else None,
+        "role": (jd_dict.get("title") or "").lower(),
+        "keywords": sorted([(kw or "").lower() for kw in jd_dict.get("ats_keywords", [])[:10]]),
+        "industry": (jd_dict.get("industry") or "").lower() if jd_dict.get("industry") else None,
     }
 
 

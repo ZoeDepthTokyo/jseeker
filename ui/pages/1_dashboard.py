@@ -77,7 +77,7 @@ with st.expander("Batch Generate From Job URLs", expanded=False):
     if raw_urls and len(urls) != len(raw_urls):
         st.warning("Some lines were ignored because they are not valid http(s) URLs.")
 
-    if st.button("Generate Resumes For URLs", disabled=not urls, use_container_width=True):
+    if st.button("Generate Resumes For URLs", disabled=not urls, width="stretch"):
         successes = []
         skipped = []
         failures = []
@@ -139,13 +139,13 @@ st.subheader("Quick Actions")
 col_a, col_b, col_c = st.columns(3)
 
 with col_a:
-    if st.button("New Resume", use_container_width=True):
+    if st.button("New Resume", width="stretch"):
         st.switch_page("pages/2_new_resume.py")
 
 with col_b:
-    if st.button("View Tracker", use_container_width=True):
+    if st.button("View Tracker", width="stretch"):
         st.switch_page("pages/4_tracker.py")
 
 with col_c:
-    if st.button("Discover Jobs", use_container_width=True):
+    if st.button("Discover Jobs", width="stretch"):
         st.switch_page("pages/5_job_discovery.py")

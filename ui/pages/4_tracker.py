@@ -91,7 +91,7 @@ if apps:
     edited_df = st.data_editor(
         df[available_cols],
         column_config=column_config,
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
         key="tracker_editor",
     )

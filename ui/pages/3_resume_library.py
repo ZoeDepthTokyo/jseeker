@@ -49,7 +49,7 @@ with st.expander("Base Resume References", expanded=True):
             key="base_resume_linkedin_pdf",
         )
 
-    if st.button("Save Base References", use_container_width=True):
+    if st.button("Save Base References", width="stretch"):
         saved = save_resume_sources(
             {
                 "base_a": base_a,
@@ -105,7 +105,7 @@ else:
     edited_df = st.data_editor(
         df[available],
         column_config=column_config,
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
         key="resume_library_editor",
     )

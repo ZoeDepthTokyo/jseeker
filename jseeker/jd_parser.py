@@ -110,6 +110,52 @@ def _clean_extracted_text(text: str) -> str:
     return text.strip()
 
 
+def _extract_workday_jd(url: str) -> str:
+    """Extract JD from Workday pages using Playwright for JS rendering.
+
+    Workday job sites are JavaScript-rendered single-page apps that don't
+    work with simple requests.get(). This function uses Playwright to render
+    the page and extract the job description content.
+
+    Args:
+        url: Workday job URL (e.g., myworkdayjobs.com).
+
+    Returns:
+        Extracted JD text, or empty string if extraction fails.
+    """
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        logger.warning("_extract_workday_jd | Playwright not installed, cannot extract Workday JDs")
+        return ""
+
+    try:
+        logger.info(f"_extract_workday_jd | launching browser for url={url[:100]}...")
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
+            page.goto(url, timeout=15000)
+
+            # Wait for Workday job description to render
+            # Workday uses data-automation-id="jobPostingDescription" for the main JD content
+            try:
+                page.wait_for_selector('[data-automation-id="jobPostingDescription"]', timeout=10000)
+                desc_el = page.query_selector('[data-automation-id="jobPostingDescription"]')
+                text = desc_el.inner_text() if desc_el else ""
+            except Exception as selector_error:
+                # Fallback: try alternative selectors
+                logger.warning(f"_extract_workday_jd | primary selector failed, trying fallbacks: {selector_error}")
+                desc_el = page.query_selector('.css-cygeeu') or page.query_selector('[class*="jobDescription"]')
+                text = desc_el.inner_text() if desc_el else ""
+
+            browser.close()
+            logger.info(f"_extract_workday_jd | extracted {len(text)} chars from Workday")
+            return text.strip()
+    except Exception as e:
+        logger.warning(f"_extract_workday_jd | failed: {e}")
+        return ""
+
+
 def extract_jd_from_url(url: str, timeout: int = 20) -> str:
     """Extract readable JD text from a public job URL.
 
@@ -119,6 +165,13 @@ def extract_jd_from_url(url: str, timeout: int = 20) -> str:
         return ""
 
     logger.info(f"extract_jd_from_url | url={url[:100]}...")
+
+    # Workday sites require JS rendering
+    if "workday" in url.lower() or "myworkdayjobs" in url.lower():
+        workday_text = _extract_workday_jd(url)
+        if workday_text:
+            return workday_text
+        # Fall through to regular extraction if Workday extraction fails
 
     try:
         response = requests.get(

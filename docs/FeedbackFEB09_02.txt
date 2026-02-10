@@ -1,0 +1,1425 @@
+Discovered Job results need to be better categorized, Create windows for each Country.
+Toggle button for tags is REALLY slow.
+
+cannot extract JD and generate resumes from job URL
+Batch generation complete.
+Generated 0 resume(s).
+Failed on 1 URL(s).
+Failed: https://otppb.wd3.myworkdayjobs.com/OntarioTeachers_Careers/job/Toronto-Canada/Senior-UX-Designer---Researcher---12-month-contract_6864?source=LinkedIn (Could not extract job description from URL)
+
+Cannot generate resumes:
+Generating resume...
+
+Step 3/5: Adapting resume content...
+
+Parsed: Senior UX Designer & Researcher at OTPP | 20 keywords | 15 requirements | Language: en | Market: us
+
+Generation failed: 'NoneType' object has no attribute 'lower'
+
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\ui\pages\2_new_resume.py", line 141, in <module>
+    adapted = adapt_resume(match_result, parsed_jd)
+  File "X:\Projects\jSeeker\jseeker\adapter.py", line 288, in adapt_resume
+    adapted_summary = adapt_summary(template, parsed_jd)
+  File "X:\Projects\jSeeker\jseeker\adapter.py", line 74, in adapt_summary
+    cached_summary = find_matching_pattern(
+        pattern_type="summary_adaptation",
+        source_text=original,
+        jd_context=jd_dict,
+    )
+  File "X:\Projects\jSeeker\jseeker\pattern_learner.py", line 147, in find_matching_pattern
+    search_context = _extract_jd_context(jd_context or {})
+  File "X:\Projects\jSeeker\jseeker\pattern_learner.py", line 59, in _extract_jd_context
+    "industry": jd_dict.get("industry", "").lower() if "industry" in jd_dict else None,
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'lower'
+
+LOG:
+
+  GAIA Co-Launch: jSeeker + ARGUS
+============================================================
+  Cleared 2 __pycache__ directories
+
+  Checking ports...
+  Port 8501 (ARGUS): available
+  Port 8502 (jSeeker): available
+
+  Starting ARGUS (GAIA Ecosystem Monitor) on port 8501...
+  Starting jSeeker (Resume Engine) on port 8502...
+  ARGUS: running (PID 43992)
+  jSeeker: running (PID 60116)
+
+============================================================
+  ARGUS  (GAIA Monitor):  http://localhost:8501
+  jSeeker (Resume Engine): http://localhost:8502
+============================================================
+  Press Ctrl+C to stop all.
+============================================================
+
+
+  You can now view your Streamlit app in your browser.
+
+  URL: http://localhost:8502
+
+
+  You can now view your Streamlit app in your browser.
+
+  URL: http://localhost:8501
+
+2026-02-09 19:35:11.500 Please replace `use_container_width` with `width`.
+
+`use_container_width` will be removed after 2025-12-31.
+
+For `use_container_width=True`, use `width='stretch'`. For `use_container_width=False`, use `width='content'`.
+2026-02-09 19:37:02.925 Please replace `use_container_width` with `width`.
+
+`use_container_width` will be removed after 2025-12-31.
+
+For `use_container_width=True`, use `width='stretch'`. For `use_container_width=False`, use `width='content'`.
+2026-02-09 19:37:12.856 Please replace `use_container_width` with `width`.
+
+`use_container_width` will be removed after 2025-12-31.
+
+For `use_container_width=True`, use `width='stretch'`. For `use_container_width=False`, use `width='content'`.
+19:38:27 [jseeker.job_discovery] INFO: Searching tag=Director of Product market=us source=indeed
+19:38:27 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.com/jobs?q=Director+of+Product&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:38:30 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.com/jobs?q=Director+of+Product&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://www.indeed.com/jobs?q=Director+of+Product&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:38:30 [jseeker.job_discovery] INFO: Found 0 results for tag=Director of Product market=us source=indeed
+19:38:30 [jseeker.job_discovery] INFO: Searching tag=Director of Product market=us source=linkedin
+19:38:30 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Director+of+Product&location=United+States&sortBy=DD&f_TPR=r604800
+19:38:32 [jseeker.job_discovery] INFO: Response status: 200, content length: 325086
+19:38:32 [jseeker.job_discovery] INFO: LinkedIn parser: found 60 job cards
+19:38:32 [jseeker.job_discovery] INFO: Found 20 results for tag=Director of Product market=us source=linkedin
+19:38:32 [jseeker.job_discovery] INFO: Searching tag=Director of Product market=us source=wellfound
+19:38:32 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Director+of+Product
+19:38:33 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Director+of+Product
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Director+of+Product
+19:38:33 [jseeker.job_discovery] INFO: Found 0 results for tag=Director of Product market=us source=wellfound
+19:38:33 [jseeker.job_discovery] INFO: Searching tag=Director of Product market=mx source=indeed
+19:38:33 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.com.mx/jobs?q=Director+of+Product+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:38:34 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.com.mx/jobs?q=Director+of+Product+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://mx.indeed.com/jobs
+19:38:34 [jseeker.job_discovery] INFO: Found 0 results for tag=Director of Product market=mx source=indeed
+19:38:34 [jseeker.job_discovery] INFO: Searching tag=Director of Product market=mx source=linkedin
+19:38:34 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Director+of+Product&location=Mexico&sortBy=DD&f_TPR=r604800
+19:38:36 [jseeker.job_discovery] INFO: Response status: 200, content length: 320919
+19:38:36 [jseeker.job_discovery] INFO: LinkedIn parser: found 60 job cards
+19:38:36 [jseeker.job_discovery] INFO: Found 20 results for tag=Director of Product market=mx source=linkedin
+19:38:36 [jseeker.job_discovery] INFO: Searching tag=Director of Product market=mx source=wellfound
+19:38:36 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Director+of+Product
+19:38:37 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Director+of+Product
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Director+of+Product
+19:38:37 [jseeker.job_discovery] INFO: Found 0 results for tag=Director of Product market=mx source=wellfound
+19:38:37 [jseeker.job_discovery] INFO: Searching tag=Director of Product market=ca source=indeed
+19:38:37 [jseeker.job_discovery] INFO: Fetching URL: https://ca.indeed.com/jobs?q=Director+of+Product&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:38:37 [jseeker.job_discovery] ERROR: Request failed for URL: https://ca.indeed.com/jobs?q=Director+of+Product&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://ca.indeed.com/jobs?q=Director+of+Product&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:38:37 [jseeker.job_discovery] INFO: Found 0 results for tag=Director of Product market=ca source=indeed
+19:38:37 [jseeker.job_discovery] INFO: Searching tag=Director of Product market=ca source=linkedin
+19:38:37 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Director+of+Product&location=Canada&sortBy=DD&f_TPR=r604800
+19:38:39 [jseeker.job_discovery] INFO: Response status: 200, content length: 315862
+19:38:39 [jseeker.job_discovery] INFO: LinkedIn parser: found 60 job cards
+19:38:39 [jseeker.job_discovery] INFO: Found 20 results for tag=Director of Product market=ca source=linkedin
+19:38:39 [jseeker.job_discovery] INFO: Searching tag=Director of Product market=ca source=wellfound
+19:38:39 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Director+of+Product
+19:38:40 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Director+of+Product
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Director+of+Product
+19:38:40 [jseeker.job_discovery] INFO: Found 0 results for tag=Director of Product market=ca source=wellfound
+19:38:40 [jseeker.job_discovery] INFO: Searching tag=Director of Product market=uk source=indeed
+19:38:40 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.co.uk/jobs?q=Director+of+Product+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:38:42 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.co.uk/jobs?q=Director+of+Product+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://uk.indeed.com/jobs
+19:38:42 [jseeker.job_discovery] INFO: Found 0 results for tag=Director of Product market=uk source=indeed
+19:38:42 [jseeker.job_discovery] INFO: Searching tag=Director of Product market=uk source=linkedin
+19:38:42 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Director+of+Product&location=United+Kingdom&sortBy=DD&f_TPR=r604800
+19:38:43 [jseeker.job_discovery] INFO: Response status: 200, content length: 305213
+19:38:43 [jseeker.job_discovery] INFO: LinkedIn parser: found 60 job cards
+19:38:43 [jseeker.job_discovery] INFO: Found 20 results for tag=Director of Product market=uk source=linkedin
+19:38:43 [jseeker.job_discovery] INFO: Searching tag=Director of Product market=uk source=wellfound
+19:38:43 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Director+of+Product
+19:38:44 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Director+of+Product
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Director+of+Product
+19:38:44 [jseeker.job_discovery] INFO: Found 0 results for tag=Director of Product market=uk source=wellfound
+19:38:44 [jseeker.job_discovery] INFO: Searching tag=Director of Product market=es source=indeed
+19:38:44 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.es/jobs?q=Director+of+Product+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:38:46 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.es/jobs?q=Director+of+Product+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://es.indeed.com/jobs
+19:38:46 [jseeker.job_discovery] INFO: Found 0 results for tag=Director of Product market=es source=indeed
+19:38:46 [jseeker.job_discovery] INFO: Searching tag=Director of Product market=es source=linkedin
+19:38:46 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Director+of+Product&location=Spain&sortBy=DD&f_TPR=r604800
+19:38:47 [jseeker.job_discovery] INFO: Response status: 200, content length: 311381
+19:38:47 [jseeker.job_discovery] INFO: LinkedIn parser: found 60 job cards
+19:38:47 [jseeker.job_discovery] INFO: Found 20 results for tag=Director of Product market=es source=linkedin
+19:38:47 [jseeker.job_discovery] INFO: Searching tag=Director of Product market=es source=wellfound
+19:38:47 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Director+of+Product
+19:38:48 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Director+of+Product
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Director+of+Product
+19:38:48 [jseeker.job_discovery] INFO: Found 0 results for tag=Director of Product market=es source=wellfound
+19:38:48 [jseeker.job_discovery] INFO: Searching tag=Director of Product market=dk source=indeed
+19:38:48 [jseeker.job_discovery] INFO: Fetching URL: https://dk.indeed.com/jobs?q=Director+of+Product+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:38:49 [jseeker.job_discovery] ERROR: Request failed for URL: https://dk.indeed.com/jobs?q=Director+of+Product+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://dk.indeed.com/jobs?q=Director+of+Product+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:38:49 [jseeker.job_discovery] INFO: Found 0 results for tag=Director of Product market=dk source=indeed
+19:38:49 [jseeker.job_discovery] INFO: Searching tag=Director of Product market=dk source=linkedin
+19:38:49 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Director+of+Product&location=Denmark&sortBy=DD&f_TPR=r604800
+19:38:50 [jseeker.job_discovery] INFO: Response status: 200, content length: 239450
+19:38:50 [jseeker.job_discovery] INFO: LinkedIn parser: found 45 job cards
+19:38:50 [jseeker.job_discovery] INFO: Found 20 results for tag=Director of Product market=dk source=linkedin
+19:38:50 [jseeker.job_discovery] INFO: Searching tag=Director of Product market=dk source=wellfound
+19:38:50 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Director+of+Product
+19:38:51 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Director+of+Product
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Director+of+Product
+19:38:51 [jseeker.job_discovery] INFO: Found 0 results for tag=Director of Product market=dk source=wellfound
+19:38:51 [jseeker.job_discovery] INFO: Searching tag=Director of Product market=fr source=indeed
+19:38:51 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.fr/jobs?q=Director+of+Product+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:38:53 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.fr/jobs?q=Director+of+Product+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://fr.indeed.com/jobs
+19:38:53 [jseeker.job_discovery] INFO: Found 0 results for tag=Director of Product market=fr source=indeed
+19:38:53 [jseeker.job_discovery] INFO: Searching tag=Director of Product market=fr source=linkedin
+19:38:53 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Director+of+Product&location=France&sortBy=DD&f_TPR=r604800
+19:38:54 [jseeker.job_discovery] INFO: Response status: 200, content length: 323271
+19:38:54 [jseeker.job_discovery] INFO: LinkedIn parser: found 60 job cards
+19:38:54 [jseeker.job_discovery] INFO: Found 20 results for tag=Director of Product market=fr source=linkedin
+19:38:54 [jseeker.job_discovery] INFO: Searching tag=Director of Product market=fr source=wellfound
+19:38:54 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Director+of+Product
+19:38:55 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Director+of+Product
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Director+of+Product
+19:38:55 [jseeker.job_discovery] INFO: Found 0 results for tag=Director of Product market=fr source=wellfound
+19:38:55 [jseeker.job_discovery] INFO: Searching tag=Director of UX market=us source=indeed
+19:38:55 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.com/jobs?q=Director+of+UX&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:38:56 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.com/jobs?q=Director+of+UX&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://www.indeed.com/jobs?q=Director+of+UX&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:38:56 [jseeker.job_discovery] INFO: Found 0 results for tag=Director of UX market=us source=indeed
+19:38:56 [jseeker.job_discovery] INFO: Searching tag=Director of UX market=us source=linkedin
+19:38:56 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Director+of+UX&location=United+States&sortBy=DD&f_TPR=r604800
+19:38:57 [jseeker.job_discovery] INFO: Response status: 200, content length: 317405
+19:38:58 [jseeker.job_discovery] INFO: LinkedIn parser: found 60 job cards
+19:38:58 [jseeker.job_discovery] INFO: Found 20 results for tag=Director of UX market=us source=linkedin
+19:38:58 [jseeker.job_discovery] INFO: Searching tag=Director of UX market=us source=wellfound
+19:38:58 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Director+of+UX
+19:38:58 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Director+of+UX
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Director+of+UX
+19:38:58 [jseeker.job_discovery] INFO: Found 0 results for tag=Director of UX market=us source=wellfound
+19:38:58 [jseeker.job_discovery] INFO: Searching tag=Director of UX market=mx source=indeed
+19:38:58 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.com.mx/jobs?q=Director+of+UX+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:39:00 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.com.mx/jobs?q=Director+of+UX+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://mx.indeed.com/jobs
+19:39:00 [jseeker.job_discovery] INFO: Found 0 results for tag=Director of UX market=mx source=indeed
+19:39:00 [jseeker.job_discovery] INFO: Searching tag=Director of UX market=mx source=linkedin
+19:39:00 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Director+of+UX&location=Mexico&sortBy=DD&f_TPR=r604800
+19:39:01 [jseeker.job_discovery] INFO: Response status: 200, content length: 146023
+19:39:01 [jseeker.job_discovery] INFO: LinkedIn parser: found 3 job cards
+19:39:01 [jseeker.job_discovery] INFO: Found 3 results for tag=Director of UX market=mx source=linkedin
+19:39:01 [jseeker.job_discovery] INFO: Searching tag=Director of UX market=mx source=wellfound
+19:39:01 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Director+of+UX
+19:39:01 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Director+of+UX
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Director+of+UX
+19:39:01 [jseeker.job_discovery] INFO: Found 0 results for tag=Director of UX market=mx source=wellfound
+19:39:01 [jseeker.job_discovery] INFO: Searching tag=Director of UX market=ca source=indeed
+19:39:01 [jseeker.job_discovery] INFO: Fetching URL: https://ca.indeed.com/jobs?q=Director+of+UX&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:39:02 [jseeker.job_discovery] ERROR: Request failed for URL: https://ca.indeed.com/jobs?q=Director+of+UX&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://ca.indeed.com/jobs?q=Director+of+UX&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:39:02 [jseeker.job_discovery] INFO: Found 0 results for tag=Director of UX market=ca source=indeed
+19:39:02 [jseeker.job_discovery] INFO: Searching tag=Director of UX market=ca source=linkedin
+19:39:02 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Director+of+UX&location=Canada&sortBy=DD&f_TPR=r604800
+19:39:03 [jseeker.job_discovery] INFO: Response status: 200, content length: 201672
+19:39:03 [jseeker.job_discovery] INFO: LinkedIn parser: found 24 job cards
+19:39:03 [jseeker.job_discovery] INFO: Found 20 results for tag=Director of UX market=ca source=linkedin
+19:39:03 [jseeker.job_discovery] INFO: Searching tag=Director of UX market=ca source=wellfound
+19:39:03 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Director+of+UX
+19:39:04 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Director+of+UX
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Director+of+UX
+19:39:04 [jseeker.job_discovery] INFO: Found 0 results for tag=Director of UX market=ca source=wellfound
+19:39:04 [jseeker.job_discovery] INFO: Searching tag=Director of UX market=uk source=indeed
+19:39:04 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.co.uk/jobs?q=Director+of+UX+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:39:06 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.co.uk/jobs?q=Director+of+UX+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://uk.indeed.com/jobs
+19:39:06 [jseeker.job_discovery] INFO: Found 0 results for tag=Director of UX market=uk source=indeed
+19:39:06 [jseeker.job_discovery] INFO: Searching tag=Director of UX market=uk source=linkedin
+19:39:06 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Director+of+UX&location=United+Kingdom&sortBy=DD&f_TPR=r604800
+19:39:07 [jseeker.job_discovery] INFO: Response status: 200, content length: 320601
+19:39:07 [jseeker.job_discovery] INFO: LinkedIn parser: found 60 job cards
+19:39:07 [jseeker.job_discovery] INFO: Found 20 results for tag=Director of UX market=uk source=linkedin
+19:39:07 [jseeker.job_discovery] INFO: Searching tag=Director of UX market=uk source=wellfound
+19:39:07 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Director+of+UX
+19:39:08 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Director+of+UX
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Director+of+UX
+19:39:08 [jseeker.job_discovery] INFO: Found 0 results for tag=Director of UX market=uk source=wellfound
+19:39:08 [jseeker.job_discovery] INFO: Searching tag=Director of UX market=es source=indeed
+19:39:08 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.es/jobs?q=Director+of+UX+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:39:09 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.es/jobs?q=Director+of+UX+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://es.indeed.com/jobs
+19:39:09 [jseeker.job_discovery] INFO: Found 0 results for tag=Director of UX market=es source=indeed
+19:39:09 [jseeker.job_discovery] INFO: Searching tag=Director of UX market=es source=linkedin
+19:39:09 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Director+of+UX&location=Spain&sortBy=DD&f_TPR=r604800
+19:39:10 [jseeker.job_discovery] INFO: Response status: 200, content length: 149183
+19:39:10 [jseeker.job_discovery] INFO: LinkedIn parser: found 4 job cards
+19:39:10 [jseeker.job_discovery] INFO: Found 4 results for tag=Director of UX market=es source=linkedin
+19:39:10 [jseeker.job_discovery] INFO: Searching tag=Director of UX market=es source=wellfound
+19:39:10 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Director+of+UX
+19:39:11 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Director+of+UX
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Director+of+UX
+19:39:11 [jseeker.job_discovery] INFO: Found 0 results for tag=Director of UX market=es source=wellfound
+19:39:11 [jseeker.job_discovery] INFO: Searching tag=Director of UX market=dk source=indeed
+19:39:11 [jseeker.job_discovery] INFO: Fetching URL: https://dk.indeed.com/jobs?q=Director+of+UX+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:39:12 [jseeker.job_discovery] ERROR: Request failed for URL: https://dk.indeed.com/jobs?q=Director+of+UX+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://dk.indeed.com/jobs?q=Director+of+UX+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:39:12 [jseeker.job_discovery] INFO: Found 0 results for tag=Director of UX market=dk source=indeed
+19:39:12 [jseeker.job_discovery] INFO: Searching tag=Director of UX market=dk source=linkedin
+19:39:12 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Director+of+UX&location=Denmark&sortBy=DD&f_TPR=r604800
+19:39:13 [jseeker.job_discovery] INFO: Response status: 200, content length: 96471
+19:39:13 [jseeker.job_discovery] INFO: LinkedIn parser: found 1 job cards
+19:39:13 [jseeker.job_discovery] INFO: Found 1 results for tag=Director of UX market=dk source=linkedin
+19:39:13 [jseeker.job_discovery] INFO: Searching tag=Director of UX market=dk source=wellfound
+19:39:13 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Director+of+UX
+19:39:13 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Director+of+UX
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Director+of+UX
+19:39:13 [jseeker.job_discovery] INFO: Found 0 results for tag=Director of UX market=dk source=wellfound
+19:39:13 [jseeker.job_discovery] INFO: Searching tag=Director of UX market=fr source=indeed
+19:39:13 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.fr/jobs?q=Director+of+UX+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:39:15 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.fr/jobs?q=Director+of+UX+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://fr.indeed.com/jobs
+19:39:15 [jseeker.job_discovery] INFO: Found 0 results for tag=Director of UX market=fr source=indeed
+19:39:15 [jseeker.job_discovery] INFO: Searching tag=Director of UX market=fr source=linkedin
+19:39:15 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Director+of+UX&location=France&sortBy=DD&f_TPR=r604800
+19:39:16 [jseeker.job_discovery] INFO: Response status: 200, content length: 160122
+19:39:16 [jseeker.job_discovery] INFO: LinkedIn parser: found 7 job cards
+19:39:16 [jseeker.job_discovery] INFO: Found 7 results for tag=Director of UX market=fr source=linkedin
+19:39:16 [jseeker.job_discovery] INFO: Searching tag=Director of UX market=fr source=wellfound
+19:39:16 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Director+of+UX
+19:39:17 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Director+of+UX
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Director+of+UX
+19:39:17 [jseeker.job_discovery] INFO: Found 0 results for tag=Director of UX market=fr source=wellfound
+19:39:17 [jseeker.job_discovery] INFO: Searching tag=Lead Product Designer market=us source=indeed
+19:39:17 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.com/jobs?q=Lead+Product+Designer&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:39:17 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.com/jobs?q=Lead+Product+Designer&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://www.indeed.com/jobs?q=Lead+Product+Designer&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:39:17 [jseeker.job_discovery] INFO: Found 0 results for tag=Lead Product Designer market=us source=indeed
+19:39:17 [jseeker.job_discovery] INFO: Searching tag=Lead Product Designer market=us source=linkedin
+19:39:17 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Lead+Product+Designer&location=United+States&sortBy=DD&f_TPR=r604800
+19:39:19 [jseeker.job_discovery] INFO: Response status: 200, content length: 303276
+19:39:19 [jseeker.job_discovery] INFO: LinkedIn parser: found 60 job cards
+19:39:19 [jseeker.job_discovery] INFO: Found 20 results for tag=Lead Product Designer market=us source=linkedin
+19:39:19 [jseeker.job_discovery] INFO: Searching tag=Lead Product Designer market=us source=wellfound
+19:39:19 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Lead+Product+Designer
+19:39:20 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Lead+Product+Designer
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Lead+Product+Designer
+19:39:20 [jseeker.job_discovery] INFO: Found 0 results for tag=Lead Product Designer market=us source=wellfound
+19:39:20 [jseeker.job_discovery] INFO: Searching tag=Lead Product Designer market=mx source=indeed
+19:39:20 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.com.mx/jobs?q=Lead+Product+Designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:39:21 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.com.mx/jobs?q=Lead+Product+Designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://mx.indeed.com/jobs
+19:39:21 [jseeker.job_discovery] INFO: Found 0 results for tag=Lead Product Designer market=mx source=indeed
+19:39:21 [jseeker.job_discovery] INFO: Searching tag=Lead Product Designer market=mx source=linkedin
+19:39:21 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Lead+Product+Designer&location=Mexico&sortBy=DD&f_TPR=r604800
+19:39:23 [jseeker.job_discovery] INFO: Response status: 200, content length: 297480
+19:39:23 [jseeker.job_discovery] INFO: LinkedIn parser: found 52 job cards
+19:39:23 [jseeker.job_discovery] INFO: Found 20 results for tag=Lead Product Designer market=mx source=linkedin
+19:39:23 [jseeker.job_discovery] INFO: Searching tag=Lead Product Designer market=mx source=wellfound
+19:39:23 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Lead+Product+Designer
+19:39:24 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Lead+Product+Designer
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Lead+Product+Designer
+19:39:24 [jseeker.job_discovery] INFO: Found 0 results for tag=Lead Product Designer market=mx source=wellfound
+19:39:24 [jseeker.job_discovery] INFO: Searching tag=Lead Product Designer market=ca source=indeed
+19:39:24 [jseeker.job_discovery] INFO: Fetching URL: https://ca.indeed.com/jobs?q=Lead+Product+Designer&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:39:24 [jseeker.job_discovery] ERROR: Request failed for URL: https://ca.indeed.com/jobs?q=Lead+Product+Designer&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://ca.indeed.com/jobs?q=Lead+Product+Designer&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:39:24 [jseeker.job_discovery] INFO: Found 0 results for tag=Lead Product Designer market=ca source=indeed
+19:39:24 [jseeker.job_discovery] INFO: Searching tag=Lead Product Designer market=ca source=linkedin
+19:39:24 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Lead+Product+Designer&location=Canada&sortBy=DD&f_TPR=r604800
+19:39:26 [jseeker.job_discovery] INFO: Response status: 200, content length: 310304
+19:39:26 [jseeker.job_discovery] INFO: LinkedIn parser: found 60 job cards
+19:39:26 [jseeker.job_discovery] INFO: Found 20 results for tag=Lead Product Designer market=ca source=linkedin
+19:39:26 [jseeker.job_discovery] INFO: Searching tag=Lead Product Designer market=ca source=wellfound
+19:39:26 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Lead+Product+Designer
+19:39:26 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Lead+Product+Designer
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Lead+Product+Designer
+19:39:26 [jseeker.job_discovery] INFO: Found 0 results for tag=Lead Product Designer market=ca source=wellfound
+19:39:26 [jseeker.job_discovery] INFO: Searching tag=Lead Product Designer market=uk source=indeed
+19:39:26 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.co.uk/jobs?q=Lead+Product+Designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:39:28 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.co.uk/jobs?q=Lead+Product+Designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://uk.indeed.com/jobs
+19:39:28 [jseeker.job_discovery] INFO: Found 0 results for tag=Lead Product Designer market=uk source=indeed
+19:39:28 [jseeker.job_discovery] INFO: Searching tag=Lead Product Designer market=uk source=linkedin
+19:39:28 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Lead+Product+Designer&location=United+Kingdom&sortBy=DD&f_TPR=r604800
+19:39:29 [jseeker.job_discovery] INFO: Response status: 200, content length: 323087
+19:39:29 [jseeker.job_discovery] INFO: LinkedIn parser: found 60 job cards
+19:39:29 [jseeker.job_discovery] INFO: Found 20 results for tag=Lead Product Designer market=uk source=linkedin
+19:39:29 [jseeker.job_discovery] INFO: Searching tag=Lead Product Designer market=uk source=wellfound
+19:39:29 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Lead+Product+Designer
+19:39:31 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Lead+Product+Designer
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Lead+Product+Designer
+19:39:31 [jseeker.job_discovery] INFO: Found 0 results for tag=Lead Product Designer market=uk source=wellfound
+19:39:31 [jseeker.job_discovery] INFO: Searching tag=Lead Product Designer market=es source=indeed
+19:39:31 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.es/jobs?q=Lead+Product+Designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:39:32 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.es/jobs?q=Lead+Product+Designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://es.indeed.com/jobs
+19:39:32 [jseeker.job_discovery] INFO: Found 0 results for tag=Lead Product Designer market=es source=indeed
+19:39:32 [jseeker.job_discovery] INFO: Searching tag=Lead Product Designer market=es source=linkedin
+19:39:32 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Lead+Product+Designer&location=Spain&sortBy=DD&f_TPR=r604800
+19:39:34 [jseeker.job_discovery] INFO: Response status: 200, content length: 302815
+19:39:34 [jseeker.job_discovery] INFO: LinkedIn parser: found 60 job cards
+19:39:34 [jseeker.job_discovery] INFO: Found 20 results for tag=Lead Product Designer market=es source=linkedin
+19:39:34 [jseeker.job_discovery] INFO: Searching tag=Lead Product Designer market=es source=wellfound
+19:39:34 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Lead+Product+Designer
+19:39:34 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Lead+Product+Designer
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Lead+Product+Designer
+19:39:34 [jseeker.job_discovery] INFO: Found 0 results for tag=Lead Product Designer market=es source=wellfound
+19:39:34 [jseeker.job_discovery] INFO: Searching tag=Lead Product Designer market=dk source=indeed
+19:39:34 [jseeker.job_discovery] INFO: Fetching URL: https://dk.indeed.com/jobs?q=Lead+Product+Designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:39:35 [jseeker.job_discovery] ERROR: Request failed for URL: https://dk.indeed.com/jobs?q=Lead+Product+Designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://dk.indeed.com/jobs?q=Lead+Product+Designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:39:35 [jseeker.job_discovery] INFO: Found 0 results for tag=Lead Product Designer market=dk source=indeed
+19:39:35 [jseeker.job_discovery] INFO: Searching tag=Lead Product Designer market=dk source=linkedin
+19:39:35 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Lead+Product+Designer&location=Denmark&sortBy=DD&f_TPR=r604800
+19:39:36 [jseeker.job_discovery] INFO: Response status: 200, content length: 172454
+19:39:36 [jseeker.job_discovery] INFO: LinkedIn parser: found 20 job cards
+19:39:36 [jseeker.job_discovery] INFO: Found 20 results for tag=Lead Product Designer market=dk source=linkedin
+19:39:36 [jseeker.job_discovery] INFO: Searching tag=Lead Product Designer market=dk source=wellfound
+19:39:36 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Lead+Product+Designer
+19:39:37 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Lead+Product+Designer
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Lead+Product+Designer
+19:39:37 [jseeker.job_discovery] INFO: Found 0 results for tag=Lead Product Designer market=dk source=wellfound
+19:39:37 [jseeker.job_discovery] INFO: Searching tag=Lead Product Designer market=fr source=indeed
+19:39:37 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.fr/jobs?q=Lead+Product+Designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:39:39 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.fr/jobs?q=Lead+Product+Designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://fr.indeed.com/jobs
+19:39:39 [jseeker.job_discovery] INFO: Found 0 results for tag=Lead Product Designer market=fr source=indeed
+19:39:39 [jseeker.job_discovery] INFO: Searching tag=Lead Product Designer market=fr source=linkedin
+19:39:39 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Lead+Product+Designer&location=France&sortBy=DD&f_TPR=r604800
+19:39:40 [jseeker.job_discovery] INFO: Response status: 200, content length: 322433
+19:39:40 [jseeker.job_discovery] INFO: LinkedIn parser: found 60 job cards
+19:39:40 [jseeker.job_discovery] INFO: Found 20 results for tag=Lead Product Designer market=fr source=linkedin
+19:39:40 [jseeker.job_discovery] INFO: Searching tag=Lead Product Designer market=fr source=wellfound
+19:39:40 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Lead+Product+Designer
+19:39:41 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Lead+Product+Designer
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Lead+Product+Designer
+19:39:41 [jseeker.job_discovery] INFO: Found 0 results for tag=Lead Product Designer market=fr source=wellfound
+19:39:41 [jseeker.job_discovery] INFO: Searching tag=Senior Product Designer market=us source=indeed
+19:39:41 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.com/jobs?q=Senior+Product+Designer&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:39:42 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.com/jobs?q=Senior+Product+Designer&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://www.indeed.com/jobs?q=Senior+Product+Designer&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:39:42 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior Product Designer market=us source=indeed
+19:39:42 [jseeker.job_discovery] INFO: Searching tag=Senior Product Designer market=us source=linkedin
+19:39:42 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Senior+Product+Designer&location=United+States&sortBy=DD&f_TPR=r604800
+19:39:43 [jseeker.job_discovery] INFO: Response status: 200, content length: 311539
+19:39:44 [jseeker.job_discovery] INFO: LinkedIn parser: found 60 job cards
+19:39:44 [jseeker.job_discovery] INFO: Found 20 results for tag=Senior Product Designer market=us source=linkedin
+19:39:44 [jseeker.job_discovery] INFO: Searching tag=Senior Product Designer market=us source=wellfound
+19:39:44 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Senior+Product+Designer
+19:39:44 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Senior+Product+Designer
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Senior+Product+Designer
+19:39:44 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior Product Designer market=us source=wellfound
+19:39:44 [jseeker.job_discovery] INFO: Searching tag=Senior Product Designer market=mx source=indeed
+19:39:44 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.com.mx/jobs?q=Senior+Product+Designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:39:46 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.com.mx/jobs?q=Senior+Product+Designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://mx.indeed.com/jobs
+19:39:46 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior Product Designer market=mx source=indeed
+19:39:46 [jseeker.job_discovery] INFO: Searching tag=Senior Product Designer market=mx source=linkedin
+19:39:46 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Senior+Product+Designer&location=Mexico&sortBy=DD&f_TPR=r604800
+19:39:47 [jseeker.job_discovery] INFO: Response status: 200, content length: 277213
+19:39:47 [jseeker.job_discovery] INFO: LinkedIn parser: found 45 job cards
+19:39:47 [jseeker.job_discovery] INFO: Found 20 results for tag=Senior Product Designer market=mx source=linkedin
+19:39:47 [jseeker.job_discovery] INFO: Searching tag=Senior Product Designer market=mx source=wellfound
+19:39:47 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Senior+Product+Designer
+19:39:48 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Senior+Product+Designer
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Senior+Product+Designer
+19:39:48 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior Product Designer market=mx source=wellfound
+19:39:48 [jseeker.job_discovery] INFO: Searching tag=Senior Product Designer market=ca source=indeed
+19:39:48 [jseeker.job_discovery] INFO: Fetching URL: https://ca.indeed.com/jobs?q=Senior+Product+Designer&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:39:49 [jseeker.job_discovery] ERROR: Request failed for URL: https://ca.indeed.com/jobs?q=Senior+Product+Designer&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://ca.indeed.com/jobs?q=Senior+Product+Designer&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:39:49 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior Product Designer market=ca source=indeed
+19:39:49 [jseeker.job_discovery] INFO: Searching tag=Senior Product Designer market=ca source=linkedin
+19:39:49 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Senior+Product+Designer&location=Canada&sortBy=DD&f_TPR=r604800
+19:39:50 [jseeker.job_discovery] INFO: Response status: 200, content length: 311260
+19:39:51 [jseeker.job_discovery] INFO: LinkedIn parser: found 60 job cards
+19:39:51 [jseeker.job_discovery] INFO: Found 20 results for tag=Senior Product Designer market=ca source=linkedin
+19:39:51 [jseeker.job_discovery] INFO: Searching tag=Senior Product Designer market=ca source=wellfound
+19:39:51 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Senior+Product+Designer
+19:39:51 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Senior+Product+Designer
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Senior+Product+Designer
+19:39:51 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior Product Designer market=ca source=wellfound
+19:39:51 [jseeker.job_discovery] INFO: Searching tag=Senior Product Designer market=uk source=indeed
+19:39:51 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.co.uk/jobs?q=Senior+Product+Designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:39:53 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.co.uk/jobs?q=Senior+Product+Designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://uk.indeed.com/jobs
+19:39:53 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior Product Designer market=uk source=indeed
+19:39:53 [jseeker.job_discovery] INFO: Searching tag=Senior Product Designer market=uk source=linkedin
+19:39:53 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Senior+Product+Designer&location=United+Kingdom&sortBy=DD&f_TPR=r604800
+19:39:54 [jseeker.job_discovery] INFO: Response status: 200, content length: 305499
+19:39:54 [jseeker.job_discovery] INFO: LinkedIn parser: found 60 job cards
+19:39:54 [jseeker.job_discovery] INFO: Found 20 results for tag=Senior Product Designer market=uk source=linkedin
+19:39:54 [jseeker.job_discovery] INFO: Searching tag=Senior Product Designer market=uk source=wellfound
+19:39:54 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Senior+Product+Designer
+19:39:55 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Senior+Product+Designer
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Senior+Product+Designer
+19:39:55 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior Product Designer market=uk source=wellfound
+19:39:55 [jseeker.job_discovery] INFO: Searching tag=Senior Product Designer market=es source=indeed
+19:39:55 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.es/jobs?q=Senior+Product+Designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:39:57 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.es/jobs?q=Senior+Product+Designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://es.indeed.com/jobs
+19:39:57 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior Product Designer market=es source=indeed
+19:39:57 [jseeker.job_discovery] INFO: Searching tag=Senior Product Designer market=es source=linkedin
+19:39:57 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Senior+Product+Designer&location=Spain&sortBy=DD&f_TPR=r604800
+19:39:58 [jseeker.job_discovery] INFO: Response status: 200, content length: 320748
+19:39:58 [jseeker.job_discovery] INFO: LinkedIn parser: found 60 job cards
+19:39:58 [jseeker.job_discovery] INFO: Found 20 results for tag=Senior Product Designer market=es source=linkedin
+19:39:58 [jseeker.job_discovery] INFO: Searching tag=Senior Product Designer market=es source=wellfound
+19:39:58 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Senior+Product+Designer
+19:39:59 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Senior+Product+Designer
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Senior+Product+Designer
+19:39:59 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior Product Designer market=es source=wellfound
+19:39:59 [jseeker.job_discovery] INFO: Searching tag=Senior Product Designer market=dk source=indeed
+19:39:59 [jseeker.job_discovery] INFO: Fetching URL: https://dk.indeed.com/jobs?q=Senior+Product+Designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:40:00 [jseeker.job_discovery] ERROR: Request failed for URL: https://dk.indeed.com/jobs?q=Senior+Product+Designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://dk.indeed.com/jobs?q=Senior+Product+Designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:40:00 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior Product Designer market=dk source=indeed
+19:40:00 [jseeker.job_discovery] INFO: Searching tag=Senior Product Designer market=dk source=linkedin
+19:40:00 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Senior+Product+Designer&location=Denmark&sortBy=DD&f_TPR=r604800
+19:40:01 [jseeker.job_discovery] INFO: Response status: 200, content length: 186088
+19:40:01 [jseeker.job_discovery] INFO: LinkedIn parser: found 28 job cards
+19:40:01 [jseeker.job_discovery] INFO: Found 20 results for tag=Senior Product Designer market=dk source=linkedin
+19:40:01 [jseeker.job_discovery] INFO: Searching tag=Senior Product Designer market=dk source=wellfound
+19:40:01 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Senior+Product+Designer
+19:40:02 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Senior+Product+Designer
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Senior+Product+Designer
+19:40:02 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior Product Designer market=dk source=wellfound
+19:40:02 [jseeker.job_discovery] INFO: Searching tag=Senior Product Designer market=fr source=indeed
+19:40:02 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.fr/jobs?q=Senior+Product+Designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:40:04 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.fr/jobs?q=Senior+Product+Designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://fr.indeed.com/jobs
+19:40:04 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior Product Designer market=fr source=indeed
+19:40:04 [jseeker.job_discovery] INFO: Searching tag=Senior Product Designer market=fr source=linkedin
+19:40:04 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Senior+Product+Designer&location=France&sortBy=DD&f_TPR=r604800
+19:40:05 [jseeker.job_discovery] INFO: Response status: 200, content length: 309271
+19:40:05 [jseeker.job_discovery] INFO: LinkedIn parser: found 60 job cards
+19:40:05 [jseeker.job_discovery] INFO: Found 20 results for tag=Senior Product Designer market=fr source=linkedin
+19:40:05 [jseeker.job_discovery] INFO: Searching tag=Senior Product Designer market=fr source=wellfound
+19:40:05 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Senior+Product+Designer
+19:40:06 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Senior+Product+Designer
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Senior+Product+Designer
+19:40:06 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior Product Designer market=fr source=wellfound
+19:40:06 [jseeker.job_discovery] INFO: Searching tag=Senior Product Manager market=us source=indeed
+19:40:06 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.com/jobs?q=Senior+Product+Manager&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:40:07 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.com/jobs?q=Senior+Product+Manager&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://www.indeed.com/jobs?q=Senior+Product+Manager&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:40:07 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior Product Manager market=us source=indeed
+19:40:07 [jseeker.job_discovery] INFO: Searching tag=Senior Product Manager market=us source=linkedin
+19:40:07 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Senior+Product+Manager&location=United+States&sortBy=DD&f_TPR=r604800
+19:40:09 [jseeker.job_discovery] INFO: Response status: 200, content length: 325889
+19:40:09 [jseeker.job_discovery] INFO: LinkedIn parser: found 60 job cards
+19:40:09 [jseeker.job_discovery] INFO: Found 20 results for tag=Senior Product Manager market=us source=linkedin
+19:40:09 [jseeker.job_discovery] INFO: Searching tag=Senior Product Manager market=us source=wellfound
+19:40:09 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Senior+Product+Manager
+19:40:10 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Senior+Product+Manager
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Senior+Product+Manager
+19:40:10 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior Product Manager market=us source=wellfound
+19:40:10 [jseeker.job_discovery] INFO: Searching tag=Senior Product Manager market=mx source=indeed
+19:40:10 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.com.mx/jobs?q=Senior+Product+Manager+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:40:11 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.com.mx/jobs?q=Senior+Product+Manager+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://mx.indeed.com/jobs
+19:40:11 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior Product Manager market=mx source=indeed
+19:40:11 [jseeker.job_discovery] INFO: Searching tag=Senior Product Manager market=mx source=linkedin
+19:40:11 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Senior+Product+Manager&location=Mexico&sortBy=DD&f_TPR=r604800
+19:40:13 [jseeker.job_discovery] INFO: Response status: 200, content length: 305491
+19:40:13 [jseeker.job_discovery] INFO: LinkedIn parser: found 60 job cards
+19:40:13 [jseeker.job_discovery] INFO: Found 20 results for tag=Senior Product Manager market=mx source=linkedin
+19:40:13 [jseeker.job_discovery] INFO: Searching tag=Senior Product Manager market=mx source=wellfound
+19:40:13 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Senior+Product+Manager
+19:40:14 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Senior+Product+Manager
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Senior+Product+Manager
+19:40:14 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior Product Manager market=mx source=wellfound
+19:40:14 [jseeker.job_discovery] INFO: Searching tag=Senior Product Manager market=ca source=indeed
+19:40:14 [jseeker.job_discovery] INFO: Fetching URL: https://ca.indeed.com/jobs?q=Senior+Product+Manager&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:40:15 [jseeker.job_discovery] ERROR: Request failed for URL: https://ca.indeed.com/jobs?q=Senior+Product+Manager&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://ca.indeed.com/jobs?q=Senior+Product+Manager&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:40:15 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior Product Manager market=ca source=indeed
+19:40:15 [jseeker.job_discovery] INFO: Searching tag=Senior Product Manager market=ca source=linkedin
+19:40:15 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Senior+Product+Manager&location=Canada&sortBy=DD&f_TPR=r604800
+19:40:16 [jseeker.job_discovery] INFO: Response status: 200, content length: 315362
+19:40:17 [jseeker.job_discovery] INFO: LinkedIn parser: found 60 job cards
+19:40:17 [jseeker.job_discovery] INFO: Found 20 results for tag=Senior Product Manager market=ca source=linkedin
+19:40:17 [jseeker.job_discovery] INFO: Searching tag=Senior Product Manager market=ca source=wellfound
+19:40:17 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Senior+Product+Manager
+2026-02-09 19:40:17.335 Please replace `use_container_width` with `width`.
+
+`use_container_width` will be removed after 2025-12-31.
+
+For `use_container_width=True`, use `width='stretch'`. For `use_container_width=False`, use `width='content'`.
+19:40:18 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Senior+Product+Manager
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Senior+Product+Manager
+19:40:18 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior Product Manager market=ca source=wellfound
+19:40:18 [jseeker.job_discovery] INFO: Searching tag=Senior Product Manager market=uk source=indeed
+19:40:18 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.co.uk/jobs?q=Senior+Product+Manager+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:40:19 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.co.uk/jobs?q=Senior+Product+Manager+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://uk.indeed.com/jobs
+19:40:19 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior Product Manager market=uk source=indeed
+19:40:19 [jseeker.job_discovery] INFO: Searching tag=Senior Product Manager market=uk source=linkedin
+19:40:19 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Senior+Product+Manager&location=United+Kingdom&sortBy=DD&f_TPR=r604800
+2026-02-09 19:40:19.652 Please replace `use_container_width` with `width`.
+
+`use_container_width` will be removed after 2025-12-31.
+
+For `use_container_width=True`, use `width='stretch'`. For `use_container_width=False`, use `width='content'`.
+19:40:20 [jseeker.job_discovery] INFO: Response status: 200, content length: 326630
+19:40:21 [jseeker.job_discovery] INFO: LinkedIn parser: found 60 job cards
+19:40:21 [jseeker.job_discovery] INFO: Found 20 results for tag=Senior Product Manager market=uk source=linkedin
+19:40:21 [jseeker.job_discovery] INFO: Searching tag=Senior Product Manager market=uk source=wellfound
+19:40:21 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Senior+Product+Manager
+2026-02-09 19:40:21.115 Please replace `use_container_width` with `width`.
+
+`use_container_width` will be removed after 2025-12-31.
+
+For `use_container_width=True`, use `width='stretch'`. For `use_container_width=False`, use `width='content'`.
+19:40:21 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Senior+Product+Manager
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Senior+Product+Manager
+19:40:21 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior Product Manager market=uk source=wellfound
+19:40:21 [jseeker.job_discovery] INFO: Searching tag=Senior Product Manager market=es source=indeed
+19:40:21 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.es/jobs?q=Senior+Product+Manager+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:40:23 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.es/jobs?q=Senior+Product+Manager+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://es.indeed.com/jobs
+19:40:23 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior Product Manager market=es source=indeed
+19:40:23 [jseeker.job_discovery] INFO: Searching tag=Senior Product Manager market=es source=linkedin
+19:40:23 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Senior+Product+Manager&location=Spain&sortBy=DD&f_TPR=r604800
+19:40:24 [jseeker.job_discovery] INFO: Response status: 200, content length: 312300
+19:40:24 [jseeker.job_discovery] INFO: LinkedIn parser: found 60 job cards
+19:40:24 [jseeker.job_discovery] INFO: Found 20 results for tag=Senior Product Manager market=es source=linkedin
+19:40:24 [jseeker.job_discovery] INFO: Searching tag=Senior Product Manager market=es source=wellfound
+19:40:24 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Senior+Product+Manager
+19:40:25 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Senior+Product+Manager
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Senior+Product+Manager
+19:40:25 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior Product Manager market=es source=wellfound
+19:40:25 [jseeker.job_discovery] INFO: Searching tag=Senior Product Manager market=dk source=indeed
+19:40:25 [jseeker.job_discovery] INFO: Fetching URL: https://dk.indeed.com/jobs?q=Senior+Product+Manager+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:40:26 [jseeker.job_discovery] ERROR: Request failed for URL: https://dk.indeed.com/jobs?q=Senior+Product+Manager+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://dk.indeed.com/jobs?q=Senior+Product+Manager+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:40:26 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior Product Manager market=dk source=indeed
+19:40:26 [jseeker.job_discovery] INFO: Searching tag=Senior Product Manager market=dk source=linkedin
+19:40:26 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Senior+Product+Manager&location=Denmark&sortBy=DD&f_TPR=r604800
+19:40:27 [jseeker.job_discovery] INFO: Response status: 200, content length: 285586
+19:40:27 [jseeker.job_discovery] INFO: LinkedIn parser: found 57 job cards
+19:40:27 [jseeker.job_discovery] INFO: Found 20 results for tag=Senior Product Manager market=dk source=linkedin
+19:40:27 [jseeker.job_discovery] INFO: Searching tag=Senior Product Manager market=dk source=wellfound
+19:40:27 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Senior+Product+Manager
+19:40:29 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Senior+Product+Manager
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Senior+Product+Manager
+19:40:29 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior Product Manager market=dk source=wellfound
+19:40:29 [jseeker.job_discovery] INFO: Searching tag=Senior Product Manager market=fr source=indeed
+19:40:29 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.fr/jobs?q=Senior+Product+Manager+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:40:31 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.fr/jobs?q=Senior+Product+Manager+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://fr.indeed.com/jobs
+19:40:31 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior Product Manager market=fr source=indeed
+19:40:31 [jseeker.job_discovery] INFO: Searching tag=Senior Product Manager market=fr source=linkedin
+19:40:31 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Senior+Product+Manager&location=France&sortBy=DD&f_TPR=r604800
+19:40:32 [jseeker.job_discovery] INFO: Response status: 200, content length: 305140
+19:40:32 [jseeker.job_discovery] INFO: LinkedIn parser: found 59 job cards
+19:40:32 [jseeker.job_discovery] INFO: Found 20 results for tag=Senior Product Manager market=fr source=linkedin
+19:40:32 [jseeker.job_discovery] INFO: Searching tag=Senior Product Manager market=fr source=wellfound
+19:40:32 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Senior+Product+Manager
+19:40:33 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Senior+Product+Manager
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Senior+Product+Manager
+19:40:33 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior Product Manager market=fr source=wellfound
+19:40:33 [jseeker.job_discovery] INFO: Searching tag=Senior UX designer market=us source=indeed
+19:40:33 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.com/jobs?q=Senior+UX+designer&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:40:34 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.com/jobs?q=Senior+UX+designer&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://www.indeed.com/jobs?q=Senior+UX+designer&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:40:34 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior UX designer market=us source=indeed
+19:40:34 [jseeker.job_discovery] INFO: Searching tag=Senior UX designer market=us source=linkedin
+19:40:34 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Senior+UX+designer&location=United+States&sortBy=DD&f_TPR=r604800
+19:40:35 [jseeker.job_discovery] INFO: Response status: 200, content length: 315700
+19:40:35 [jseeker.job_discovery] INFO: LinkedIn parser: found 60 job cards
+19:40:35 [jseeker.job_discovery] INFO: Found 20 results for tag=Senior UX designer market=us source=linkedin
+19:40:35 [jseeker.job_discovery] INFO: Searching tag=Senior UX designer market=us source=wellfound
+19:40:35 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Senior+UX+designer
+19:40:36 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Senior+UX+designer
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Senior+UX+designer
+19:40:36 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior UX designer market=us source=wellfound
+19:40:36 [jseeker.job_discovery] INFO: Searching tag=Senior UX designer market=mx source=indeed
+19:40:36 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.com.mx/jobs?q=Senior+UX+designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:40:37 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.com.mx/jobs?q=Senior+UX+designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://mx.indeed.com/jobs
+19:40:37 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior UX designer market=mx source=indeed
+19:40:37 [jseeker.job_discovery] INFO: Searching tag=Senior UX designer market=mx source=linkedin
+19:40:37 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Senior+UX+designer&location=Mexico&sortBy=DD&f_TPR=r604800
+19:40:39 [jseeker.job_discovery] INFO: Response status: 200, content length: 155469
+19:40:39 [jseeker.job_discovery] INFO: LinkedIn parser: found 6 job cards
+19:40:39 [jseeker.job_discovery] INFO: Found 6 results for tag=Senior UX designer market=mx source=linkedin
+19:40:39 [jseeker.job_discovery] INFO: Searching tag=Senior UX designer market=mx source=wellfound
+19:40:39 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Senior+UX+designer
+19:40:39 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Senior+UX+designer
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Senior+UX+designer
+19:40:39 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior UX designer market=mx source=wellfound
+19:40:39 [jseeker.job_discovery] INFO: Searching tag=Senior UX designer market=ca source=indeed
+19:40:39 [jseeker.job_discovery] INFO: Fetching URL: https://ca.indeed.com/jobs?q=Senior+UX+designer&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:40:40 [jseeker.job_discovery] ERROR: Request failed for URL: https://ca.indeed.com/jobs?q=Senior+UX+designer&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://ca.indeed.com/jobs?q=Senior+UX+designer&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:40:40 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior UX designer market=ca source=indeed
+19:40:40 [jseeker.job_discovery] INFO: Searching tag=Senior UX designer market=ca source=linkedin
+19:40:40 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Senior+UX+designer&location=Canada&sortBy=DD&f_TPR=r604800
+19:40:42 [jseeker.job_discovery] INFO: Response status: 200, content length: 323859
+19:40:42 [jseeker.job_discovery] INFO: LinkedIn parser: found 60 job cards
+19:40:42 [jseeker.job_discovery] INFO: Found 20 results for tag=Senior UX designer market=ca source=linkedin
+19:40:42 [jseeker.job_discovery] INFO: Searching tag=Senior UX designer market=ca source=wellfound
+19:40:42 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Senior+UX+designer
+19:40:43 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Senior+UX+designer
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Senior+UX+designer
+19:40:43 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior UX designer market=ca source=wellfound
+19:40:43 [jseeker.job_discovery] INFO: Searching tag=Senior UX designer market=uk source=indeed
+19:40:43 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.co.uk/jobs?q=Senior+UX+designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:40:44 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.co.uk/jobs?q=Senior+UX+designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://uk.indeed.com/jobs
+19:40:44 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior UX designer market=uk source=indeed
+19:40:44 [jseeker.job_discovery] INFO: Searching tag=Senior UX designer market=uk source=linkedin
+19:40:44 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Senior+UX+designer&location=United+Kingdom&sortBy=DD&f_TPR=r604800
+19:40:46 [jseeker.job_discovery] INFO: Response status: 200, content length: 303789
+19:40:46 [jseeker.job_discovery] INFO: LinkedIn parser: found 60 job cards
+19:40:46 [jseeker.job_discovery] INFO: Found 20 results for tag=Senior UX designer market=uk source=linkedin
+19:40:46 [jseeker.job_discovery] INFO: Searching tag=Senior UX designer market=uk source=wellfound
+19:40:46 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Senior+UX+designer
+19:40:47 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Senior+UX+designer
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Senior+UX+designer
+19:40:47 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior UX designer market=uk source=wellfound
+19:40:47 [jseeker.job_discovery] INFO: Searching tag=Senior UX designer market=es source=indeed
+19:40:47 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.es/jobs?q=Senior+UX+designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:40:49 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.es/jobs?q=Senior+UX+designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://es.indeed.com/jobs
+19:40:49 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior UX designer market=es source=indeed
+19:40:49 [jseeker.job_discovery] INFO: Searching tag=Senior UX designer market=es source=linkedin
+19:40:49 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Senior+UX+designer&location=Spain&sortBy=DD&f_TPR=r604800
+19:40:51 [jseeker.job_discovery] INFO: Response status: 200, content length: 215103
+19:40:51 [jseeker.job_discovery] INFO: LinkedIn parser: found 29 job cards
+19:40:51 [jseeker.job_discovery] INFO: Found 20 results for tag=Senior UX designer market=es source=linkedin
+19:40:51 [jseeker.job_discovery] INFO: Searching tag=Senior UX designer market=es source=wellfound
+19:40:51 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Senior+UX+designer
+19:40:52 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Senior+UX+designer
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Senior+UX+designer
+19:40:52 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior UX designer market=es source=wellfound
+19:40:52 [jseeker.job_discovery] INFO: Searching tag=Senior UX designer market=dk source=indeed
+19:40:52 [jseeker.job_discovery] INFO: Fetching URL: https://dk.indeed.com/jobs?q=Senior+UX+designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:40:53 [jseeker.job_discovery] ERROR: Request failed for URL: https://dk.indeed.com/jobs?q=Senior+UX+designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://dk.indeed.com/jobs?q=Senior+UX+designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:40:53 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior UX designer market=dk source=indeed
+19:40:53 [jseeker.job_discovery] INFO: Searching tag=Senior UX designer market=dk source=linkedin
+19:40:53 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Senior+UX+designer&location=Denmark&sortBy=DD&f_TPR=r604800
+19:40:54 [jseeker.job_discovery] INFO: Response status: 200, content length: 141651
+19:40:54 [jseeker.job_discovery] INFO: LinkedIn parser: found 11 job cards
+19:40:54 [jseeker.job_discovery] INFO: Found 11 results for tag=Senior UX designer market=dk source=linkedin
+19:40:54 [jseeker.job_discovery] INFO: Searching tag=Senior UX designer market=dk source=wellfound
+19:40:54 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Senior+UX+designer
+19:40:54 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Senior+UX+designer
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Senior+UX+designer
+19:40:54 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior UX designer market=dk source=wellfound
+19:40:54 [jseeker.job_discovery] INFO: Searching tag=Senior UX designer market=fr source=indeed
+19:40:54 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.fr/jobs?q=Senior+UX+designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:40:56 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.fr/jobs?q=Senior+UX+designer+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://fr.indeed.com/jobs
+19:40:56 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior UX designer market=fr source=indeed
+19:40:56 [jseeker.job_discovery] INFO: Searching tag=Senior UX designer market=fr source=linkedin
+19:40:56 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=Senior+UX+designer&location=France&sortBy=DD&f_TPR=r604800
+19:40:57 [jseeker.job_discovery] INFO: Response status: 200, content length: 221049
+19:40:57 [jseeker.job_discovery] INFO: LinkedIn parser: found 27 job cards
+19:40:57 [jseeker.job_discovery] INFO: Found 20 results for tag=Senior UX designer market=fr source=linkedin
+19:40:57 [jseeker.job_discovery] INFO: Searching tag=Senior UX designer market=fr source=wellfound
+19:40:57 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/Senior+UX+designer
+19:40:58 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/Senior+UX+designer
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/Senior+UX+designer
+19:40:58 [jseeker.job_discovery] INFO: Found 0 results for tag=Senior UX designer market=fr source=wellfound
+19:40:58 [jseeker.job_discovery] INFO: Searching tag=UX manager market=us source=indeed
+19:40:58 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.com/jobs?q=UX+manager&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:40:59 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.com/jobs?q=UX+manager&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://www.indeed.com/jobs?q=UX+manager&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:40:59 [jseeker.job_discovery] INFO: Found 0 results for tag=UX manager market=us source=indeed
+19:40:59 [jseeker.job_discovery] INFO: Searching tag=UX manager market=us source=linkedin
+19:40:59 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=UX+manager&location=United+States&sortBy=DD&f_TPR=r604800
+19:41:01 [jseeker.job_discovery] INFO: Response status: 200, content length: 311983
+19:41:01 [jseeker.job_discovery] INFO: LinkedIn parser: found 60 job cards
+19:41:01 [jseeker.job_discovery] INFO: Found 20 results for tag=UX manager market=us source=linkedin
+19:41:01 [jseeker.job_discovery] INFO: Searching tag=UX manager market=us source=wellfound
+19:41:01 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/UX+manager
+19:41:02 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/UX+manager
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/UX+manager
+19:41:02 [jseeker.job_discovery] INFO: Found 0 results for tag=UX manager market=us source=wellfound
+19:41:02 [jseeker.job_discovery] INFO: Searching tag=UX manager market=mx source=indeed
+19:41:02 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.com.mx/jobs?q=UX+manager+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:41:03 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.com.mx/jobs?q=UX+manager+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://mx.indeed.com/jobs
+19:41:03 [jseeker.job_discovery] INFO: Found 0 results for tag=UX manager market=mx source=indeed
+19:41:03 [jseeker.job_discovery] INFO: Searching tag=UX manager market=mx source=linkedin
+19:41:03 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=UX+manager&location=Mexico&sortBy=DD&f_TPR=r604800
+19:41:05 [jseeker.job_discovery] INFO: Response status: 200, content length: 202361
+19:41:05 [jseeker.job_discovery] INFO: LinkedIn parser: found 24 job cards
+19:41:05 [jseeker.job_discovery] INFO: Found 20 results for tag=UX manager market=mx source=linkedin
+19:41:05 [jseeker.job_discovery] INFO: Searching tag=UX manager market=mx source=wellfound
+19:41:05 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/UX+manager
+19:41:06 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/UX+manager
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/UX+manager
+19:41:06 [jseeker.job_discovery] INFO: Found 0 results for tag=UX manager market=mx source=wellfound
+19:41:06 [jseeker.job_discovery] INFO: Searching tag=UX manager market=ca source=indeed
+19:41:06 [jseeker.job_discovery] INFO: Fetching URL: https://ca.indeed.com/jobs?q=UX+manager&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:41:06 [jseeker.job_discovery] ERROR: Request failed for URL: https://ca.indeed.com/jobs?q=UX+manager&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://ca.indeed.com/jobs?q=UX+manager&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:41:07 [jseeker.job_discovery] INFO: Found 0 results for tag=UX manager market=ca source=indeed
+19:41:07 [jseeker.job_discovery] INFO: Searching tag=UX manager market=ca source=linkedin
+19:41:07 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=UX+manager&location=Canada&sortBy=DD&f_TPR=r604800
+19:41:08 [jseeker.job_discovery] INFO: Response status: 200, content length: 313955
+19:41:08 [jseeker.job_discovery] INFO: LinkedIn parser: found 60 job cards
+19:41:08 [jseeker.job_discovery] INFO: Found 20 results for tag=UX manager market=ca source=linkedin
+19:41:08 [jseeker.job_discovery] INFO: Searching tag=UX manager market=ca source=wellfound
+19:41:08 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/UX+manager
+19:41:09 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/UX+manager
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/UX+manager
+19:41:09 [jseeker.job_discovery] INFO: Found 0 results for tag=UX manager market=ca source=wellfound
+19:41:09 [jseeker.job_discovery] INFO: Searching tag=UX manager market=uk source=indeed
+19:41:09 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.co.uk/jobs?q=UX+manager+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:41:10 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.co.uk/jobs?q=UX+manager+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://uk.indeed.com/jobs
+19:41:10 [jseeker.job_discovery] INFO: Found 0 results for tag=UX manager market=uk source=indeed
+19:41:10 [jseeker.job_discovery] INFO: Searching tag=UX manager market=uk source=linkedin
+19:41:10 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=UX+manager&location=United+Kingdom&sortBy=DD&f_TPR=r604800
+19:41:12 [jseeker.job_discovery] INFO: Response status: 200, content length: 324858
+19:41:12 [jseeker.job_discovery] INFO: LinkedIn parser: found 60 job cards
+19:41:12 [jseeker.job_discovery] INFO: Found 20 results for tag=UX manager market=uk source=linkedin
+19:41:12 [jseeker.job_discovery] INFO: Searching tag=UX manager market=uk source=wellfound
+19:41:12 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/UX+manager
+19:41:13 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/UX+manager
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/UX+manager
+19:41:13 [jseeker.job_discovery] INFO: Found 0 results for tag=UX manager market=uk source=wellfound
+19:41:13 [jseeker.job_discovery] INFO: Searching tag=UX manager market=es source=indeed
+19:41:13 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.es/jobs?q=UX+manager+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:41:14 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.es/jobs?q=UX+manager+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://es.indeed.com/jobs
+19:41:14 [jseeker.job_discovery] INFO: Found 0 results for tag=UX manager market=es source=indeed
+19:41:14 [jseeker.job_discovery] INFO: Searching tag=UX manager market=es source=linkedin
+19:41:14 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=UX+manager&location=Spain&sortBy=DD&f_TPR=r604800
+19:41:16 [jseeker.job_discovery] INFO: Response status: 200, content length: 308408
+19:41:16 [jseeker.job_discovery] INFO: LinkedIn parser: found 60 job cards
+19:41:16 [jseeker.job_discovery] INFO: Found 20 results for tag=UX manager market=es source=linkedin
+19:41:16 [jseeker.job_discovery] INFO: Searching tag=UX manager market=es source=wellfound
+19:41:16 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/UX+manager
+19:41:17 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/UX+manager
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/UX+manager
+19:41:17 [jseeker.job_discovery] INFO: Found 0 results for tag=UX manager market=es source=wellfound
+19:41:17 [jseeker.job_discovery] INFO: Searching tag=UX manager market=dk source=indeed
+19:41:17 [jseeker.job_discovery] INFO: Fetching URL: https://dk.indeed.com/jobs?q=UX+manager+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:41:18 [jseeker.job_discovery] ERROR: Request failed for URL: https://dk.indeed.com/jobs?q=UX+manager+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://dk.indeed.com/jobs?q=UX+manager+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:41:18 [jseeker.job_discovery] INFO: Found 0 results for tag=UX manager market=dk source=indeed
+19:41:18 [jseeker.job_discovery] INFO: Searching tag=UX manager market=dk source=linkedin
+19:41:18 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=UX+manager&location=Denmark&sortBy=DD&f_TPR=r604800
+19:41:19 [jseeker.job_discovery] INFO: Response status: 200, content length: 176151
+19:41:19 [jseeker.job_discovery] INFO: LinkedIn parser: found 22 job cards
+19:41:19 [jseeker.job_discovery] INFO: Found 20 results for tag=UX manager market=dk source=linkedin
+19:41:19 [jseeker.job_discovery] INFO: Searching tag=UX manager market=dk source=wellfound
+19:41:19 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/UX+manager
+19:41:20 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/UX+manager
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/UX+manager
+19:41:20 [jseeker.job_discovery] INFO: Found 0 results for tag=UX manager market=dk source=wellfound
+19:41:20 [jseeker.job_discovery] INFO: Searching tag=UX manager market=fr source=indeed
+19:41:20 [jseeker.job_discovery] INFO: Fetching URL: https://www.indeed.fr/jobs?q=UX+manager+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+19:41:21 [jseeker.job_discovery] ERROR: Request failed for URL: https://www.indeed.fr/jobs?q=UX+manager+english&l=San+Francisco%2C+Santa+Monica%2C+Mexico+City%2C+Ciudad+de+Mexico%2C+Madrid%2C+London%2C+Copenhagen%2C+Toronto%2C+Vancouver&sort=date&fromage=14
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://fr.indeed.com/jobs
+19:41:21 [jseeker.job_discovery] INFO: Found 0 results for tag=UX manager market=fr source=indeed
+19:41:21 [jseeker.job_discovery] INFO: Searching tag=UX manager market=fr source=linkedin
+19:41:21 [jseeker.job_discovery] INFO: Fetching URL: https://www.linkedin.com/jobs/search/?keywords=UX+manager&location=France&sortBy=DD&f_TPR=r604800
+19:41:23 [jseeker.job_discovery] INFO: Response status: 200, content length: 309651
+19:41:23 [jseeker.job_discovery] INFO: LinkedIn parser: found 60 job cards
+19:41:23 [jseeker.job_discovery] INFO: Found 20 results for tag=UX manager market=fr source=linkedin
+19:41:23 [jseeker.job_discovery] INFO: Searching tag=UX manager market=fr source=wellfound
+19:41:23 [jseeker.job_discovery] INFO: Fetching URL: https://wellfound.com/role/l/UX+manager
+19:41:24 [jseeker.job_discovery] ERROR: Request failed for URL: https://wellfound.com/role/l/UX+manager
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\jseeker\job_discovery.py", line 196, in _search_source
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://wellfound.com/role/l/UX+manager
+19:41:24 [jseeker.job_discovery] INFO: Found 0 results for tag=UX manager market=fr source=wellfound
+19:41:24 [jseeker.job_discovery] INFO: Total: 892 discoveries, 677 after dedup
+19:47:03 [jseeker.jd_parser] INFO: extract_jd_from_url | url=https://otppb.wd3.myworkdayjobs.com/OntarioTeachers_Careers/job/Toronto-Canada/Senior-UX-Designer---...
+19:47:05 [jseeker.jd_parser] INFO: extract_jd_from_url | status=200 | content_length=22412
+19:47:05 [jseeker.jd_parser] WARNING: JD extraction produced too little text for URL: https://otppb.wd3.myworkdayjobs.com/OntarioTeachers_Careers/job/Toronto-Canada/Senior-UX-Designer---Researcher---12-month-contract_6864?source=LinkedIn

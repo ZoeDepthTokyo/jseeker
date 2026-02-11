@@ -232,17 +232,22 @@ if apps:
                 app_id = int(original["id"])
                 changes = {}
 
-                # Handle company_name separately (update companies table, not applications)
+                # Handle company_name separately (create NEW company, don't update existing)
                 if "company_name" in edited_df.columns and "company_name" in original:
                     new_company = row.get("company_name")
                     old_company = original.get("company_name")
                     if not (pd.isna(new_company) and pd.isna(old_company)) and new_company != old_company:
-                        # Get company_id from the application
-                        app_data = tracker_db.get_application(app_id)
-                        if app_data and app_data.get("company_id"):
-                            company_id = app_data["company_id"]
-                            tracker_db.update_company_name(company_id, new_company)
-                            changed_count += 1
+                        # Create a new company and reassign the application to it
+                        # This prevents accidentally updating other applications sharing the same company
+                        new_company_id = tracker_db.get_or_create_company(new_company)
+
+                        # Update the application to point to the new company
+                        conn = tracker_db._conn()
+                        c = conn.cursor()
+                        c.execute("UPDATE applications SET company_id = ? WHERE id = ?", (new_company_id, app_id))
+                        conn.commit()
+                        conn.close()
+                        changed_count += 1
 
                 # Handle other application fields
                 for col in [

@@ -427,14 +427,15 @@ if discoveries:
         # Reverse to get country first
         parts.reverse()
 
-        country = parts[0] if parts else "Unknown"
-        state = parts[1] if len(parts) > 1 else ""
-        city = parts[2] if len(parts) > 2 else ""
+        # Normalize country name (title case for consistency)
+        country = parts[0].strip().title() if parts else "Unknown"
+        state = parts[1].strip() if len(parts) > 1 else ""
+        city = parts[2].strip() if len(parts) > 2 else ""
 
         # If only 2 parts, second is city (no state)
         if len(parts) == 2:
             state = ""
-            city = parts[1]
+            city = parts[1].strip()
 
         return (country, state, city)
 
@@ -506,7 +507,7 @@ if discoveries:
         country_total = sum(len(jobs) for state_cities in states.values() for jobs in state_cities.values())
         country_emoji = COUNTRY_EMOJIS.get(country, "🌍")
 
-        with st.expander(f"{country_emoji} {country.upper()} ({country_total} jobs)", expanded=False):
+        with st.expander(f"{country_emoji} {country} ({country_total} jobs)", expanded=False):
             sorted_states = sorted(states.keys())
 
             for state in sorted_states:

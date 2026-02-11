@@ -273,14 +273,14 @@ if not resumes:
 else:
     df = pd.DataFrame(resumes)
 
-    # Show full system path for better navigation
+    # Show single output folder (PDF and DOCX are always in same folder)
     if "pdf_path" in df.columns:
-        df["pdf_folder"] = df["pdf_path"].apply(
-            lambda x: str(Path(x).parent) + "/" if x and Path(x).parent else ""
+        df["output_folder"] = df["pdf_path"].apply(
+            lambda x: str(Path(x).parent) if x and Path(x).exists() else ""
         )
-    if "docx_path" in df.columns:
-        df["docx_folder"] = df["docx_path"].apply(
-            lambda x: str(Path(x).parent) + "/" if x and Path(x).parent else ""
+    elif "docx_path" in df.columns:
+        df["output_folder"] = df["docx_path"].apply(
+            lambda x: str(Path(x).parent) if x and Path(x).exists() else ""
         )
 
     display_cols = [
@@ -290,8 +290,7 @@ else:
         "version",
         "ats_score",
         "template_used",
-        "pdf_folder",
-        "docx_folder",
+        "output_folder",
         "created_at",
         "generation_cost",
     ]

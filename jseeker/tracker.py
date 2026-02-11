@@ -500,7 +500,7 @@ class TrackerDB:
         conn.close()
 
     _ALLOWED_APP_FIELDS = {
-        "company_name", "role_title", "jd_text", "jd_url", "salary_range",
+        "role_title", "jd_text", "jd_url", "salary_range",
         "salary_min", "salary_max", "salary_currency", "location",
         "remote_policy", "relevance_score", "resume_status",
         "application_status", "job_status", "job_status_checked_at",

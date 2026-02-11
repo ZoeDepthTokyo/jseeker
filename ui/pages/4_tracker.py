@@ -137,6 +137,23 @@ if apps:
     if "relevance_score" in df.columns:
         df["relevance_score"] = df["relevance_score"].fillna(0) * 100
 
+    # Convert None salary values to NaN for proper display
+    if "salary_min" in df.columns:
+        df["salary_min"] = pd.to_numeric(df["salary_min"], errors="coerce")
+    if "salary_max" in df.columns:
+        df["salary_max"] = pd.to_numeric(df["salary_max"], errors="coerce")
+
+    # Apply color coding to application_status
+    def style_app_status(val):
+        colors = {
+            "rejected": "background-color: #ffcccc; color: #990000",  # Red
+            "applied": "background-color: #ccffcc; color: #006600",  # Green
+            "not_applied": "background-color: #ffffcc; color: #996600",  # Yellow
+            "interviewing": "background-color: #cce5ff; color: #004080",  # Blue
+            "offer": "background-color: #e6ccff; color: #660099",  # Purple
+        }
+        return colors.get(val, "")
+
     column_config = {
         "id": st.column_config.NumberColumn("ID", disabled=True),
         "company_name": st.column_config.TextColumn(
@@ -215,8 +232,20 @@ if apps:
                 app_id = int(original["id"])
                 changes = {}
 
+                # Handle company_name separately (update companies table, not applications)
+                if "company_name" in edited_df.columns and "company_name" in original:
+                    new_company = row.get("company_name")
+                    old_company = original.get("company_name")
+                    if not (pd.isna(new_company) and pd.isna(old_company)) and new_company != old_company:
+                        # Get company_id from the application
+                        app_data = tracker_db.get_application(app_id)
+                        if app_data and app_data.get("company_id"):
+                            company_id = app_data["company_id"]
+                            tracker_db.update_company_name(company_id, new_company)
+                            changed_count += 1
+
+                # Handle other application fields
                 for col in [
-                    "company_name",
                     "application_status",
                     "resume_status",
                     "job_status",

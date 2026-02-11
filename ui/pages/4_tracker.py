@@ -218,14 +218,11 @@ if apps:
         key="tracker_editor",
     )
 
-    # Check if there are unsaved changes
+    # Auto-save changes (no button required per user feedback)
     has_changes = not df[available_cols].equals(edited_df)
 
     if has_changes:
-        st.warning("⚠️ You have unsaved changes")
-
-        # Explicit save button
-        if st.button("💾 Save All Changes", type="primary"):
+        with st.spinner("💾 Auto-saving changes..."):
             changed_count = 0
             for idx, row in edited_df.iterrows():
                 original = df.iloc[idx]
@@ -273,11 +270,9 @@ if apps:
                     tracker_db.update_application(app_id, **changes)
                     changed_count += 1
 
-            if changed_count > 0:
-                st.success(f"✅ Saved {changed_count} change(s)!")
-                st.rerun()
-            else:
-                st.info("No changes detected")
+        if changed_count > 0:
+            st.success(f"✅ Auto-saved {changed_count} change(s)!")
+            st.rerun()
 else:
     st.info("No applications match your filters.")
 

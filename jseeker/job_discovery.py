@@ -644,11 +644,12 @@ def save_discoveries(discoveries: list[JobDiscovery]) -> int:
 
 
 def import_discovery_to_application(discovery_id: int) -> Optional[int]:
-    """Import a starred discovery into the applications tracker.
+    """Import a starred discovery into the applications tracker with ALL data.
 
     Returns application ID if created.
     """
     from jseeker.models import Application
+    from jseeker.jd_parser import process_jd
 
     discoveries = tracker_db.list_discoveries()
     disc = None
@@ -662,12 +663,38 @@ def import_discovery_to_application(discovery_id: int) -> Optional[int]:
 
     company_id = tracker_db.get_or_create_company(disc.get("company", "Unknown"))
 
+    # If we have a URL, fetch and parse the full JD
+    jd_text = ""
+    jd_data = None
+    if disc.get("url"):
+        try:
+            from jseeker.jd_parser import extract_jd_from_url
+            jd_text, metadata = extract_jd_from_url(disc["url"])
+
+            if jd_text:
+                # Parse JD to extract salary, skills, etc.
+                jd_data = process_jd(
+                    jd_text=jd_text,
+                    jd_url=disc["url"],
+                    role_title=disc["title"],
+                    company_name=disc.get("company", "")
+                )
+        except Exception as e:
+            logger.warning(f"Could not fetch/parse JD for import: {e}")
+
+    # Build application with all available data
     app = Application(
         company_id=company_id,
         role_title=disc["title"],
+        jd_text=jd_data.jd_text if jd_data else jd_text,
         jd_url=disc.get("url", ""),
-        location=disc.get("location", ""),
-        salary_range=disc.get("salary_range", ""),
+        location=jd_data.location if jd_data else disc.get("location", ""),
+        salary_range=jd_data.salary_range if jd_data else disc.get("salary_range", ""),
+        salary_min=jd_data.salary_min if jd_data else None,
+        salary_max=jd_data.salary_max if jd_data else None,
+        salary_currency=jd_data.salary_currency if jd_data else None,
+        remote_policy=jd_data.remote_policy if jd_data else None,
+        relevance_score=jd_data.relevance_score if jd_data else None,
     )
 
     app_id = tracker_db.add_application(app)

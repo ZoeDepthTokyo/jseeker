@@ -412,32 +412,60 @@ if discoveries:
         """
         Parse location string into (country, state, city) tuple.
 
-        Handles formats:
-        - "City, State, Country"
-        - "City, Country"
-        - "State, Country"
-        - "Country"
-        - "Remote" or other special values
+        Handles multiple formats robustly:
+        - "City, State, Country" -> (Country, State, City)
+        - "City, Country" -> (Country, "", City)
+        - "State, Country" -> (Country, State, "")
+        - "Country" -> (Country, "", "")
+        - "Greater X, Country" -> (Country, "Greater X", "")
+        - Just "City" -> (Market country, "", City)
         """
+        # Market to country mapping
+        market_countries = {
+            "us": "United States", "mx": "Mexico", "ca": "Canada",
+            "uk": "United Kingdom", "es": "Spain", "dk": "Denmark",
+            "fr": "France", "de": "Germany"
+        }
+
         if not location_str or location_str.strip().lower() in ["remote", "unknown", "anywhere"]:
             return ("Remote/Other", "", location_str or "Unknown")
 
-        parts = [p.strip() for p in location_str.split(",")]
+        loc = location_str.strip()
 
-        # Reverse to get country first
-        parts.reverse()
+        # Handle just country name
+        if loc in ["Canada", "United States", "Mexico", "Denmark", "Spain", "France", "Germany", "United Kingdom"]:
+            return (loc, "", "")
 
-        # Normalize country name (title case for consistency)
-        country = parts[0].strip().title() if parts else "Unknown"
-        state = parts[1].strip() if len(parts) > 1 else ""
-        city = parts[2].strip() if len(parts) > 2 else ""
+        parts = [p.strip() for p in loc.split(",")]
 
-        # If only 2 parts, second is city (no state)
-        if len(parts) == 2:
-            state = ""
-            city = parts[1].strip()
+        if len(parts) == 1:
+            # Just a city name - use market as country
+            country = market_countries.get(market_code.lower(), "Unknown")
+            return (country, "", parts[0])
 
-        return (country, state, city)
+        elif len(parts) == 2:
+            # "City, Country" or "State, Country"
+            potential_country = parts[1]
+            # Check if second part is a known country
+            if potential_country in market_countries.values():
+                # It's a country - first part could be city or state
+                if "Greater" in parts[0] or "Metropolitan" in parts[0] or "Area" in parts[0]:
+                    return (potential_country, parts[0], "")  # Region/area
+                else:
+                    return (potential_country, "", parts[0])  # City
+            else:
+                # Not a recognized country, treat as city, region
+                country = market_countries.get(market_code.lower(), "Unknown")
+                return (country, parts[1], parts[0])
+
+        elif len(parts) >= 3:
+            # "City, State, Country" - standard format
+            country = parts[-1].strip()  # Last is country
+            state = parts[-2].strip()     # Second to last is state/province
+            city = parts[0].strip()       # First is city
+            return (country, state, city)
+
+        return ("Unknown", "", loc)
 
     # Build 3-level nested structure
     by_location_hierarchy = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))

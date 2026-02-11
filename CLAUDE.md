@@ -64,7 +64,16 @@ output/ -- generated resumes (gitignored)
 - **MNEMIS**: Pattern storage via integrations/mnemis_bridge.py (Phase 3+)
 
 ## Testing
+# Full test suite (333/336 passing)
 pytest tests/ --cov=jseeker
+
+# Pre-commit validation for major releases
+python scripts/test_v0_3_2_complete.py
+
+# Known failures (not blockers): 3 E2E tests in test_e2e_scenarios.py
+# - Batch processing mock fixture
+# - Language detection edge case (French)
+# - Tag weight ranking
 
 ## Key Files
 - jseeker/adapter.py -- Core value: Claude-powered resume content adaptation
@@ -78,6 +87,9 @@ pytest tests/ --cov=jseeker
 - **MYCEL local install**: Must be installed as editable (`-e`) not from PyPI
 - **Job Discovery parsers**: Depend on site markup; may need updates if sites change CSS selectors
 - **DB auto-migration**: First run auto-renames `proteus.db` -> `jseeker.db` (safe, keeps data)
+- **process_jd() signature**: Only accepts (`raw_text`, `jd_url`, `use_semantic_cache`) - NOT `role_title` or `company_name`
+- **ParsedJD model**: Has NO `relevance_score` field (computed during matching phase, not JD parsing)
+- **Version management**: Update version in BOTH `config.py` (app_version) AND `jseeker/__init__.py` (__version__)
 
 ## DO NOT
 - Invent experience or metrics not in resume_blocks YAML

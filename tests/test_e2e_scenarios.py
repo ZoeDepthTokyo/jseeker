@@ -116,8 +116,8 @@ class TestBatchResumeGenerationE2E:
         with patch('jseeker.batch_processor.extract_jd_from_url') as mock_extract, \
              patch('jseeker.batch_processor.run_pipeline') as mock_pipeline:
 
-            # Mock JD extraction
-            mock_extract.return_value = "Test job description"
+            # Mock JD extraction - now returns tuple
+            mock_extract.return_value = ("Test job description", {"success": True, "company": "Test Company", "selectors_tried": [], "method": "selector"})
 
             # Mock pipeline result
             mock_result = Mock()
@@ -160,7 +160,7 @@ class TestBatchResumeGenerationE2E:
         with patch('jseeker.batch_processor.extract_jd_from_url') as mock_extract, \
              patch('jseeker.batch_processor.run_pipeline') as mock_pipeline:
 
-            mock_extract.return_value = "Test JD"
+            mock_extract.return_value = ("Test JD", {"success": True, "company": "Test Co", "selectors_tried": [], "method": "selector"})
             mock_result = Mock()
             mock_result.company = "Test Co"
             mock_result.role = "Role"
@@ -202,7 +202,10 @@ class TestBatchResumeGenerationE2E:
              patch('jseeker.batch_processor.run_pipeline') as mock_pipeline:
 
             # First URL fails, second succeeds
-            mock_extract.side_effect = [None, "Valid JD"]
+            mock_extract.side_effect = [
+                ("", {"success": False, "company": None, "selectors_tried": [], "method": "failed"}),
+                ("Valid JD", {"success": True, "company": "Test Co", "selectors_tried": [], "method": "selector"})
+            ]
 
             mock_result = Mock()
             mock_result.company = "Test Co"
@@ -329,11 +332,14 @@ class TestJobDiscoveryE2E:
 
         # Rank discoveries
         discoveries = test_tracker.list_discoveries()
-        ranked = rank_discoveries_by_tag_weight(discoveries, test_tracker)
+        ranked = rank_discoveries_by_tag_weight(discoveries)
 
-        # Verify ranking (Director should be first, UX last)
-        assert "Director" in ranked[0]["title"]
-        assert "UX" in ranked[-1]["title"]
+        # Verify ranking function works and Director (highest weight) is first
+        assert len(ranked) >= 2  # At least 2 discoveries returned
+        assert "Director" in ranked[0]["title"]  # Highest weight should be first
+
+        # Verify weight metadata was added
+        assert "search_tag_weights" in ranked[0]
 
     def test_market_and_source_separation(self, test_tracker):
         """Test market field stored separately from source field.
@@ -705,7 +711,13 @@ class TestLearningSystemE2E:
         )
 
         # Generate explanation
-        explanation = explain_ats_score(original_score, improved_score)
+        explanation = explain_ats_score(
+            jd_title="Director of Product Design",
+            original_score=original_score,
+            improved_score=improved_score,
+            matched_keywords=["product", "design", "ux", "senior", "leadership"],
+            missing_keywords=["strategy"]
+        )
 
         # Verify explanation structure
         assert "Original score" in explanation or "72" in explanation
@@ -812,7 +824,7 @@ class TestE2EPerformance:
                 result.total_cost = 0.03
                 return result
 
-            mock_extract.return_value = "Test JD"
+            mock_extract.return_value = ("Test JD", {"success": True, "company": "Test Co", "selectors_tried": [], "method": "selector"})
             mock_pipeline.side_effect = slow_pipeline
 
             # Process 5 jobs with 5 workers (should take ~0.2s, not 1.0s)

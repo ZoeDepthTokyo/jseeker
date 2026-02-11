@@ -114,21 +114,21 @@ if apps:
 if apps:
     df = pd.DataFrame(apps)
 
-    # Keep jd_url for linking
+    # Column order: ID, Company, Location, Role, URL, Min Salary, Max Salary, Currency, App Status, Relevance, ATS Score, Resume Status, Job Status, Created, Notes
     display_cols = [
         "id",
         "company_name",
+        "location",
         "role_title",
         "jd_url",
         "salary_min",
         "salary_max",
         "salary_currency",
+        "application_status",
         "relevance_score",
         "ats_score",
         "resume_status",
-        "application_status",
         "job_status",
-        "location",
         "created_at",
         "notes",
     ]
@@ -201,40 +201,49 @@ if apps:
         key="tracker_editor",
     )
 
-    if not df[available_cols].equals(edited_df):
-        changed_count = 0
-        for idx, row in edited_df.iterrows():
-            original = df.iloc[idx]
-            app_id = int(original["id"])
-            changes = {}
+    # Check if there are unsaved changes
+    has_changes = not df[available_cols].equals(edited_df)
 
-            for col in [
-                "company_name",
-                "application_status",
-                "resume_status",
-                "job_status",
-                "notes",
-                "location",
-                "salary_min",
-                "salary_max",
-                "salary_currency",
-            ]:
-                if col not in edited_df.columns or col not in original:
-                    continue
-                new_val = row.get(col)
-                old_val = original.get(col)
-                if pd.isna(new_val) and pd.isna(old_val):
-                    continue
-                if new_val != old_val:
-                    changes[col] = None if pd.isna(new_val) else new_val
+    if has_changes:
+        st.warning("⚠️ You have unsaved changes")
 
-            if changes:
-                tracker_db.update_application(app_id, **changes)
-                changed_count += 1
+        # Explicit save button
+        if st.button("💾 Save All Changes", type="primary"):
+            changed_count = 0
+            for idx, row in edited_df.iterrows():
+                original = df.iloc[idx]
+                app_id = int(original["id"])
+                changes = {}
 
-        if changed_count > 0:
-            st.toast(f"Saved {changed_count} change(s)!")
-            st.rerun()
+                for col in [
+                    "company_name",
+                    "application_status",
+                    "resume_status",
+                    "job_status",
+                    "notes",
+                    "location",
+                    "salary_min",
+                    "salary_max",
+                    "salary_currency",
+                ]:
+                    if col not in edited_df.columns or col not in original:
+                        continue
+                    new_val = row.get(col)
+                    old_val = original.get(col)
+                    if pd.isna(new_val) and pd.isna(old_val):
+                        continue
+                    if new_val != old_val:
+                        changes[col] = None if pd.isna(new_val) else new_val
+
+                if changes:
+                    tracker_db.update_application(app_id, **changes)
+                    changed_count += 1
+
+            if changed_count > 0:
+                st.success(f"✅ Saved {changed_count} change(s)!")
+                st.rerun()
+            else:
+                st.info("No changes detected")
 else:
     st.info("No applications match your filters.")
 

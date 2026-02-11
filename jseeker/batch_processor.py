@@ -371,9 +371,12 @@ class BatchProcessor:
                 logger.debug(f"Using cached JD for {job.url}")
             else:
                 logger.debug(f"Extracting JD from {job.url}")
-                jd_text = extract_jd_from_url(job.url)
+                jd_text, extraction_meta = extract_jd_from_url(job.url)
                 if not jd_text:
-                    raise ValueError("Could not extract job description from URL")
+                    error_msg = f"Could not extract job description from URL (method: {extraction_meta.get('method', 'unknown')})"
+                    if extraction_meta.get("company"):
+                        error_msg += f" | Company: {extraction_meta['company']}"
+                    raise ValueError(error_msg)
                 self.jd_cache.set(job.url, jd_text)
 
             # Check for stop before expensive operation

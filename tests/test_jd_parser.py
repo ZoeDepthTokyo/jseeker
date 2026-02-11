@@ -109,17 +109,19 @@ class TestExtractJDFromURL:
                 return None
 
         monkeypatch.setattr("jseeker.jd_parser.requests.get", lambda *args, **kwargs: FakeResponse())
-        extracted = extract_jd_from_url("https://example.com/job")
+        extracted, metadata = extract_jd_from_url("https://example.com/job")
         assert "Director of Product Design" in extracted
         assert "Site Header" not in extracted
+        assert metadata["success"] is True
 
     def test_extract_jd_returns_empty_on_request_error(self, monkeypatch):
         def raise_error(*args, **kwargs):
             raise requests.RequestException("network error")
 
         monkeypatch.setattr("jseeker.jd_parser.requests.get", raise_error)
-        extracted = extract_jd_from_url("https://example.com/job")
+        extracted, metadata = extract_jd_from_url("https://example.com/job")
         assert extracted == ""
+        assert metadata["success"] is False
 
 
 class TestSalaryExtraction:

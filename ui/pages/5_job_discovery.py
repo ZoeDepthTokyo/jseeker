@@ -12,12 +12,104 @@ from jseeker.tracker import tracker_db
 
 st.title("Job Discovery")
 
+# --- Saved Searches Sidebar ---
+with st.sidebar:
+    st.subheader("Saved Searches")
+
+    saved_searches = tracker_db.list_saved_searches()
+
+    if saved_searches:
+        # Display saved searches
+        for search in saved_searches:
+            with st.expander(f"📌 {search['name']}", expanded=False):
+                st.caption(f"Tags: {', '.join(search['tag_weights'].keys())}")
+                if search.get('markets'):
+                    st.caption(f"Markets: {', '.join(search['markets'])}")
+                if search.get('sources'):
+                    st.caption(f"Sources: {', '.join(search['sources'])}")
+                if search.get('location'):
+                    st.caption(f"Location: {search['location']}")
+
+                col1, col2 = st.columns(2)
+
+                # Load button
+                if col1.button("Load", key=f"load_{search['id']}"):
+                    # Load tag weights
+                    for tag, weight in search['tag_weights'].items():
+                        tracker_db.set_tag_weight(tag, weight)
+
+                    # Load markets
+                    if search.get('markets'):
+                        st.session_state["job_discovery_markets"] = search['markets']
+
+                    # Store sources and location in session for later UI sync
+                    if search.get('sources'):
+                        st.session_state["loaded_sources"] = search['sources']
+                    if search.get('location'):
+                        st.session_state["loaded_location"] = search['location']
+
+                    st.success(f"Loaded: {search['name']}")
+                    st.rerun()
+
+                # Delete button
+                if col2.button("Delete", key=f"delete_{search['id']}"):
+                    if tracker_db.delete_saved_search(search['id']):
+                        st.success(f"Deleted: {search['name']}")
+                        st.rerun()
+                    else:
+                        st.error("Failed to delete")
+    else:
+        st.info("No saved searches yet. Configure a search below and save it.")
+
+    # Save current search form
+    with st.form("save_search_form"):
+        st.markdown("---")
+        st.caption("Save Current Configuration")
+        search_name = st.text_input("Search name", placeholder="e.g., Senior PM - Remote US")
+        save_button = st.form_submit_button("Save Current Search")
+
+        if save_button:
+            if not search_name.strip():
+                st.error("Please enter a name")
+            else:
+                # Get current tag weights
+                tag_weights = {tw["tag"]: tw["weight"] for tw in tracker_db.list_tag_weights()}
+
+                # Get current markets from session
+                current_markets = st.session_state.get("job_discovery_markets", [])
+
+                # Get current sources and location from session (set when user changes them)
+                current_sources = st.session_state.get("current_sources", [])
+                current_location = st.session_state.get("current_location", "")
+
+                try:
+                    search_id = tracker_db.save_search_config(
+                        name=search_name.strip(),
+                        tag_weights=tag_weights,
+                        markets=current_markets,
+                        sources=current_sources,
+                        location=current_location
+                    )
+                    st.success(f"Saved: {search_name}")
+                    st.rerun()
+                except Exception as e:
+                    if "UNIQUE constraint" in str(e):
+                        st.error("A search with this name already exists")
+                    else:
+                        st.error(f"Failed to save: {e}")
+
 # --- Search Tags Management ---
 with st.expander("Search Tags & Weights", expanded=False):
     st.caption("Configure search tags and their weights (%). All active tag weights must sum to 100%.")
 
     tags = tracker_db.list_search_tags(active_only=False)
     tag_weights = {tw["tag"]: tw["weight"] for tw in tracker_db.list_tag_weights()}
+
+    # Initialize draft mode session state
+    if "draft_mode" not in st.session_state:
+        st.session_state["draft_mode"] = False
+    if "draft_weights" not in st.session_state:
+        st.session_state["draft_weights"] = {}
 
     if tags:
         # Calculate current active tag weights and total
@@ -34,21 +126,47 @@ with st.expander("Search Tags & Weights", expanded=False):
 
             # Weight slider (only enabled for active tags)
             current_weight = tag_weights.get(tag["tag"], 50)
+            # Use draft weight if in draft mode, otherwise use current weight
+            display_weight = st.session_state["draft_weights"].get(tag["tag"], current_weight) if st.session_state["draft_mode"] else current_weight
+
             new_weight = col3.slider(
                 "Weight %",
                 min_value=0,
                 max_value=100,
-                value=current_weight,
+                value=display_weight,
                 key=f"weight_{tag['id']}",
                 label_visibility="collapsed",
                 disabled=not active
             )
+
+            # Store changes in draft mode without rerunning
             if new_weight != current_weight and active:
-                tracker_db.set_tag_weight(tag["tag"], new_weight)
-                st.rerun()
+                st.session_state["draft_mode"] = True
+                st.session_state["draft_weights"][tag["tag"]] = new_weight
 
             if col4.button("Toggle", key=f"toggle_{tag['id']}"):
                 tracker_db.toggle_search_tag(tag["id"], not active)
+                st.rerun()
+
+        # Display draft mode controls
+        if st.session_state["draft_mode"]:
+            st.markdown("---")
+            st.warning("⚠️ You have unsaved weight changes.")
+            col_apply, col_discard = st.columns(2)
+
+            if col_apply.button("✅ Apply Changes", type="primary"):
+                # Apply all draft weights to database
+                for tag_name, new_weight in st.session_state["draft_weights"].items():
+                    tracker_db.set_tag_weight(tag_name, new_weight)
+                # Clear draft mode
+                st.session_state["draft_mode"] = False
+                st.session_state["draft_weights"] = {}
+                st.rerun()
+
+            if col_discard.button("❌ Discard Changes"):
+                # Clear draft mode without saving
+                st.session_state["draft_mode"] = False
+                st.session_state["draft_weights"] = {}
                 st.rerun()
 
         # Display total weight validation
@@ -105,13 +223,19 @@ st.session_state["job_discovery_markets"] = selected_markets
 st.markdown("---")
 st.subheader("Search Jobs")
 
-location = st.text_input("Location filter", placeholder="e.g., San Francisco, Remote")
+# Check if we have loaded values from a saved search
+default_location = st.session_state.pop("loaded_location", "")
+location = st.text_input("Location filter", placeholder="e.g., San Francisco, Remote", value=default_location)
+st.session_state["current_location"] = location
 
+# Check if we have loaded sources from a saved search
+default_sources = st.session_state.pop("loaded_sources", ["indeed"])
 sources = st.multiselect(
     "Job boards to search",
     options=["indeed", "linkedin", "wellfound"],
-    default=["indeed"],
+    default=default_sources,
 )
+st.session_state["current_sources"] = sources
 st.caption("Note: Web scraping results vary. If no results appear, try different tags or check the Search Details after running.")
 
 if "linkedin" in sources:
@@ -255,7 +379,18 @@ market_value = None if market_filter == "All" else market_filter
 source_value = None if source_filter == "All" else source_filter
 location_value = location_filter.strip() if location_filter.strip() else None
 
-discoveries = tracker_db.list_discoveries(
+@st.cache_data(ttl=10)
+def _get_discoveries(status, search, market, location, source):
+    """Cached DB query for discoveries with 10-second TTL."""
+    return tracker_db.list_discoveries(
+        status=status,
+        search=search,
+        market=market,
+        location=location,
+        source=source
+    )
+
+discoveries = _get_discoveries(
     status=status_value,
     search=search_query,
     market=market_value,
@@ -270,70 +405,130 @@ if discoveries:
     )
 
 if discoveries:
-    # Group discoveries by (market, location) for better organization
+    # Group discoveries by hierarchical location: Country > State/Province > City
     from collections import defaultdict
-    by_market_location = defaultdict(list)
+
+    def parse_location_hierarchy(location_str, market_code):
+        """
+        Parse location string into (country, state, city) tuple.
+
+        Handles formats:
+        - "City, State, Country"
+        - "City, Country"
+        - "State, Country"
+        - "Country"
+        - "Remote" or other special values
+        """
+        if not location_str or location_str.strip().lower() in ["remote", "unknown", "anywhere"]:
+            return ("Remote/Other", "", location_str or "Unknown")
+
+        parts = [p.strip() for p in location_str.split(",")]
+
+        # Reverse to get country first
+        parts.reverse()
+
+        country = parts[0] if parts else "Unknown"
+        state = parts[1] if len(parts) > 1 else ""
+        city = parts[2] if len(parts) > 2 else ""
+
+        # If only 2 parts, second is city (no state)
+        if len(parts) == 2:
+            state = ""
+            city = parts[1]
+
+        return (country, state, city)
+
+    # Build 3-level nested structure
+    by_location_hierarchy = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+
     for d in discoveries:
         market = d.get("market") or "unknown"
         location = d.get("location") or "Unknown Location"
-        key = (market, location)
-        by_market_location[key].append(d)
+        country, state, city = parse_location_hierarchy(location, market)
+        by_location_hierarchy[country][state][city].append(d)
 
-    # Market display names
-    MARKET_NAMES = {
-        "us": "🇺🇸 United States",
-        "mx": "🇲🇽 Mexico",
-        "ca": "🇨🇦 Canada",
-        "uk": "🇬🇧 United Kingdom",
-        "es": "🇪🇸 Spain",
-        "dk": "🇩🇰 Denmark",
-        "fr": "🇫🇷 France",
-        "de": "🇩🇪 Germany",
+    # Country emoji mapping
+    COUNTRY_EMOJIS = {
+        "United States": "🇺🇸",
+        "Mexico": "🇲🇽",
+        "Canada": "🇨🇦",
+        "United Kingdom": "🇬🇧",
+        "Spain": "🇪🇸",
+        "Denmark": "🇩🇰",
+        "France": "🇫🇷",
+        "Germany": "🇩🇪",
     }
 
-    # Sort groups by market, then location
-    sorted_groups = sorted(by_market_location.keys(), key=lambda k: (k[0], k[1]))
+    # Sort countries
+    sorted_countries = sorted(by_location_hierarchy.keys())
 
-    # Display each (market, location) group
-    for (market_code, location) in sorted_groups:
-        market_name = MARKET_NAMES.get(market_code, f"🌍 {market_code.upper()}")
-        group_jobs = by_market_location[(market_code, location)]
+    # Helper function to render job card
+    def render_job_card(disc):
+        """Render a single job discovery card."""
+        with st.container():
+            col1, col2, col3 = st.columns([4, 2, 2])
+            col1.markdown(f"**{disc['title']}** - {disc.get('company', '')}")
+            col2.caption(disc.get("location", ""))
+            posting_date = disc.get("posting_date", "")
+            source = disc.get("source", "")
+            status = str(disc.get("status", "new")).strip().lower()
+            col3.caption(f"{posting_date} | {source} | {status}")
 
-        with st.expander(f"{market_name} — {location} ({len(group_jobs)} jobs)", expanded=False):
-            for disc in group_jobs:
-                with st.container():
-                    col1, col2, col3 = st.columns([4, 2, 2])
-                    col1.markdown(f"**{disc['title']}** - {disc.get('company', '')}")
-                    col2.caption(disc.get("location", ""))
-                    posting_date = disc.get("posting_date", "")
-                    source = disc.get("source", "")
-                    status = str(disc.get("status", "new")).strip().lower()
-                    col3.caption(f"{posting_date} | {source} | {status}")
+            action_cols = st.columns(4)
 
-                    action_cols = st.columns(4)
+            if status == "new":
+                if action_cols[0].button("Star", key=f"star_{disc['id']}"):
+                    tracker_db.update_discovery_status(disc["id"], "starred")
+                    st.rerun()
+                if action_cols[1].button("Dismiss", key=f"dismiss_{disc['id']}"):
+                    tracker_db.update_discovery_status(disc["id"], "dismissed")
+                    st.rerun()
 
-                    if status == "new":
-                        if action_cols[0].button("Star", key=f"star_{disc['id']}"):
-                            tracker_db.update_discovery_status(disc["id"], "starred")
-                            st.rerun()
-                        if action_cols[1].button("Dismiss", key=f"dismiss_{disc['id']}"):
-                            tracker_db.update_discovery_status(disc["id"], "dismissed")
-                            st.rerun()
+            if status in ("new", "starred"):
+                if action_cols[2].button("Import to Tracker", key=f"import_{disc['id']}"):
+                    from jseeker.job_discovery import import_discovery_to_application
 
-                    if status in ("new", "starred"):
-                        if action_cols[2].button("Import to Tracker", key=f"import_{disc['id']}"):
-                            from jseeker.job_discovery import import_discovery_to_application
+                    app_id = import_discovery_to_application(disc["id"])
+                    if app_id:
+                        st.success(f"Imported as application #{app_id}")
+                    else:
+                        st.error("Failed to import")
+                    st.rerun()
 
-                            app_id = import_discovery_to_application(disc["id"])
-                            if app_id:
-                                st.success(f"Imported as application #{app_id}")
-                            else:
-                                st.error("Failed to import")
-                            st.rerun()
+            if disc.get("url"):
+                action_cols[3].markdown(f"[View Job]({disc['url']})")
 
-                    if disc.get("url"):
-                        action_cols[3].markdown(f"[View Job]({disc['url']})")
+            st.markdown("---")
 
-                    st.markdown("---")
+    # Display with 3-level hierarchy: Country > State > City
+    for country in sorted_countries:
+        states = by_location_hierarchy[country]
+        country_total = sum(len(jobs) for state_cities in states.values() for jobs in state_cities.values())
+        country_emoji = COUNTRY_EMOJIS.get(country, "🌍")
+
+        with st.expander(f"{country_emoji} {country.upper()} ({country_total} jobs)", expanded=False):
+            sorted_states = sorted(states.keys())
+
+            for state in sorted_states:
+                cities = states[state]
+                state_total = sum(len(jobs) for jobs in cities.values())
+
+                # If no state/province, skip that level and go straight to cities
+                if not state:
+                    sorted_cities = sorted(cities.keys())
+                    for city in sorted_cities:
+                        city_jobs = cities[city]
+                        with st.expander(f"📍 {city} ({len(city_jobs)} jobs)", expanded=False):
+                            for disc in city_jobs:
+                                render_job_card(disc)
+                else:
+                    # State/province level exists
+                    with st.expander(f"📌 {state} ({state_total} jobs)", expanded=False):
+                        sorted_cities = sorted(cities.keys())
+                        for city in sorted_cities:
+                            city_jobs = cities[city]
+                            with st.expander(f"📍 {city} ({len(city_jobs)} jobs)", expanded=False):
+                                for disc in city_jobs:
+                                    render_job_card(disc)
 else:
     st.info("No discovered jobs match your current filters. Run a search above.")

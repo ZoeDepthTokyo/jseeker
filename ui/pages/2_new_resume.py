@@ -98,11 +98,17 @@ if generate_button:
             source_jd_text = jd_text_clean
             if not source_jd_text and jd_url_clean:
                 progress.progress(5, text="Step 1/5: Fetching job description from URL...")
-                source_jd_text = extract_jd_from_url(jd_url_clean)
+                source_jd_text, extraction_meta = extract_jd_from_url(jd_url_clean)
                 if not source_jd_text:
-                    raise ValueError(
-                        "Could not extract job description from URL. Paste the JD text and try again."
-                    )
+                    # Build detailed error message with diagnostics
+                    error_parts = ["Could not extract job description from URL."]
+                    if extraction_meta.get("company"):
+                        error_parts.append(f"Detected company: {extraction_meta['company']}")
+                    if extraction_meta.get("selectors_tried"):
+                        error_parts.append(f"Tried {len(extraction_meta['selectors_tried'])} selectors")
+                    error_parts.append(f"Method: {extraction_meta.get('method', 'unknown')}")
+                    error_parts.append("Please paste the JD text and try again.")
+                    raise ValueError(" | ".join(error_parts))
                 progress.progress(12, text="Step 1/5: Job description extracted from URL.")
             else:
                 progress.progress(12, text="Step 1/5: Using pasted job description.")

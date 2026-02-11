@@ -137,12 +137,29 @@ with st.expander("Batch Generate From Job URLs", expanded=False):
     if st.session_state.batch_progress:
         progress = st.session_state.batch_progress
 
-        # Progress bar
-        st.progress(
-            progress.progress_pct / 100,
-            text=f"Processing {progress.completed + progress.running}/{progress.total} jobs "
-                 f"({progress.completed} completed, {progress.failed} failed, {progress.skipped} skipped)"
-        )
+        # Auto-refresh control
+        col_progress, col_refresh = st.columns([4, 1])
+
+        with col_progress:
+            # Progress bar
+            st.progress(
+                progress.progress_pct / 100,
+                text=f"Processing {progress.completed + progress.running}/{progress.total} jobs "
+                     f"({progress.completed} completed, {progress.failed} failed, {progress.skipped} skipped)"
+            )
+
+        with col_refresh:
+            # Manual refresh button
+            if st.button("🔄 Refresh", key="batch_refresh_btn", help="Manually refresh progress"):
+                st.rerun()
+
+        # Auto-refresh every 2 seconds while batch is running
+        if st.session_state.batch_running and not progress.paused and not progress.stopped:
+            if progress.completed + progress.failed + progress.skipped < progress.total:
+                import time
+                st.empty()  # Placeholder for rerun trigger
+                time.sleep(2)
+                st.rerun()
 
         # Status text
         if progress.paused:

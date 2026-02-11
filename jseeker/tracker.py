@@ -223,6 +223,17 @@ def init_db(db_path: Path = None) -> None:
     c.execute("CREATE INDEX IF NOT EXISTS idx_batch_job_items_batch_id ON batch_job_items(batch_id)")
     c.execute("CREATE INDEX IF NOT EXISTS idx_batch_job_items_status ON batch_job_items(status)")
 
+    c.execute("""CREATE TABLE IF NOT EXISTS saved_searches (
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL UNIQUE,
+        tag_weights TEXT NOT NULL,
+        markets TEXT,
+        sources TEXT,
+        location TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )""")
+
     conn.commit()
     conn.close()
 
@@ -1161,6 +1172,164 @@ class TrackerDB:
         rows = c.fetchall()
         conn.close()
         return [dict(r) for r in rows]
+
+    # ── Saved Searches ─────────────────────────────────────────────
+
+    def save_search_config(
+        self,
+        name: str,
+        tag_weights: dict[str, int],
+        markets: list[str] = None,
+        sources: list[str] = None,
+        location: str = None
+    ) -> int:
+        """Save a search configuration for later reuse.
+
+        Args:
+            name: Name for this saved search (must be unique)
+            tag_weights: Dict mapping tag names to weights (1-100)
+            markets: List of market codes to search
+            sources: List of sources to search
+            location: Location filter string
+
+        Returns:
+            Saved search ID
+
+        Raises:
+            sqlite3.IntegrityError: If a search with this name already exists
+        """
+        conn = self._get_conn()
+        c = conn.cursor()
+        c.execute(
+            """INSERT INTO saved_searches (name, tag_weights, markets, sources, location)
+            VALUES (?, ?, ?, ?, ?)""",
+            (
+                name,
+                json.dumps(tag_weights),
+                json.dumps(markets or []),
+                json.dumps(sources or []),
+                location or ""
+            )
+        )
+        conn.commit()
+        saved_id = c.lastrowid
+        conn.close()
+        return saved_id
+
+    def list_saved_searches(self) -> list[dict]:
+        """List all saved search configurations.
+
+        Returns:
+            List of dicts with id, name, tag_weights, markets, sources, location, created_at, updated_at
+        """
+        conn = self._get_conn()
+        c = conn.cursor()
+        c.execute("SELECT * FROM saved_searches ORDER BY name")
+        rows = c.fetchall()
+        conn.close()
+        result = []
+        for row in rows:
+            d = dict(row)
+            d["tag_weights"] = json.loads(d.get("tag_weights", "{}"))
+            d["markets"] = json.loads(d.get("markets", "[]"))
+            d["sources"] = json.loads(d.get("sources", "[]"))
+            result.append(d)
+        return result
+
+    def get_saved_search(self, search_id: int) -> Optional[dict]:
+        """Get a saved search configuration by ID.
+
+        Args:
+            search_id: Saved search ID
+
+        Returns:
+            Dict with search configuration or None if not found
+        """
+        conn = self._get_conn()
+        c = conn.cursor()
+        c.execute("SELECT * FROM saved_searches WHERE id = ?", (search_id,))
+        row = c.fetchone()
+        conn.close()
+        if row:
+            d = dict(row)
+            d["tag_weights"] = json.loads(d.get("tag_weights", "{}"))
+            d["markets"] = json.loads(d.get("markets", "[]"))
+            d["sources"] = json.loads(d.get("sources", "[]"))
+            return d
+        return None
+
+    def delete_saved_search(self, search_id: int) -> bool:
+        """Delete a saved search configuration.
+
+        Args:
+            search_id: Saved search ID to delete
+
+        Returns:
+            True if deleted, False if not found
+        """
+        conn = self._get_conn()
+        c = conn.cursor()
+        c.execute("DELETE FROM saved_searches WHERE id = ?", (search_id,))
+        deleted = c.rowcount > 0
+        conn.commit()
+        conn.close()
+        return deleted
+
+    def update_saved_search(
+        self,
+        search_id: int,
+        name: str = None,
+        tag_weights: dict[str, int] = None,
+        markets: list[str] = None,
+        sources: list[str] = None,
+        location: str = None
+    ) -> bool:
+        """Update a saved search configuration.
+
+        Args:
+            search_id: Saved search ID to update
+            name: New name (optional)
+            tag_weights: New tag weights (optional)
+            markets: New markets list (optional)
+            sources: New sources list (optional)
+            location: New location filter (optional)
+
+        Returns:
+            True if updated, False if not found
+        """
+        conn = self._get_conn()
+        c = conn.cursor()
+
+        updates = ["updated_at = CURRENT_TIMESTAMP"]
+        params = []
+
+        if name is not None:
+            updates.append("name = ?")
+            params.append(name)
+        if tag_weights is not None:
+            updates.append("tag_weights = ?")
+            params.append(json.dumps(tag_weights))
+        if markets is not None:
+            updates.append("markets = ?")
+            params.append(json.dumps(markets))
+        if sources is not None:
+            updates.append("sources = ?")
+            params.append(json.dumps(sources))
+        if location is not None:
+            updates.append("location = ?")
+            params.append(location)
+
+        if not updates or len(updates) == 1:  # Only timestamp update
+            conn.close()
+            return False
+
+        params.append(search_id)
+        query = f"UPDATE saved_searches SET {', '.join(updates)} WHERE id = ?"
+        c.execute(query, params)
+        updated = c.rowcount > 0
+        conn.commit()
+        conn.close()
+        return updated
 
     # ── CSV Export/Import ──────────────────────────────────────────
 

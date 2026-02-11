@@ -82,9 +82,10 @@ class TestExtractJDFromURLEdgeCases:
         import requests
         mock_get.side_effect = requests.Timeout("Connection timed out")
 
-        result = extract_jd_from_url("https://example.com/job")
+        result, metadata = extract_jd_from_url("https://example.com/job")
 
         assert result == ""
+        assert metadata["success"] is False
 
     @patch("jseeker.jd_parser.requests.get")
     def test_connection_error(self, mock_get):
@@ -92,9 +93,10 @@ class TestExtractJDFromURLEdgeCases:
         import requests
         mock_get.side_effect = requests.ConnectionError("Failed to connect")
 
-        result = extract_jd_from_url("https://example.com/job")
+        result, metadata = extract_jd_from_url("https://example.com/job")
 
         assert result == ""
+        assert metadata["success"] is False
 
     @patch("jseeker.jd_parser.requests.get")
     def test_http_404_error(self, mock_get):
@@ -104,7 +106,7 @@ class TestExtractJDFromURLEdgeCases:
         mock_response.text = "<html><body>Not Found - This page does not exist. Please check the URL.</body></html>"
         mock_get.return_value = mock_response
 
-        result = extract_jd_from_url("https://example.com/job")
+        result, metadata = extract_jd_from_url("https://example.com/job")
 
         # Returns empty or error text
         assert isinstance(result, str)
@@ -117,7 +119,7 @@ class TestExtractJDFromURLEdgeCases:
         mock_response.text = "<html><body>Internal Server Error - Something went wrong on our end.</body></html>"
         mock_get.return_value = mock_response
 
-        result = extract_jd_from_url("https://example.com/job")
+        result, metadata = extract_jd_from_url("https://example.com/job")
 
         # Returns empty or error text
         assert isinstance(result, str)
@@ -130,7 +132,7 @@ class TestExtractJDFromURLEdgeCases:
         mock_response.text = ""
         mock_get.return_value = mock_response
 
-        result = extract_jd_from_url("https://example.com/job")
+        result, metadata = extract_jd_from_url("https://example.com/job")
 
         assert result == ""
 
@@ -142,7 +144,7 @@ class TestExtractJDFromURLEdgeCases:
         mock_response.text = "<html><body><div>Unclosed div<p>Malformed"
         mock_get.return_value = mock_response
 
-        result = extract_jd_from_url("https://example.com/job")
+        result, metadata = extract_jd_from_url("https://example.com/job")
 
         # Should not crash
         assert isinstance(result, str)
@@ -156,7 +158,7 @@ class TestExtractJDFromURLEdgeCases:
         mock_response.text = "<html><body><div>" + ("Job in München, café environment, 中文. " * 20) + "</div></body></html>"
         mock_get.return_value = mock_response
 
-        result = extract_jd_from_url("https://example.com/job")
+        result, metadata = extract_jd_from_url("https://example.com/job")
 
         # Should not crash with Unicode
         assert isinstance(result, str)
@@ -170,7 +172,7 @@ class TestExtractJDFromURLEdgeCases:
         mock_response.text = "<html><body><div>" + ("Real job content here. " * 30) + "</div><script>alert('ad');</script></body></html>"
         mock_get.return_value = mock_response
 
-        result = extract_jd_from_url("https://example.com/job")
+        result, metadata = extract_jd_from_url("https://example.com/job")
 
         assert "Real job content" in result
         # Script content should be stripped
@@ -178,9 +180,10 @@ class TestExtractJDFromURLEdgeCases:
 
     def test_empty_url_returns_empty_string(self):
         """Test empty URL returns empty string."""
-        result = extract_jd_from_url("")
+        result, metadata = extract_jd_from_url("")
 
         assert result == ""
+        assert metadata["success"] is False
 
     @patch("jseeker.jd_parser.requests.get")
     def test_extraction_with_long_content(self, mock_get):
@@ -192,7 +195,7 @@ class TestExtractJDFromURLEdgeCases:
         mock_response.text = long_content
         mock_get.return_value = mock_response
 
-        result = extract_jd_from_url("https://example.com/job")
+        result, metadata = extract_jd_from_url("https://example.com/job")
 
         assert len(result) > 0
         assert "Job requirement" in result

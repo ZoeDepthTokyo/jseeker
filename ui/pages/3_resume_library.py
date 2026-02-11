@@ -273,14 +273,14 @@ if not resumes:
 else:
     df = pd.DataFrame(resumes)
 
-    # Show only folder name, not full file path
+    # Show full system path for better navigation
     if "pdf_path" in df.columns:
         df["pdf_folder"] = df["pdf_path"].apply(
-            lambda x: str(Path(x).parent.name) + "/" if x and Path(x).parent.name else ""
+            lambda x: str(Path(x).parent) + "/" if x and Path(x).parent else ""
         )
     if "docx_path" in df.columns:
         df["docx_folder"] = df["docx_path"].apply(
-            lambda x: str(Path(x).parent.name) + "/" if x and Path(x).parent.name else ""
+            lambda x: str(Path(x).parent) + "/" if x and Path(x).parent else ""
         )
 
     display_cols = [

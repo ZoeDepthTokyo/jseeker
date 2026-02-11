@@ -44,8 +44,8 @@ def mock_pipeline():
     with patch("jseeker.batch_processor.extract_jd_from_url") as mock_extract, \
          patch("jseeker.batch_processor.run_pipeline") as mock_run:
 
-        # Mock JD extraction
-        mock_extract.return_value = "Test job description"
+        # Mock JD extraction - now returns tuple (text, metadata)
+        mock_extract.return_value = ("Test job description", {"success": True, "company": "Test Company", "selectors_tried": [], "method": "selector"})
 
         # Mock pipeline result
         mock_result = MagicMock()

@@ -512,18 +512,20 @@ def _parse_relative_date(text: str) -> date:
     return date.today()
 
 
-def rank_discoveries_by_tag_weight(discoveries: list[JobDiscovery]) -> list[JobDiscovery]:
+def rank_discoveries_by_tag_weight(discoveries: list[JobDiscovery | dict]) -> list[JobDiscovery | dict]:
     """Rank discoveries by sum of tag weights from their search_tags.
 
     Args:
-        discoveries: List of JobDiscovery objects with search_tags field
+        discoveries: List of JobDiscovery objects or dicts with search_tags field
 
     Returns:
         Sorted list of discoveries (highest weight first)
     """
     for disc in discoveries:
         total_weight = 0
-        tags = [t.strip() for t in disc.search_tags.split(",") if t.strip()]
+        # Handle both dict and object formats
+        search_tags = disc.get("search_tags") if isinstance(disc, dict) else disc.search_tags
+        tags = [t.strip() for t in (search_tags or "").split(",") if t.strip()]
         tag_weights = {}
 
         for tag in tags:
@@ -531,14 +533,17 @@ def rank_discoveries_by_tag_weight(discoveries: list[JobDiscovery]) -> list[JobD
             tag_weights[tag] = weight
             total_weight += weight
 
-        disc.search_tag_weights = tag_weights
+        if isinstance(disc, dict):
+            disc["search_tag_weights"] = tag_weights
+        else:
+            disc.search_tag_weights = tag_weights
 
     # Sort by total weight (descending), then by posting_date (descending)
     sorted_discoveries = sorted(
         discoveries,
         key=lambda d: (
-            sum(d.search_tag_weights.values()),
-            d.posting_date or date.min
+            sum(d.get("search_tag_weights", {}).values() if isinstance(d, dict) else d.search_tag_weights.values()),
+            (d.get("posting_date") if isinstance(d, dict) else d.posting_date) or date.min
         ),
         reverse=True
     )
@@ -590,7 +595,7 @@ def search_jobs_async(
                     return all_discoveries
 
                 # Perform search
-                results = _search_source(tag, source, market, location)
+                results = _search_source(tag, location, source, market)
 
                 # Add results but respect limit
                 for result in results:

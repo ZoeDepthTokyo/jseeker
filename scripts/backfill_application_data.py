@@ -1,7 +1,8 @@
 """
-Backfill missing salary and relevance data for existing applications.
+Backfill missing salary and JD text for existing applications.
 
 Run this script to re-parse JD URLs and extract missing fields.
+Note: relevance_score is computed during matching, not JD parsing, so it's not backfilled here.
 """
 import sys
 from pathlib import Path
@@ -43,9 +44,7 @@ def backfill_application(app_id: int, tracker_db: TrackerDB):
         # Parse JD to extract all fields
         jd_data = process_jd(
             raw_text=jd_text,
-            jd_url=jd_url,
-            role_title=app.get("role_title", ""),
-            company_name=app.get("company_name", "")
+            jd_url=jd_url
         )
 
         # Prepare updates
@@ -64,9 +63,7 @@ def backfill_application(app_id: int, tracker_db: TrackerDB):
         if not app.get("salary_currency") and jd_data.salary_currency:
             updates["salary_currency"] = jd_data.salary_currency
 
-        if not app.get("relevance_score") or app.get("relevance_score") == 0:
-            if jd_data.relevance_score:
-                updates["relevance_score"] = jd_data.relevance_score
+        # Note: relevance_score is computed during matching, not available from ParsedJD
 
         if updates:
             logger.info(f"Updating application {app_id} with: {list(updates.keys())}")
@@ -102,8 +99,8 @@ def main():
         if app:
             print(f"\nID {app_id}: {app.get('role_title')}")
             print(f"  Salary: {app.get('salary_min')} - {app.get('salary_max')} {app.get('salary_currency')}")
-            print(f"  Relevance: {app.get('relevance_score')}")
             print(f"  JD Text: {'Yes' if app.get('jd_text') else 'No'}")
+            print(f"  Location: {app.get('location', 'N/A')}")
 
 
 if __name__ == "__main__":

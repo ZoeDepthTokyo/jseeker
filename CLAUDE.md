@@ -26,6 +26,10 @@ playwright install  # Browser for PDF rendering
 
 ### Launch
 ```bash
+# Windows (recommended - clears cache + kills port automatically)
+start.bat
+
+# Or manual launch
 python run.py                # Full pipeline (recommended)
 python launch.py             # Co-launch with ARGUS on :8502 + :8501
 streamlit run ui/app.py --server.port 8502  # jSeeker only

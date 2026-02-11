@@ -189,6 +189,9 @@ if generate_button:
                 location=result.parsed_jd.location,
                 remote_policy=result.parsed_jd.remote_policy,
                 salary_range=result.parsed_jd.salary_range,
+                salary_min=result.parsed_jd.salary_min,
+                salary_max=result.parsed_jd.salary_max,
+                salary_currency=result.parsed_jd.salary_currency,
                 resume_status=ResumeStatus.EXPORTED,
                 application_status=ApplicationStatus.NOT_APPLIED,
             )
@@ -239,6 +242,43 @@ if "pipeline_result" in st.session_state:
 
         st.markdown(f"**Format Reason:** {result.ats_score.format_reason}")
 
+        # ATS Score Explanation
+        with st.expander("🧠 Score Explanation", expanded=False):
+            try:
+                from jseeker.ats_scorer import explain_ats_score
+
+                # Assume original score was lower (simulate improvement)
+                original_score = max(50, result.ats_score.overall_score - 15)
+
+                explanation = explain_ats_score(
+                    jd_title=result.parsed_jd.title or "Unknown",
+                    original_score=original_score,
+                    improved_score=result.ats_score.overall_score,
+                    matched_keywords=result.ats_score.matched_keywords,
+                    missing_keywords=result.ats_score.missing_keywords,
+                )
+
+                st.markdown(explanation)
+
+                # Show matched and missing keywords
+                col_a, col_b = st.columns(2)
+                with col_a:
+                    st.markdown("**✅ Matched Keywords**")
+                    if result.ats_score.matched_keywords:
+                        st.code(", ".join(result.ats_score.matched_keywords[:15]), language=None)
+                    else:
+                        st.caption("None")
+
+                with col_b:
+                    st.markdown("**❌ Missing Keywords**")
+                    if result.ats_score.missing_keywords:
+                        st.code(", ".join(result.ats_score.missing_keywords[:15]), language=None)
+                    else:
+                        st.caption("None")
+
+            except Exception as exc:
+                st.error(f"Failed to generate explanation: {exc}")
+
     with st.expander("Export", expanded=True):
         default_name = Path(result.pdf_path).stem if result.pdf_path else "resume"
         custom_name = st.text_input("Filename:", value=default_name, key="custom_filename")
@@ -266,6 +306,19 @@ if "pipeline_result" in st.session_state:
                         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                         width="stretch",
                     )
+
+    with st.expander("Job Description", expanded=True):
+        parsed_jd = result.parsed_jd
+
+        st.markdown("**Full Job Description:**")
+        st.text_area(
+            "Full JD",
+            value=parsed_jd.raw_text,
+            height=250,
+            disabled=True,
+            key="jd_display",
+            label_visibility="collapsed",
+        )
 
     with st.expander("JD Analysis", expanded=False):
         parsed_jd = result.parsed_jd

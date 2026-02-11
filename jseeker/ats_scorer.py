@@ -197,3 +197,41 @@ def recommend_format(ats_platform: ATSPlatform) -> dict:
         return {"primary": "pdf", "reason": "Modern ATS handles PDF two-column well"}
     else:
         return {"primary": "both", "reason": "Unknown ATS — submit DOCX for safety"}
+
+
+def explain_ats_score(
+    jd_title: str,
+    original_score: int,
+    improved_score: int,
+    matched_keywords: list[str],
+    missing_keywords: list[str],
+) -> str:
+    """Generate natural language explanation of ATS score improvement.
+
+    Args:
+        jd_title: Job title from JD.
+        original_score: Score before adaptation (0-100).
+        improved_score: Score after adaptation (0-100).
+        matched_keywords: Keywords successfully matched.
+        missing_keywords: Keywords still missing.
+
+    Returns:
+        2-3 sentence plain text explanation.
+    """
+    prompt = f"""You are an ATS expert explaining resume scores to a job seeker.
+
+Job Title: {jd_title}
+Original ATS Score: {original_score}/100
+Improved Score: {improved_score}/100
+Matched Keywords: {', '.join(matched_keywords[:10])}
+Missing Keywords: {', '.join(missing_keywords[:10])}
+
+Write a 2-3 sentence explanation covering:
+1. Why the original score was low (or good if 70+)
+2. What improved and how (keyword matching, structure, etc.)
+3. What could still be improved if applicable
+
+Be encouraging and specific. Focus on actionable insights."""
+
+    explanation = llm.call_haiku(prompt, task="ats_explanation")
+    return explanation.strip()

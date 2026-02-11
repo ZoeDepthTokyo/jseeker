@@ -218,15 +218,19 @@ def _search_source(
 
     soup = BeautifulSoup(response.text, "html.parser")
 
-    # Parse results and tag with market
+    # Parse results with clean source and separate market
     if source == "indeed":
-        results = _parse_indeed(soup, f"{source}_{market}", indeed_base=indeed_base)
+        results = _parse_indeed(soup, source, indeed_base=indeed_base)
     elif source == "linkedin":
-        results = _parse_linkedin(soup, f"{source}_{market}")
+        results = _parse_linkedin(soup, source)
     elif source == "wellfound":
-        results = _parse_wellfound(soup, f"{source}_{market}")
+        results = _parse_wellfound(soup, source)
     else:
         results = []
+
+    # Set market field on all results
+    for result in results:
+        result.market = market
 
     return results
 
@@ -236,11 +240,11 @@ def _parse_indeed(soup: BeautifulSoup, source: str, indeed_base: str = "https://
 
     Args:
         soup: BeautifulSoup object of the Indeed search results page
-        source: Source identifier (e.g., "indeed_us", "indeed_mx")
+        source: Source identifier (clean: "indeed", not "indeed_us")
         indeed_base: Base URL for Indeed (e.g., "https://www.indeed.com.mx")
 
     Returns:
-        List of JobDiscovery objects
+        List of JobDiscovery objects (market field set by caller)
     """
     results = []
 
@@ -341,7 +345,15 @@ def _parse_indeed(soup: BeautifulSoup, source: str, indeed_base: str = "https://
 
 
 def _parse_linkedin(soup: BeautifulSoup, source: str) -> list[JobDiscovery]:
-    """Parse LinkedIn Jobs search results (public, no auth)."""
+    """Parse LinkedIn Jobs search results (public, no auth).
+
+    Args:
+        soup: BeautifulSoup object of the LinkedIn search results page
+        source: Source identifier (clean: "linkedin", not "linkedin_us")
+
+    Returns:
+        List of JobDiscovery objects (market field set by caller)
+    """
     results = []
 
     # Try multiple card selectors
@@ -402,7 +414,15 @@ def _parse_linkedin(soup: BeautifulSoup, source: str) -> list[JobDiscovery]:
 
 
 def _parse_wellfound(soup: BeautifulSoup, source: str) -> list[JobDiscovery]:
-    """Parse Wellfound jobs from generic anchor-based markup."""
+    """Parse Wellfound jobs from generic anchor-based markup.
+
+    Args:
+        soup: BeautifulSoup object of the Wellfound search results page
+        source: Source identifier (clean: "wellfound", not "wellfound_us")
+
+    Returns:
+        List of JobDiscovery objects (market field set by caller)
+    """
     results = []
     seen_urls = set()
 
@@ -490,6 +510,112 @@ def _parse_relative_date(text: str) -> date:
 
     # Default to today if unparseable
     return date.today()
+
+
+def rank_discoveries_by_tag_weight(discoveries: list[JobDiscovery]) -> list[JobDiscovery]:
+    """Rank discoveries by sum of tag weights from their search_tags.
+
+    Args:
+        discoveries: List of JobDiscovery objects with search_tags field
+
+    Returns:
+        Sorted list of discoveries (highest weight first)
+    """
+    for disc in discoveries:
+        total_weight = 0
+        tags = [t.strip() for t in disc.search_tags.split(",") if t.strip()]
+        tag_weights = {}
+
+        for tag in tags:
+            weight = tracker_db.get_tag_weight(tag)
+            tag_weights[tag] = weight
+            total_weight += weight
+
+        disc.search_tag_weights = tag_weights
+
+    # Sort by total weight (descending), then by posting_date (descending)
+    sorted_discoveries = sorted(
+        discoveries,
+        key=lambda d: (
+            sum(d.search_tag_weights.values()),
+            d.posting_date or date.min
+        ),
+        reverse=True
+    )
+
+    return sorted_discoveries
+
+
+def search_jobs_async(
+    tags: list[str],
+    location: str = "",
+    sources: list[str] = None,
+    markets: list[str] = None,
+    pause_check: callable = None,
+    progress_callback: callable = None,
+    max_results: int = 250
+) -> list[JobDiscovery]:
+    """Search jobs with pause/resume support and result limit.
+
+    Args:
+        tags: List of search tags
+        location: Location filter
+        sources: List of sources to search (indeed, linkedin, wellfound)
+        markets: List of markets to search (us, mx, ca, uk, es, de)
+        pause_check: Callback that returns True if search should pause
+        progress_callback: Callback(current_count, total_found) for progress updates
+        max_results: Maximum number of results to find (default 250)
+
+    Returns:
+        List of JobDiscovery objects (may be paused before completion)
+    """
+    sources = sources or ["indeed", "linkedin"]
+    markets = markets or ["us"]
+
+    all_discoveries = []
+    total_combinations = len(tags) * len(sources) * len(markets)
+    current = 0
+
+    for tag in tags:
+        for source in sources:
+            for market in markets:
+                # Check for pause
+                if pause_check and pause_check():
+                    logger.info("Search paused at %d/%d combinations", current, total_combinations)
+                    return all_discoveries
+
+                # Check result limit BEFORE searching
+                if len(all_discoveries) >= max_results:
+                    logger.info("Search limit reached: %d results", len(all_discoveries))
+                    return all_discoveries
+
+                # Perform search
+                results = _search_source(tag, source, market, location)
+
+                # Add results but respect limit
+                for result in results:
+                    if len(all_discoveries) >= max_results:
+                        break
+                    all_discoveries.append(result)
+
+                current += 1
+
+                # Progress callback
+                if progress_callback:
+                    progress_callback(current, len(all_discoveries))
+
+                logger.debug(
+                    "Search progress: %d/%d combinations, %d total results",
+                    current, total_combinations, len(all_discoveries)
+                )
+
+                # Check limit again after adding results
+                if len(all_discoveries) >= max_results:
+                    logger.info("Search limit reached: %d results", len(all_discoveries))
+                    return all_discoveries
+
+    logger.info("Search completed: %d total results from %d combinations", len(all_discoveries), total_combinations)
+    return all_discoveries
 
 
 def save_discoveries(discoveries: list[JobDiscovery]) -> int:

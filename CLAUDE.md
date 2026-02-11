@@ -3,6 +3,34 @@
 ## Role
 jSeeker (formerly PROTEUS) adapts structured resume content to match job descriptions, scores ATS compliance per platform, renders PDF + DOCX, generates recruiter outreach, and tracks applications. It is a GAIA ecosystem product.
 
+## Quick Start
+1. Setup: `python -m venv .venv && .venv\Scripts\activate && pip install -r requirements.txt`
+2. Install MYCEL: `pip install -e X:\Projects\_GAIA\_MYCEL`
+3. Install browsers: `playwright install`
+4. Launch: `python run.py`
+5. Open: http://localhost:8502
+
+## Setup & Launch
+
+### Setup
+```bash
+# Create venv
+python -m venv .venv
+.venv\Scripts\activate  # Windows
+
+# Install dependencies
+pip install -r requirements.txt
+pip install -e X:\Projects\_GAIA\_MYCEL  # MYCEL local package
+playwright install  # Browser for PDF rendering
+```
+
+### Launch
+```bash
+python run.py                # Full pipeline (recommended)
+python launch.py             # Co-launch with ARGUS on :8502 + :8501
+streamlit run ui/app.py --server.port 8502  # jSeeker only
+```
+
 ## Constitutional Constraints
 1. Never invent or hallucinate experience, metrics, or achievements -- only adapt real content from resume blocks
 2. All LLM calls must be cost-tracked and logged
@@ -40,6 +68,12 @@ pytest tests/ --cov=jseeker
 - jseeker/llm.py -- Claude API wrapper with model routing and caching
 - jseeker/models.py -- All Pydantic data types
 - ui/pages/2_new_resume.py -- Main user workflow wizard
+
+## Gotchas
+- **__pycache__ after renames**: Bulk file renames cause stale bytecode. Clear all `__pycache__/` dirs: `find . -name "__pycache__" -type d -exec rm -rf {} +`
+- **MYCEL local install**: Must be installed as editable (`-e`) not from PyPI
+- **Job Discovery parsers**: Depend on site markup; may need updates if sites change CSS selectors
+- **DB auto-migration**: First run auto-renames `proteus.db` -> `jseeker.db` (safe, keeps data)
 
 ## DO NOT
 - Invent experience or metrics not in resume_blocks YAML

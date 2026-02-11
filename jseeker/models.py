@@ -93,6 +93,9 @@ class ParsedJD(BaseModel):
     location: str = ""
     remote_policy: str = ""
     salary_range: str = ""
+    salary_min: Optional[int] = None
+    salary_max: Optional[int] = None
+    salary_currency: str = "USD"
     requirements: list[JDRequirement] = Field(default_factory=list)
     ats_keywords: list[str] = Field(default_factory=list)
     culture_signals: list[str] = Field(default_factory=list)
@@ -263,6 +266,9 @@ class Application(BaseModel):
     jd_text: str = ""
     jd_url: str = ""
     salary_range: str = ""
+    salary_min: Optional[int] = None
+    salary_max: Optional[int] = None
+    salary_currency: str = "USD"
     location: str = ""
     remote_policy: str = ""
     relevance_score: float = 0.0
@@ -315,9 +321,11 @@ class JobDiscovery(BaseModel):
     location: str = ""
     salary_range: str = ""
     url: str = ""
-    source: str = ""
+    source: str = ""  # Clean source: "indeed", "linkedin", "wellfound" (no market suffix)
+    market: str = ""  # Separate market field: "us", "mx", "ca", "uk", "es", "de"
     posting_date: Optional[date] = None
     search_tags: str = ""
+    search_tag_weights: dict[str, int] = {}  # Tag weights for ranking (not persisted to DB)
     status: DiscoveryStatus = DiscoveryStatus.NEW
     imported_application_id: Optional[int] = None
     discovered_at: Optional[datetime] = None

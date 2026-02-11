@@ -63,7 +63,8 @@ with st.expander("Recent Applications", expanded=True):
 
 # --- Batch URL Intake ---
 with st.expander("Batch Generate From Job URLs", expanded=False):
-    st.caption("Paste one job URL per line. jSeeker will extract each JD and generate resumes in sequence.")
+    st.caption("Paste one job URL per line. jSeeker will process them in parallel (5 at a time).")
+
     url_blob = st.text_area(
         "Job URLs",
         placeholder="https://boards.greenhouse.io/company/jobs/123\nhttps://jobs.lever.co/company/456",
@@ -77,60 +78,107 @@ with st.expander("Batch Generate From Job URLs", expanded=False):
     if raw_urls and len(urls) != len(raw_urls):
         st.warning("Some lines were ignored because they are not valid http(s) URLs.")
 
-    if st.button("Generate Resumes For URLs", disabled=not urls, width="stretch"):
-        successes = []
-        skipped = []
-        failures = []
+    # Initialize batch processor in session state
+    if "batch_processor" not in st.session_state:
+        from jseeker.batch_processor import BatchProcessor
+        st.session_state.batch_processor = BatchProcessor(max_workers=5)
 
-        progress = st.progress(0, text="Starting batch generation...")
+    if "batch_progress" not in st.session_state:
+        st.session_state.batch_progress = None
 
-        for idx, url in enumerate(urls, start=1):
-            progress_pct = int(((idx - 1) / len(urls)) * 100)
-            progress.progress(progress_pct, text=f"Processing {idx}/{len(urls)}: {url}")
+    if "batch_running" not in st.session_state:
+        st.session_state.batch_running = False
 
-            if tracker_db.is_url_known(url):
-                skipped.append((url, "URL already exists in discoveries/applications"))
-                continue
+    # Control buttons
+    col_btn1, col_btn2, col_btn3 = st.columns(3)
 
-            try:
-                jd_text = extract_jd_from_url(url)
-                if not jd_text:
-                    raise ValueError("Could not extract job description from URL")
+    with col_btn1:
+        if st.button(
+            "▶️ Start Batch",
+            disabled=not urls or st.session_state.batch_running,
+            width="stretch",
+            key="batch_start_btn",
+        ):
+            # Progress callback to update session state
+            def on_progress(progress):
+                st.session_state.batch_progress = progress
 
-                result = run_pipeline(jd_text=jd_text, jd_url=url, output_dir=settings.output_dir)
-                created = tracker_db.create_from_pipeline(result)
-                tracker_db.update_application(created["application_id"], resume_status="exported")
+            # Submit batch
+            batch_id = st.session_state.batch_processor.submit_batch(urls, progress_callback=on_progress)
+            st.session_state.batch_running = True
+            st.session_state.batch_id = batch_id
+            st.rerun()
 
-                successes.append(
-                    {
-                        "url": url,
-                        "application_id": created["application_id"],
-                        "company": result.company,
-                        "role": result.role,
-                    }
-                )
-            except Exception as exc:
-                failures.append((url, str(exc)))
+    with col_btn2:
+        if st.button(
+            "⏸️ Pause" if not (st.session_state.batch_progress and st.session_state.batch_progress.paused) else "▶️ Resume",
+            disabled=not st.session_state.batch_running,
+            width="stretch",
+            key="batch_pause_btn",
+        ):
+            if st.session_state.batch_progress and st.session_state.batch_progress.paused:
+                st.session_state.batch_processor.resume()
+            else:
+                st.session_state.batch_processor.pause()
+            st.rerun()
 
-        progress.progress(100, text="Batch generation complete.")
+    with col_btn3:
+        if st.button(
+            "⏹️ Stop",
+            disabled=not st.session_state.batch_running,
+            width="stretch",
+            key="batch_stop_btn",
+        ):
+            st.session_state.batch_processor.stop()
+            st.session_state.batch_running = False
+            st.rerun()
 
-        st.success(f"Generated {len(successes)} resume(s).")
-        if skipped:
-            st.info(f"Skipped {len(skipped)} URL(s) already known to the tracker.")
-        if failures:
-            st.error(f"Failed on {len(failures)} URL(s).")
+    # Progress display
+    if st.session_state.batch_progress:
+        progress = st.session_state.batch_progress
 
-        for item in successes:
-            st.caption(
-                f"Created application #{item['application_id']}: "
-                f"{item['company'] or 'Unknown'} - {item['role'] or 'Role'}"
-            )
+        # Progress bar
+        st.progress(
+            progress.progress_pct / 100,
+            text=f"Processing {progress.completed + progress.running}/{progress.total} jobs "
+                 f"({progress.completed} completed, {progress.failed} failed, {progress.skipped} skipped)"
+        )
 
-        for url, reason in skipped:
-            st.caption(f"Skipped: {url} ({reason})")
+        # Status text
+        if progress.paused:
+            st.info("⏸️ Batch paused. Click Resume to continue.")
+        elif progress.stopped:
+            st.warning("⏹️ Batch stopped.")
+        elif progress.completed + progress.failed + progress.skipped == progress.total:
+            st.success(f"✅ Batch complete! {progress.completed} succeeded, {progress.failed} failed, {progress.skipped} skipped.")
+            st.session_state.batch_running = False
+        else:
+            status_text = f"Running: {progress.running} active workers"
+            if progress.estimated_remaining_seconds:
+                mins = int(progress.estimated_remaining_seconds / 60)
+                secs = int(progress.estimated_remaining_seconds % 60)
+                status_text += f" • ETA: {mins}m {secs}s"
+            st.caption(status_text)
 
-        for url, reason in failures:
-            st.caption(f"Failed: {url} ({reason})")
+        # Worker status expander
+        with st.expander(f"Worker Status ({len([w for w in progress.workers.values() if w.is_active])} active)", expanded=False):
+            for worker_id, worker in sorted(progress.workers.items()):
+                if worker.is_active:
+                    st.caption(f"**Worker {worker_id}**: {worker.current_url or 'idle'}")
+                else:
+                    st.caption(f"Worker {worker_id}: {worker.jobs_completed} completed, {worker.jobs_failed} failed")
+
+        # Detailed results (after completion)
+        if progress.completed + progress.failed + progress.skipped == progress.total and not progress.stopped:
+            with st.expander("Detailed Results", expanded=False):
+                jobs = st.session_state.batch_processor.get_all_jobs()
+                for job in jobs:
+                    if job.status.value == "completed":
+                        st.success(f"✅ {job.url}: {job.result.get('company')} - {job.result.get('role')}")
+                    elif job.status.value == "failed":
+                        st.error(f"❌ {job.url}: {job.error}")
+                    elif job.status.value == "skipped":
+                        st.info(f"⏭️ {job.url}: {job.error}")
 
 st.markdown("---")
 

@@ -38,3 +38,13 @@ repos:
     hooks:
       - id: ruff
         args: ['--fix', '--exit-non-zero-on-fix']
+
+  # Resume YAML Validation
+  - repo: local
+    hooks:
+      - id: resume-yaml-validate
+        name: Validate Resume Block YAML
+        entry: python -c "import yaml; import sys; [yaml.safe_load(open(f)) for f in sys.argv[1:]]"
+        language: system
+        files: ^data/resume_blocks/.*\.yaml$
+        pass_filenames: true

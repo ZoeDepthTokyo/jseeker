@@ -2,7 +2,7 @@
 
 import pytest
 import requests
-from jseeker.jd_parser import detect_ats_platform, detect_language, extract_jd_from_url
+from jseeker.jd_parser import detect_ats_platform, detect_language, extract_jd_from_url, _extract_salary
 from jseeker.models import ATSPlatform
 
 
@@ -120,3 +120,77 @@ class TestExtractJDFromURL:
         monkeypatch.setattr("jseeker.jd_parser.requests.get", raise_error)
         extracted = extract_jd_from_url("https://example.com/job")
         assert extracted == ""
+
+
+class TestSalaryExtraction:
+    """Test salary extraction from JD text."""
+
+    def test_extract_k_format_with_currency(self):
+        """Extract salary in k format like $100k-150k."""
+        min_sal, max_sal, currency = _extract_salary("Salary: $100k-150k USD")
+        assert min_sal == 100000
+        assert max_sal == 150000
+        assert currency == "USD"
+
+    def test_extract_k_format_uppercase(self):
+        """Extract salary with uppercase K."""
+        min_sal, max_sal, currency = _extract_salary("Compensation: $100K-$150K")
+        assert min_sal == 100000
+        assert max_sal == 150000
+        assert currency == "USD"
+
+    def test_extract_euro_format(self):
+        """Extract salary with Euro symbol."""
+        min_sal, max_sal, currency = _extract_salary("Pay: €80k-€100k")
+        assert min_sal == 80000
+        assert max_sal == 100000
+        assert currency == "EUR"
+
+    def test_extract_comma_separated(self):
+        """Extract salary with comma separators."""
+        min_sal, max_sal, currency = _extract_salary("Salary range: $120,000 - $150,000")
+        assert min_sal == 120000
+        assert max_sal == 150000
+        assert currency == "USD"
+
+    def test_extract_full_numbers_with_currency(self):
+        """Extract salary with full numbers and currency code."""
+        min_sal, max_sal, currency = _extract_salary("Compensation: 100000-150000 USD")
+        assert min_sal == 100000
+        assert max_sal == 150000
+        assert currency == "USD"
+
+    def test_extract_gbp_format(self):
+        """Extract salary with GBP symbol."""
+        min_sal, max_sal, currency = _extract_salary("Pay range: £60,000-£80,000")
+        assert min_sal == 60000
+        assert max_sal == 80000
+        assert currency == "GBP"
+
+    def test_extract_k_no_currency(self):
+        """Extract salary in k format without currency."""
+        min_sal, max_sal, currency = _extract_salary("Salary: 100k-150k")
+        assert min_sal == 100000
+        assert max_sal == 150000
+        assert currency == "USD"  # defaults to USD
+
+    def test_extract_k_with_eur_code(self):
+        """Extract salary with k and EUR code."""
+        min_sal, max_sal, currency = _extract_salary("Compensation 80k-100k EUR")
+        assert min_sal == 80000
+        assert max_sal == 100000
+        assert currency == "EUR"
+
+    def test_no_salary_returns_none(self):
+        """When no salary is found, return None values."""
+        min_sal, max_sal, currency = _extract_salary("No salary information here")
+        assert min_sal is None
+        assert max_sal is None
+        assert currency == "USD"
+
+    def test_empty_string_returns_none(self):
+        """Empty string returns None values."""
+        min_sal, max_sal, currency = _extract_salary("")
+        assert min_sal is None
+        assert max_sal is None
+        assert currency == "USD"

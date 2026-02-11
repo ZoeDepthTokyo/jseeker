@@ -14,6 +14,204 @@ from jseeker.tracker import tracker_db
 
 st.title("Resume Library")
 
+# --- PDF Template Upload ---
+with st.expander("Upload PDF Templates", expanded=False):
+    st.caption("Upload base resume PDF templates to use as references.")
+
+    import json
+    from datetime import datetime
+
+    # Batch upload support
+    uploaded_files = st.file_uploader(
+        "Choose PDF template(s)",
+        type=["pdf"],
+        accept_multiple_files=True,
+        key="pdf_template_uploader"
+    )
+
+    if uploaded_files:
+        st.info(f"{len(uploaded_files)} file(s) selected")
+
+        # Show file size warnings
+        for file in uploaded_files:
+            size_mb = len(file.getvalue()) / (1024 * 1024)
+            if size_mb > 10:
+                st.warning(f"⚠️ {file.name} is {size_mb:.1f} MB (recommended: < 10 MB)")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        template_name = st.text_input(
+            "Template Name",
+            placeholder="e.g., Resume_DirectorAI_2026 (leave empty for filename)",
+            key="template_name_input"
+        )
+    with col2:
+        template_lang = st.selectbox(
+            "Language",
+            options=["English", "Spanish", "French", "Other"],
+            key="template_lang_select"
+        )
+
+    if st.button("Upload Template(s)", width="stretch", disabled=not uploaded_files):
+        if uploaded_files:
+            save_dir = Path("X:/Projects/jSeeker/docs/Resume References")
+            save_dir.mkdir(parents=True, exist_ok=True)
+
+            sources_path = Path("X:/Projects/jSeeker/data/resume_sources.json")
+            if sources_path.exists():
+                sources_data = json.loads(sources_path.read_text(encoding="utf-8"))
+            else:
+                sources_data = {}
+
+            if "uploaded_templates" not in sources_data:
+                sources_data["uploaded_templates"] = []
+
+            uploaded_count = 0
+            for uploaded_file in uploaded_files:
+                # Use custom name if provided (single file) or filename (batch)
+                if len(uploaded_files) == 1 and template_name:
+                    safe_name = "".join(c for c in template_name if c.isalnum() or c in (' ', '-', '_')).strip()
+                else:
+                    # Use original filename without extension
+                    safe_name = Path(uploaded_file.name).stem
+                    safe_name = "".join(c for c in safe_name if c.isalnum() or c in (' ', '-', '_')).strip()
+
+                pdf_path = save_dir / f"{safe_name}.pdf"
+
+                # Check for duplicates
+                if any(t.get("name") == safe_name for t in sources_data["uploaded_templates"]):
+                    st.warning(f"⚠️ Template '{safe_name}' already exists - skipping")
+                    continue
+
+                # Write PDF
+                pdf_path.write_bytes(uploaded_file.getvalue())
+
+                # Add metadata
+                sources_data["uploaded_templates"].append({
+                    "name": safe_name,
+                    "path": str(pdf_path),
+                    "language": template_lang,
+                    "uploaded_at": datetime.now().isoformat(),
+                    "size_kb": len(uploaded_file.getvalue()) / 1024,
+                })
+                uploaded_count += 1
+
+            sources_path.write_text(json.dumps(sources_data, indent=2), encoding="utf-8")
+
+            if uploaded_count > 0:
+                st.success(f"{uploaded_count} template(s) uploaded successfully!")
+                st.rerun()
+
+    # Display existing uploaded templates with preview and delete
+    sources_path = Path("X:/Projects/jSeeker/data/resume_sources.json")
+    if sources_path.exists():
+        sources_data = json.loads(sources_path.read_text(encoding="utf-8"))
+        uploaded_templates = sources_data.get("uploaded_templates", [])
+
+        if uploaded_templates:
+            st.markdown("**Existing Templates:**")
+
+            for idx, tmpl in enumerate(uploaded_templates):
+                with st.expander(f"📄 {tmpl['name']}", expanded=False):
+                    tmpl_path = Path(tmpl['path'])
+
+                    # Metadata display
+                    col1, col2, col3 = st.columns([2, 1, 1])
+                    with col1:
+                        st.caption(f"**Language:** {tmpl['language']}")
+                        st.caption(f"**Size:** {tmpl['size_kb']:.1f} KB")
+                        st.caption(f"**Uploaded:** {tmpl['uploaded_at'][:10]}")
+
+                    with col2:
+                        if tmpl_path.exists():
+                            with open(tmpl_path, "rb") as f:
+                                st.download_button(
+                                    "⬇️ Download",
+                                    data=f.read(),
+                                    file_name=tmpl_path.name,
+                                    mime="application/pdf",
+                                    key=f"download_{idx}",
+                                )
+
+                    with col3:
+                        if st.button("🗑️ Delete", key=f"delete_{idx}", type="secondary"):
+                            st.session_state[f"confirm_delete_template_{idx}"] = True
+                            st.rerun()
+
+                    # Confirmation dialog
+                    if st.session_state.get(f"confirm_delete_template_{idx}"):
+                        st.warning("⚠️ Are you sure? This will permanently delete the template file.")
+                        col_a, col_b = st.columns(2)
+                        with col_a:
+                            if st.button("✓ Confirm Delete", key=f"confirm_yes_{idx}", type="primary"):
+                                # Delete file
+                                if tmpl_path.exists():
+                                    tmpl_path.unlink()
+
+                                # Remove from metadata
+                                sources_data["uploaded_templates"].pop(idx)
+                                sources_path.write_text(json.dumps(sources_data, indent=2), encoding="utf-8")
+
+                                st.session_state.pop(f"confirm_delete_template_{idx}", None)
+                                st.success("Template deleted")
+                                st.rerun()
+                        with col_b:
+                            if st.button("✗ Cancel", key=f"confirm_no_{idx}"):
+                                st.session_state.pop(f"confirm_delete_template_{idx}", None)
+                                st.rerun()
+
+                    # PDF Preview (first page)
+                    if tmpl_path.exists() and not st.session_state.get(f"confirm_delete_template_{idx}"):
+                        try:
+                            import fitz  # PyMuPDF
+
+                            with st.spinner("Rendering preview..."):
+                                doc = fitz.open(tmpl_path)
+                                page = doc[0]  # First page
+                                pix = page.get_pixmap(dpi=150)
+
+                                # Convert to bytes
+                                img_bytes = pix.tobytes("png")
+                                st.image(img_bytes, caption=f"Preview - Page 1/{len(doc)}", use_container_width=True)
+                                doc.close()
+                        except ImportError:
+                            st.info("💡 Install PyMuPDF for PDF preview: `pip install PyMuPDF`")
+                        except Exception as e:
+                            st.warning(f"Could not render preview: {e}")
+
+                    # Edit metadata
+                    with st.form(key=f"edit_form_{idx}"):
+                        st.markdown("**Edit Metadata**")
+                        new_name = st.text_input("Template Name", value=tmpl['name'], key=f"edit_name_{idx}")
+                        new_lang = st.selectbox(
+                            "Language",
+                            options=["English", "Spanish", "French", "Other"],
+                            index=["English", "Spanish", "French", "Other"].index(tmpl['language']),
+                            key=f"edit_lang_{idx}"
+                        )
+
+                        if st.form_submit_button("Save Changes"):
+                            # Validate new name
+                            safe_new_name = "".join(c for c in new_name if c.isalnum() or c in (' ', '-', '_')).strip()
+
+                            if safe_new_name != tmpl['name']:
+                                # Rename file
+                                new_path = save_dir / f"{safe_new_name}.pdf"
+                                if new_path.exists() and new_path != tmpl_path:
+                                    st.error(f"Template '{safe_new_name}' already exists")
+                                else:
+                                    if tmpl_path.exists():
+                                        tmpl_path.rename(new_path)
+                                    sources_data["uploaded_templates"][idx]["name"] = safe_new_name
+                                    sources_data["uploaded_templates"][idx]["path"] = str(new_path)
+
+                            # Update language
+                            sources_data["uploaded_templates"][idx]["language"] = new_lang
+
+                            sources_path.write_text(json.dumps(sources_data, indent=2), encoding="utf-8")
+                            st.success("Metadata updated")
+                            st.rerun()
+
 # --- Base Resume References ---
 with st.expander("Base Resume References", expanded=True):
     st.caption("Track which source files are used as Base A/B/C and LinkedIn PDF.")
@@ -75,6 +273,16 @@ if not resumes:
 else:
     df = pd.DataFrame(resumes)
 
+    # Show only folder name, not full file path
+    if "pdf_path" in df.columns:
+        df["pdf_folder"] = df["pdf_path"].apply(
+            lambda x: str(Path(x).parent.name) + "/" if x and Path(x).parent.name else ""
+        )
+    if "docx_path" in df.columns:
+        df["docx_folder"] = df["docx_path"].apply(
+            lambda x: str(Path(x).parent.name) + "/" if x and Path(x).parent.name else ""
+        )
+
     display_cols = [
         "id",
         "company_name",
@@ -82,8 +290,8 @@ else:
         "version",
         "ats_score",
         "template_used",
-        "pdf_path",
-        "docx_path",
+        "pdf_folder",
+        "docx_folder",
         "created_at",
         "generation_cost",
     ]
@@ -96,8 +304,8 @@ else:
         "version": st.column_config.NumberColumn("Version", disabled=True),
         "ats_score": st.column_config.NumberColumn("ATS Score", disabled=True),
         "template_used": st.column_config.TextColumn("Template", disabled=True),
-        "pdf_path": st.column_config.TextColumn("PDF Path", disabled=True),
-        "docx_path": st.column_config.TextColumn("DOCX Path", disabled=True),
+        "pdf_folder": st.column_config.TextColumn("Output Folder", disabled=True, width="small"),
+        "docx_folder": st.column_config.TextColumn("Output Folder", disabled=True, width="small"),
         "created_at": st.column_config.DatetimeColumn("Created", disabled=True),
         "generation_cost": st.column_config.NumberColumn("Cost ($)", format="%.4f", disabled=True),
     }

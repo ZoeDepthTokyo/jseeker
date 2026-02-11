@@ -6,6 +6,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import pandas as pd
+import plotly.express as px
 import streamlit as st
 
 from jseeker.models import ApplicationStatus, JobStatus, ResumeStatus
@@ -44,15 +45,84 @@ if job_status_filter != "All":
 apps = tracker_db.list_applications(**kwargs)
 st.caption(f"Showing {len(apps)} applications")
 
+# --- Salary Analytics Chart ---
+if apps:
+    df_all = pd.DataFrame(apps)
+
+    # Only show salary chart if salary data exists
+    df_with_salary = df_all[
+        (df_all["salary_min"].notna()) | (df_all["salary_max"].notna())
+    ].copy()
+
+    if not df_with_salary.empty:
+        with st.expander("Salary Analytics", expanded=False):
+            # Calculate average salary
+            df_with_salary["salary_avg"] = (
+                df_with_salary["salary_min"].fillna(0) +
+                df_with_salary["salary_max"].fillna(0)
+            ) / 2
+            df_with_salary["salary_avg"] = df_with_salary["salary_avg"].replace(0, pd.NA)
+            df_with_salary = df_with_salary[df_with_salary["salary_avg"].notna()]
+
+            if not df_with_salary.empty:
+                # Format hover data
+                df_with_salary["hover_text"] = (
+                    df_with_salary["role_title"] +
+                    "<br>" + df_with_salary["company_name"] +
+                    "<br>Salary: " + df_with_salary["salary_currency"].fillna("USD") + " " +
+                    df_with_salary["salary_min"].fillna(0).astype(int).astype(str) +
+                    " - " +
+                    df_with_salary["salary_max"].fillna(0).astype(int).astype(str)
+                )
+
+                # Create scatter plot
+                fig = px.scatter(
+                    df_with_salary,
+                    x="created_at",
+                    y="salary_avg",
+                    color="application_status",
+                    size="relevance_score",
+                    hover_data=["hover_text"],
+                    labels={
+                        "created_at": "Application Date",
+                        "salary_avg": "Average Salary",
+                        "application_status": "Status"
+                    },
+                    title="Salary Distribution Over Time"
+                )
+
+                fig.update_traces(
+                    hovertemplate="<b>%{customdata[0]}</b><br>Date: %{x}<br>Avg Salary: %{y:,.0f}<extra></extra>"
+                )
+
+                st.plotly_chart(fig, use_container_width=True)
+
+                # Summary stats
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Avg Salary", f"${df_with_salary['salary_avg'].mean():,.0f}")
+                with col2:
+                    st.metric("Min Salary", f"${df_with_salary['salary_avg'].min():,.0f}")
+                with col3:
+                    st.metric("Max Salary", f"${df_with_salary['salary_avg'].max():,.0f}")
+            else:
+                st.info("No valid salary data to display.")
+
+    st.markdown("---")
+
 # --- Inline-Editable Table ---
 if apps:
     df = pd.DataFrame(apps)
 
+    # Keep jd_url for linking
     display_cols = [
         "id",
         "company_name",
         "role_title",
         "jd_url",
+        "salary_min",
+        "salary_max",
+        "salary_currency",
         "relevance_score",
         "ats_score",
         "resume_status",
@@ -69,10 +139,45 @@ if apps:
 
     column_config = {
         "id": st.column_config.NumberColumn("ID", disabled=True),
-        "company_name": st.column_config.TextColumn("Company", disabled=True),
-        "role_title": st.column_config.TextColumn("Role", disabled=True),
-        "jd_url": st.column_config.LinkColumn("URL"),
-        "relevance_score": st.column_config.NumberColumn("Relevance", format="%.0f%%", disabled=True),
+        "company_name": st.column_config.TextColumn(
+            "Company",
+            help="Edit if parser didn't extract correctly",
+            disabled=False
+        ),
+        "role_title": st.column_config.TextColumn(
+            "Role",
+            help="Job title (click link icon → to view posting)",
+            disabled=True,
+            width="large"
+        ),
+        "jd_url": st.column_config.LinkColumn(
+            "🔗",
+            help="Click to open job posting in new tab",
+            max_chars=500,
+            disabled=True,
+            width="small"
+        ),
+        "salary_min": st.column_config.NumberColumn(
+            "Min Salary",
+            help="Minimum salary (optional)",
+            format="%d"
+        ),
+        "salary_max": st.column_config.NumberColumn(
+            "Max Salary",
+            help="Maximum salary (optional)",
+            format="%d"
+        ),
+        "salary_currency": st.column_config.SelectboxColumn(
+            "Currency",
+            options=["USD", "EUR", "GBP", "MXN"],
+            default="USD"
+        ),
+        "relevance_score": st.column_config.NumberColumn(
+            "Relevance",
+            format="%.0f%%",
+            disabled=True,
+            help="0-25: Low fit | 26-50: Medium fit | 51-75: Good fit | 76-100: Excellent fit. Used for prioritization and success rate analysis."
+        ),
         "ats_score": st.column_config.NumberColumn("ATS Score", disabled=True),
         "application_status": st.column_config.SelectboxColumn(
             "App Status", options=[s.value for s in ApplicationStatus], required=True
@@ -104,12 +209,15 @@ if apps:
             changes = {}
 
             for col in [
+                "company_name",
                 "application_status",
                 "resume_status",
                 "job_status",
                 "notes",
-                "jd_url",
                 "location",
+                "salary_min",
+                "salary_max",
+                "salary_currency",
             ]:
                 if col not in edited_df.columns or col not in original:
                     continue

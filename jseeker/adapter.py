@@ -25,6 +25,25 @@ LOCATIONS_BY_MARKET = {
     "fr": "Remote / Open to relocation",
 }
 
+# Address mapping by language
+ADDRESSES_BY_LANGUAGE = {
+    "en": "San Diego, CA, USA",
+    "es": "Ciudad de México, CDMX, México",
+    "fr": "San Diego, CA, USA",  # Default to US for French
+}
+
+
+def get_address_for_language(language: str) -> str:
+    """Get the appropriate address based on JD language.
+
+    Args:
+        language: ISO 639-1 language code (e.g., "en", "es", "fr").
+
+    Returns:
+        Localized address string.
+    """
+    return ADDRESSES_BY_LANGUAGE.get(language.lower(), "San Diego, CA, USA")
+
 
 def _load_prompt(name: str) -> str:
     from config import settings
@@ -108,6 +127,22 @@ def adapt_summary(
 
     adapted = llm.call_sonnet(prompt, task="summary_adapt").strip()
     logger.info(f"adapt_summary | adapted_length={len(adapted)} | language={parsed_jd.language}")
+
+    # Learn pattern from this LLM adaptation for future cache hits
+    from jseeker.pattern_learner import learn_pattern
+    jd_dict = {
+        "title": parsed_jd.title,
+        "ats_keywords": parsed_jd.ats_keywords,
+        "industry": getattr(parsed_jd, "industry", None),
+    }
+    learn_pattern(
+        pattern_type="summary_adaptation",
+        source_text=original,
+        target_text=adapted,
+        jd_context=jd_dict,
+    )
+    logger.info("adapt_summary | pattern learned from LLM adaptation")
+
     return adapted
 
 
@@ -303,6 +338,24 @@ Output format: [["bullet1", "bullet2", ...], ["bullet1", "bullet2", ...], ...]
 
     logger.info(f"adapt_bullets_batch | LLM returned {len(llm_results)} bullet sets")
 
+    # Learn patterns from LLM adaptations for future cache hits
+    from jseeker.pattern_learner import learn_pattern
+    jd_dict = {
+        "title": parsed_jd.title,
+        "ats_keywords": parsed_jd.ats_keywords,
+        "industry": getattr(parsed_jd, "industry", None),
+    }
+    for idx, exp in enumerate(experience_blocks):
+        original_bullets = "\n".join(exp.get("bullets", []))
+        adapted_bullets = "\n".join(llm_results[idx]) if isinstance(llm_results[idx], list) else str(llm_results[idx])
+        learn_pattern(
+            pattern_type="bullet_adaptation",
+            source_text=original_bullets,
+            target_text=adapted_bullets,
+            jd_context=jd_dict,
+        )
+    logger.info(f"adapt_bullets_batch | learned {len(experience_blocks)} bullet patterns from LLM")
+
     # If we used pattern matching, merge cached + LLM results
     if use_learned_patterns and results is not None:
         for original_idx, llm_result in zip(needs_llm_indices, llm_results):
@@ -418,13 +471,13 @@ def adapt_resume(
                 "matched": False,
             })
 
-    # 4. Adapt location for market
-    logger.info("adapt_resume | step 4: adapting location for market")
+    # 4. Adapt location based on JD language
+    logger.info("adapt_resume | step 4: adapting location for language")
     adapted_contact = corpus.contact.model_copy()
-    market = parsed_jd.market
-    if market in LOCATIONS_BY_MARKET:
-        adapted_contact.locations = [LOCATIONS_BY_MARKET[market]]
-        logger.info(f"adapt_resume | location adapted for market={market}")
+    language = parsed_jd.language or "en"
+    localized_address = get_address_for_language(language)
+    adapted_contact.locations = [localized_address]
+    logger.info(f"adapt_resume | location adapted for language={language} -> {localized_address}")
 
     logger.info(
         f"adapt_resume | completed | total_experience_blocks={len(adapted_experiences)} | "

@@ -90,6 +90,18 @@ def detect_language(text: str) -> str:
     return "en"
 
 
+def detect_jd_language(jd_text: str) -> str:
+    """Detect language of JD text (alias for detect_language).
+
+    Args:
+        jd_text: Job description text to analyze.
+
+    Returns:
+        Language code: "en" or "es".
+    """
+    return detect_language(jd_text)
+
+
 def detect_ats_platform(url: str) -> ATSPlatform:
     """Detect ATS platform from a job URL."""
     if not url:
@@ -268,6 +280,107 @@ def parse_jd(pruned_text: str) -> dict:
         return {}
 
 
+def _extract_salary(text: str) -> tuple[Optional[int], Optional[int], str]:
+    """Extract salary information from JD text.
+
+    Handles various formats:
+    - "$100k-150k", "$100K-$150K"
+    - "100000-150000 USD", "100,000 - 150,000"
+    - "€80k-€100k", "£60,000-£80,000"
+    - "$120,000 - $150,000", "$120K-$150K USD"
+
+    Args:
+        text: JD text to extract salary from.
+
+    Returns:
+        Tuple of (min_salary, max_salary, currency).
+        Returns (None, None, "USD") if no salary found.
+    """
+    if not text:
+        return None, None, "USD"
+
+    # Currency symbol to code mapping
+    currency_map = {
+        "$": "USD",
+        "€": "EUR",
+        "£": "GBP",
+        "¥": "JPY",
+        "₹": "INR",
+        "C$": "CAD",
+        "A$": "AUD",
+    }
+
+    # Patterns to match salary ranges
+    patterns = [
+        # "$120,000 - $150,000", "£60,000-£80,000" (with comma separators)
+        r'([€£¥₹$]|C\$|A\$)\s*(\d{1,3}),(\d{3}),?(\d{3})?\s*[-–—to]+\s*\1?\s*(\d{1,3}),(\d{3}),?(\d{3})?',
+        # "$100k-150k", "$100K-$150K", "€80k-€100k"
+        r'([€£¥₹$]|C\$|A\$)\s*(\d+)[\.,]?(\d*)\s*k?\s*[-–—to]+\s*\1?\s*(\d+)[\.,]?(\d*)\s*k',
+        # "100000-150000 USD", "100,000-150,000 EUR"
+        r'(\d{2,3})[\.,]?(\d{3})[\.,]?(\d{3})?\s*[-–—to]+\s*(\d{2,3})[\.,]?(\d{3})[\.,]?(\d{3})?\s*(USD|EUR|GBP|CAD|AUD|JPY|INR)',
+        # "100k-150k USD", "80k-100k"
+        r'(\d+)[\.,]?(\d*)\s*k\s*[-–—to]+\s*(\d+)[\.,]?(\d*)\s*k\s*(USD|EUR|GBP|CAD|AUD|JPY|INR)?',
+    ]
+
+    for pattern in patterns:
+        matches = re.finditer(pattern, text, re.IGNORECASE)
+        for match in matches:
+            groups = match.groups()
+
+            try:
+                # Pattern 1: "$120,000 - $150,000" (comma-separated)
+                if len(groups) >= 7 and groups[0] in currency_map and ',' in match.group():
+                    currency = currency_map.get(groups[0], "USD")
+                    # Join all digit groups for min and max, ignoring None values
+                    min_parts = [g for g in groups[1:4] if g and g.isdigit()]
+                    max_parts = [g for g in groups[4:7] if g and g.isdigit()]
+
+                    if min_parts and max_parts:
+                        min_sal = int(''.join(min_parts))
+                        max_sal = int(''.join(max_parts))
+                        return min_sal, max_sal, currency
+
+                # Pattern 2: "$100k-150k"
+                elif len(groups) >= 5 and groups[0] in currency_map:
+                    currency = currency_map.get(groups[0], "USD")
+                    # Handle None and empty string
+                    min_sal = int(groups[1]) * 1000 if (not groups[2] or groups[2] == '') else int(groups[1] + (groups[2] or ''))
+                    max_sal = int(groups[3]) * 1000 if (not groups[4] or groups[4] == '') else int(groups[3] + (groups[4] or ''))
+
+                    # Multiply by 1000 if values look like "k" format (< 10000)
+                    if min_sal < 10000:
+                        min_sal *= 1000
+                    if max_sal < 10000:
+                        max_sal *= 1000
+
+                    return min_sal, max_sal, currency
+
+                # Pattern 3: "100000-150000 USD"
+                elif len(groups) >= 7 and groups[-1] and groups[-1] in ["USD", "EUR", "GBP", "CAD", "AUD", "JPY", "INR"]:
+                    currency = groups[-1]
+                    # Join digits without separators
+                    min_parts = [g for g in groups[:3] if g and g.isdigit()]
+                    max_parts = [g for g in groups[3:6] if g and g.isdigit()]
+
+                    if min_parts and max_parts:
+                        min_sal = int(''.join(min_parts))
+                        max_sal = int(''.join(max_parts))
+                        return min_sal, max_sal, currency
+
+                # Pattern 4: "100k-150k" or "100k-150k USD"
+                elif len(groups) >= 4:
+                    min_sal = int(groups[0]) * 1000
+                    max_sal = int(groups[2]) * 1000
+                    currency = groups[4] if len(groups) > 4 and groups[4] else "USD"
+                    return min_sal, max_sal, currency
+
+            except (ValueError, IndexError, TypeError):
+                # Skip malformed matches
+                continue
+
+    return None, None, "USD"
+
+
 def _compute_jd_similarity(text1: str, text2: str) -> float:
     """Compute similarity between two JD texts using keyword overlap.
 
@@ -426,6 +539,12 @@ def process_jd(raw_text: str, jd_url: str = "", use_semantic_cache: bool = True)
     # Step 5: Detect ATS platform
     ats_platform = detect_ats_platform(jd_url)
 
+    # Step 6: Extract structured salary data from raw and pruned text
+    salary_min, salary_max, salary_currency = _extract_salary(raw_text + " " + pruned)
+    logger.info(
+        f"process_jd | salary_extraction | min={salary_min} | max={salary_max} | currency={salary_currency}"
+    )
+
     return ParsedJD(
         raw_text=raw_text,
         pruned_text=pruned,
@@ -435,6 +554,9 @@ def process_jd(raw_text: str, jd_url: str = "", use_semantic_cache: bool = True)
         location=parsed_data.get("location", ""),
         remote_policy=parsed_data.get("remote_policy", ""),
         salary_range=parsed_data.get("salary_range", ""),
+        salary_min=salary_min,
+        salary_max=salary_max,
+        salary_currency=salary_currency,
         requirements=requirements,
         ats_keywords=parsed_data.get("ats_keywords", []),
         culture_signals=parsed_data.get("culture_signals", []),

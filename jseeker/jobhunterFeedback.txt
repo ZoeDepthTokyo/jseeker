@@ -1,0 +1,57 @@
+Performance is really slow. 
+Good architecture poor UX. Too many clicks and steps for user.
+Current: Analyze JD ->(click) Match template ->(click) Adapt resume->(click) Score Compliance ->(click) Export pdf and doc
+
+Instead user should:
+Analyze JD ->(click) Receive pdf and doc ready for export.
+(back end still goes through the whole chain Analyze JD, Match template, Adapt resume, Score Compliance and Export pdf and doc)
+
+Output for user
+Is traceability of all steps and results, seeing the output of each step is good.
+
+Currently no new resume creation gets saved, there is no way to see history or go back to a resume version. Ask me how this should work and what nomenclature files should have. All Resumes should be saved to a local database, and I should be able to delete or re export them from the front end UI.
+
+too much vertical scrolling, create scrollable containers, expandible and collapsible windows.
+
+Wasnt there a GAIA module that focused on good UX and UI design? why isnt that agent being called? 
+
+The Resume creation is referencing Resume A,B,C but not the LinkedIn full version so its missing a lot of details and data. like education and other jobs.
+
+The PDF ouput format is visually unusable, while all the data is there, it created it with its own font, its own spacing and terrible type layout, DONT WE HAVE A DESIGN AGENT to take care of this?
+
+There is now way to indicate output folder and name of folder. 
+There is no way to inidicate output file name.
+
+Resume doc x is better, but format is not following previously stated standards so it creates a vertically long resume. Look at "C:\Users\Fede\Downloads\Federico_Ponce_Manager – Human Interface Design, Commercial GM.docx (1).pdf" for layout and formatting as reference.
+
+Why did you add a manual tracker? 
+The application tracker does not have editable column values. If I applied, there is no way to change status
+
+Job discovery works really well. Can you extract and sort by date posted.
+
+API cost is not being tracked. 
+When new resume is created it should be added to tracker
+tracker needs to have a URL column 
+currently there are only three job boards available, there should be more, and 
+the scan should discard redundant postings and give preference to linked in platform
+
+relevance score in the application tracker is not registering percentage.
+
+
+once approved match flow to tasks so that you dont miss any tasks
+assign sub agents to complete all tasks
+use GAIA framework 
+
+
+User-confirmed preferences:
+
+File naming: Fede_Ponce_{role}_{company}.{ext} (from contact.yaml display_name)
+Folder structure: output/{company}/Fede_Ponce_{role}_v{N}.pdf
+Versioning: Keep all versions, mark latest, allow manual deletion
+But allow user to EDIT.
+
+in plain text generate user flow for all modules. and mermaid charts to confirm UX and output flows
+
+enlgish and spanish language, auto detect what language to use from Job description language.
+
+Job markets to search US, Mexico, Canada, Spain, Denmark, France (in case of markets outside of the continental US, only search JD's in english)

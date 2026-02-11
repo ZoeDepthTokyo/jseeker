@@ -2,5 +2,21 @@
   "base_a": "X:\\Projects\\jSeeker\\docs\\Resume References\\Resume A \u2013 Director of AI Driven UX.pdf",
   "base_b": "X:\\Projects\\jSeeker\\docs\\Resume References\\Resume B \u2013 Senior Director of AI Product.pdf",
   "base_c": "X:\\Projects\\jSeeker\\docs\\Resume References\\Resume C \u2013 Hybrid Director AI UX + AI Product + Intelligent Systems.pdf",
-  "linkedin_pdf": "X:\\Projects\\jSeeker\\docs\\Resume References\\Fede_LinkedIN.pdf"
+  "linkedin_pdf": "X:\\Projects\\jSeeker\\docs\\Resume References\\Fede_LinkedIN.pdf",
+  "uploaded_templates": [
+    {
+      "name": "Fede Ponce Product and UX Director ENG",
+      "path": "X:\\Projects\\jSeeker\\docs\\Resume References\\Fede Ponce Product and UX Director ENG.pdf",
+      "language": "English",
+      "uploaded_at": "2026-02-10T17:38:05.361064",
+      "size_kb": 94.9873046875
+    },
+    {
+      "name": "Fede Ponce Product and UX Director ESP",
+      "path": "X:\\Projects\\jSeeker\\docs\\Resume References\\Fede Ponce Product and UX Director ESP.pdf",
+      "language": "English",
+      "uploaded_at": "2026-02-10T17:38:05.362670",
+      "size_kb": 99.509765625
+    }
+  ]
 }

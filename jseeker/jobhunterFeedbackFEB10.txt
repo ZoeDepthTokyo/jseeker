@@ -1,0 +1,98 @@
+Resume library:
+Two new RESUME templates are needed to add to library from front end. Need option to add them as PDF reference for text and visual layout.
+
+Application Tracker, what is the relevance field?
+Make sure to detect Job description language and adapt RESUME accordingly. If resume is English, use San Diego direction, if it is in Spanish use Ciudad de Mexico Address,
+For all others use San Diego CA address.
+
+Single JD capture from URL not available or working
+When pasting JD, make sure to prune non relevant information to avoid confusion.
+Single Resume generation not working:
+Generation failed: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CXzv3MX5tTzMXoNbaLS4A'}
+Traceback (most recent call last):
+  File "X:\Projects\jSeeker\ui\pages\2_new_resume.py", line 111, in <module>
+    parsed_jd = process_jd(source_jd_text, jd_url=jd_url_clean)
+  File "X:\Projects\jSeeker\jseeker\jd_parser.py", line 381, in process_jd
+    pruned = prune_jd(raw_text)
+  File "X:\Projects\jSeeker\jseeker\jd_parser.py", line 239, in prune_jd
+    pruned = llm.call_haiku(prompt, task="jd_prune")
+  File "X:\Projects\jSeeker\jseeker\llm.py", line 173, in call_haiku
+    block = {"type": "text", "text": system}
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "X:\Projects\jSeeker\jseeker\llm.py", line 113, in call
+        self._client: Optional[anthropic.Anthropic] = None
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    def client(self) -> anthropic.Anthropic:
+    ^^^^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\anthropic\_utils\_utils.py", line 282, in wrapper
+    return func(*args, **kwargs)
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\anthropic\resources\messages\messages.py", line 950, in create
+    return self._post(
+           ~~~~~~~~~~^
+        "/v1/messages",
+        ^^^^^^^^^^^^^^^
+    ...<27 lines>...
+        stream_cls=Stream[RawMessageStreamEvent],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\anthropic\_base_client.py", line 1364, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Fede\AppData\Roaming\Python\Python314\site-packages\anthropic\_base_client.py", line 1137, in request
+    raise self._make_status_error_from_response(err.response) from None
+anthropic.AuthenticationError: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CXzv3MX5tTzMXoNbaLS4A'}
+
+Batch Generate from URLs
+Examples:
+
+https://careers.ey.com/ey/job/New-York-EY-Parthenon-AI-Business-Solutions-AI-Labs-Product-Manager-Director-NY-10001-8604/1258467501/
+http://job-boards.greenhouse.io/mrbeastyoutube/jobs/5727615004?gh_src=114e62fd4us
+https://careers.adobe.com/us/en/apply?jobSeqNo=ADOBUSR164927EXTERNALENUS&step=1&stepname=personalInformation
+https://www.lego.com/en-dk/careers/job/creative-director-innovation-c7a84b017a0a100214c1ba3442250000?cmp=SOC-INUS13OctOtherGlobalrecruitment&source=LinkedIn&locale=en-dk
+https://jobs.ashbyhq.com/phantom/21708d37-8993-43e0-aca9-881dea2971d5?src=LinkedIn
+https://careers.expediagroup.com/job/director-of-product-design-search/new-york-NY/R-99376-2/
+https://www.capitalonecareers.com/job/-/-/234/86329394656?p_sid=0fI6_Lb&p_uid=567B43CFy7&ss=paid&utm_campaign=mexicocity_26&utm_content=pj_board&utm_medium=jobad&utm_source=linkedin+slotted
+https://recruiting.paylocity.com/Recruiting/Jobs/Details/3516263?src=LinkedIn
+https://www.deel.com/careers/position/
+https://www.google.com/about/careers/applications/jobs/results/77930450399437510
+https://eofe.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001/job/73137?utm_medium=jobshare&src=JB-10200
+https://careers.activisionblizzard.com/job/ACCOUSR026669EXTERNAL/Associate-Director-of-Product
+https://eeho.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/jobsearch/job/319353?utm_medium=jobboard&utm_source=LinkedIn
+https://genesys.wd1.myworkdayjobs.com/en-US/Genesys/job/AI-and-Experience-Orchestration-Director_JR109569-1
+https://jobs.lever.co/zoox/8dfc9225-5de5-4e73-9188-242102d8b334/apply?source=LinkedIn
+https://www.theladders.com/linkedin/84814945?src=LinkedIn
+https://konfio.bamboohr.com/careers/1136
+https://jobs.us.pwc.com/job/-/-/932/90837388800?utm_source=linkedin.com&utm_campaign=core_media&utm_medium=social_media&utm_content=job_posting&ss=paid&gad_source=7&dclid=CPHqyIq4opIDFYTeGAIdpTA6Cg
+https://lovable.dev/careers
+https://jobs.ashbyhq.com/kraken.com/d617e841-ff90-4bb4-bb90-1196a5a3339d/application?utm_source=LinkedIn
+https://jobs.ashbyhq.com/Strava/ea83a5f0-df62-451a-82f3-49a70407df4d?utm_source=Ylzb31VmkK
+
+Failed on 21 URL(s).
+Failed: https://careers.ey.com/ey/job/New-York-EY-Parthenon-AI-Business-Solutions-AI-Labs-Product-Manager-Director-NY-10001-8604/1258467501/ (Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CXzumMTuwLaHkXKoccKKP'})
+Failed: http://job-boards.greenhouse.io/mrbeastyoutube/jobs/5727615004?gh_src=114e62fd4us (Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CXzumTX3ppVN4s57Aq9yw'})
+Failed: https://careers.adobe.com/us/en/apply?jobSeqNo=ADOBUSR164927EXTERNALENUS&step=1&stepname=personalInformation (Could not extract job description from URL)
+Failed: https://www.lego.com/en-dk/careers/job/creative-director-innovation-c7a84b017a0a100214c1ba3442250000?cmp=SOC-INUS13OctOtherGlobalrecruitment&source=LinkedIn&locale=en-dk (Could not extract job description from URL)
+Failed: https://jobs.ashbyhq.com/phantom/21708d37-8993-43e0-aca9-881dea2971d5?src=LinkedIn (Could not extract job description from URL)
+Failed: https://careers.expediagroup.com/job/director-of-product-design-search/new-york-NY/R-99376-2/ (Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CXzun75FuzvjLafUoK8Pe'})
+Failed: https://www.capitalonecareers.com/job/-/-/234/86329394656?p_sid=0fI6_Lb&p_uid=567B43CFy7&ss=paid&utm_campaign=mexicocity_26&utm_content=pj_board&utm_medium=jobad&utm_source=linkedin+slotted (Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CXzunD9st77rWRitFNEq9'})
+Failed: https://recruiting.paylocity.com/Recruiting/Jobs/Details/3516263?src=LinkedIn (Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CXzunLVQKEtrvgKDm7qaC'})
+Failed: https://www.deel.com/careers/position/ (Could not extract job description from URL)
+Failed: https://www.google.com/about/careers/applications/jobs/results/77930450399437510 (Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CXzunXZf5heMHRx32t1Mg'})
+Failed: https://eofe.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001/job/73137?utm_medium=jobshare&src=JB-10200 (Could not extract job description from URL)
+Failed: https://careers.activisionblizzard.com/job/ACCOUSR026669EXTERNAL/Associate-Director-of-Product (Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CXzunnwsnHJkqNCko9gE2'})
+Failed: https://eeho.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/jobsearch/job/319353?utm_medium=jobboard&utm_source=LinkedIn (Could not extract job description from URL)
+Failed: https://genesys.wd1.myworkdayjobs.com/en-US/Genesys/job/AI-and-Experience-Orchestration-Director_JR109569-1 (Could not extract job description from URL)
+Failed: https://jobs.lever.co/zoox/8dfc9225-5de5-4e73-9188-242102d8b334/apply?source=LinkedIn (Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CXzuo9wgFmEZ9ejn8ALqG'})
+Failed: https://www.theladders.com/linkedin/84814945?src=LinkedIn (Could not extract job description from URL)
+Failed: https://konfio.bamboohr.com/careers/1136 (Could not extract job description from URL)
+Failed: https://jobs.us.pwc.com/job/-/-/932/90837388800?utm_source=linkedin.com&utm_campaign=core_media&utm_medium=social_media&utm_content=job_posting&ss=paid&gad_source=7&dclid=CPHqyIq4opIDFYTeGAIdpTA6Cg (Could not extract job description from URL)
+Failed: https://lovable.dev/careers (Could not extract job description from URL)
+Failed: https://jobs.ashbyhq.com/kraken.com/d617e841-ff90-4bb4-bb90-1196a5a3339d/application?utm_source=LinkedIn (Could not extract job description from URL)
+Failed: https://jobs.ashbyhq.com/Strava/ea83a5f0-df62-451a-82f3-49a70407df4d?utm_source=Ylzb31VmkK (Could not extract job description from URL)
+
+Jseeker failed generating resumes from URL's, but if it had succeed how might Jseeker have gotten smarter from this? how did he get more efficient? did Jseeker implement new schema, more Json rules? Explain. 
+
+Ensure robust debugging and TDD, many bugs persist.
+

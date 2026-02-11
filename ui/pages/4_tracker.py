@@ -143,6 +143,22 @@ if apps:
     if "salary_max" in df.columns:
         df["salary_max"] = pd.to_numeric(df["salary_max"], errors="coerce")
 
+    # Add emoji indicators for status (visual cue since we can't color cells)
+    status_emojis = {
+        "rejected": "❌", "applied": "✅", "not_applied": "⏳",
+        "interviewing": "🗣️", "offer": "🎉"
+    }
+    job_emojis = {"closed": "❌", "active": "✅", "paused": "⏸️"}
+
+    if "application_status" in df.columns:
+        df["app_status_display"] = df["application_status"].apply(
+            lambda x: f"{status_emojis.get(x, '')} {x}" if x else ""
+        )
+    if "job_status" in df.columns:
+        df["job_status_display"] = df["job_status"].apply(
+            lambda x: f"{job_emojis.get(x, '')} {x}" if x else ""
+        )
+
     # Apply color coding to application_status
     def style_app_status(val):
         colors = {
@@ -197,13 +213,19 @@ if apps:
         ),
         "ats_score": st.column_config.NumberColumn("ATS Score", disabled=True),
         "application_status": st.column_config.SelectboxColumn(
-            "App Status", options=[s.value for s in ApplicationStatus], required=True
+            "App Status",
+            options=[s.value for s in ApplicationStatus],
+            required=True,
+            help="❌ rejected | ✅ applied | ⏳ not_applied | 🗣️ interviewing | 🎉 offer"
         ),
         "resume_status": st.column_config.SelectboxColumn(
             "Resume Status", options=[s.value for s in ResumeStatus], required=True
         ),
         "job_status": st.column_config.SelectboxColumn(
-            "Job Status", options=[s.value for s in JobStatus], required=True
+            "Job Status",
+            options=[s.value for s in JobStatus],
+            required=True,
+            help="❌ closed | ✅ active | ⏸️ paused"
         ),
         "location": st.column_config.TextColumn("Location"),
         "created_at": st.column_config.DatetimeColumn("Created", disabled=True),

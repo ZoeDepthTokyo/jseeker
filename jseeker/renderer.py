@@ -399,15 +399,22 @@ def render_docx(adapted: AdaptedResume, output_path: Path, language: str = "en")
         # Check if this is a condensed entry
         is_condensed = exp.get("condensed", False)
 
+        # Role title (bold)
         role_para = doc.add_paragraph()
         role_para.paragraph_format.space_before = Pt(0)
         role_para.paragraph_format.space_after = Pt(0)
         role_run = role_para.add_run(f"{exp['role']}")
         role_run.bold = True
-        role_para.add_run(f" — {exp['company']}")
         if is_condensed:
             role_run.font.size = Pt(9.5)
-            role_para.runs[-1].font.size = Pt(9.5)
+
+        # Company name (separate line, regular weight)
+        company_para = doc.add_paragraph()
+        company_para.paragraph_format.space_before = Pt(0)
+        company_para.paragraph_format.space_after = Pt(0)
+        company_run = company_para.add_run(f"{exp['company']}")
+        if is_condensed:
+            company_run.font.size = Pt(9.5)
 
         date_para = doc.add_paragraph()
         date_para.paragraph_format.space_before = Pt(0)
@@ -550,9 +557,20 @@ def _get_display_name() -> str:
 
 
 def _sanitize(text: str, max_len: int = 30) -> str:
-    """Sanitize text for use in filenames."""
+    """Sanitize text for use in filenames.
+
+    Args:
+        text: Text to sanitize for filesystem.
+        max_len: Maximum length of sanitized string.
+
+    Returns:
+        Sanitized string safe for filenames. Empty strings return "Unknown".
+    """
+    if not text or not text.strip():
+        return "Unknown"
     clean = "".join(c for c in text if c.isalnum() or c in " -_")
-    return clean.strip().replace(" ", "_")[:max_len]
+    result = clean.strip().replace(" ", "_")[:max_len]
+    return result if result else "Unknown"
 
 
 def _get_next_version(folder: Path, base_name: str) -> int:
@@ -609,6 +627,13 @@ def generate_output(
     # Build folder and filename
     display_name = _get_display_name()
     safe_name = _sanitize(display_name)
+
+    # Log when company name fallback is used
+    if not company or not company.strip():
+        import logging
+        logging.warning(f"Company name is empty, using fallback 'Unknown_Company'")
+        company = "Unknown_Company"
+
     safe_company = _sanitize(company)
     safe_role = _sanitize(role)
 

@@ -20,19 +20,19 @@
   </div>
 
   <div class="section">
-    <h3>SUMMARY</h3>
+    <h3>{{ section_labels.summary | default("SUMMARY") }}</h3>
     <p>{{ summary }}</p>
   </div>
 
   <div class="section">
-    <h3>EXPERIENCE</h3>
+    <h3>{{ section_labels.experience | default("EXPERIENCE") }}</h3>
     {% for exp in experiences %}
     <div class="exp-entry">
       <div class="exp-header">
-        <strong>{{ exp.role }}</strong> — {{ exp.company }}
+        <strong>{{ exp.role }}</strong>
         <span class="dates">{{ exp.start_display }} – {{ exp.end_display }}</span>
       </div>
-      {% if exp.location %}<div class="exp-location">{{ exp.location }}</div>{% endif %}
+      <div class="exp-company">{{ exp.company }}{% if exp.location %} — {{ exp.location }}{% endif %}</div>
       <ul>
         {% for bullet in exp.bullets %}
         <li>{{ bullet }}</li>
@@ -43,14 +43,14 @@
   </div>
 
   <div class="section">
-    <h3>SKILLS</h3>
+    <h3>{{ section_labels.skills | default("SKILLS") }}</h3>
     {% for group in skills %}
     <p><strong>{{ group.category }}:</strong> {{ group.skills | join(', ') }}</p>
     {% endfor %}
   </div>
 
   <div class="section">
-    <h3>EDUCATION</h3>
+    <h3>{{ section_labels.education | default("EDUCATION") }}</h3>
     {% for edu in education %}
     <p><strong>{{ edu.degree }} {{ edu.field }}</strong> — {{ edu.institution }} ({{ edu.start }}–{{ edu.end }})</p>
     {% endfor %}
@@ -58,7 +58,7 @@
 
   {% if awards %}
   <div class="section">
-    <h3>AWARDS</h3>
+    <h3>{{ section_labels.awards | default("AWARDS") }}</h3>
     <ul>
       {% for award in awards %}
       <li>{{ award.name }}</li>
@@ -69,14 +69,14 @@
 
   {% if certifications %}
   <div class="section">
-    <h3>CERTIFICATIONS</h3>
+    <h3>{{ section_labels.certifications | default("CERTIFICATIONS") }}</h3>
     <p>{{ certifications | map(attribute='name') | join(', ') }}</p>
   </div>
   {% endif %}
 
   {% if early_career %}
   <div class="section">
-    <h3>EARLY CAREER</h3>
+    <h3>{{ section_labels.early_career | default("EARLY CAREER") }}</h3>
     {% for entry in early_career %}
     <p><strong>{{ entry.role }}</strong> — {{ entry.company }}</p>
     {% endfor %}

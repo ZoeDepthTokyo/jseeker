@@ -244,16 +244,51 @@ if "linkedin" in sources:
         "Indeed usually returns more consistent results."
     )
 
-# Search controls
-col_search, col_pause, col_stop = st.columns([1, 1, 1])
-
-# Initialize session state for search control
+# Initialize session state for search control and caching
 if "search_paused" not in st.session_state:
     st.session_state["search_paused"] = False
 if "search_session_id" not in st.session_state:
     st.session_state["search_session_id"] = None
+if "cached_search_results" not in st.session_state:
+    st.session_state["cached_search_results"] = None
+if "cached_search_params" not in st.session_state:
+    st.session_state["cached_search_params"] = None
+if "cached_search_timestamp" not in st.session_state:
+    st.session_state["cached_search_timestamp"] = None
 
-if col_search.button("🔍 Start Search", type="primary"):
+# Generate cache key from current search parameters
+def get_cache_key(markets, location, sources):
+    """Generate cache key from search parameters."""
+    return {
+        "markets": tuple(sorted(markets)),
+        "location": location.strip().lower() if location else "",
+        "sources": tuple(sorted(sources))
+    }
+
+current_cache_key = get_cache_key(selected_markets, location, sources)
+
+# Display cache status
+cache_match = (
+    st.session_state["cached_search_params"] == current_cache_key
+    if st.session_state["cached_search_params"] else False
+)
+
+if cache_match and st.session_state["cached_search_timestamp"]:
+    from datetime import datetime
+    cache_time = datetime.fromisoformat(st.session_state["cached_search_timestamp"])
+    cache_col1, cache_col2 = st.columns([5, 1])
+    cache_col1.info(f"💾 Using cached results from {cache_time.strftime('%Y-%m-%d %H:%M:%S')}. "
+                    f"Change parameters and click 'Run Search' to refresh.")
+    if cache_col2.button("Clear Cache"):
+        st.session_state["cached_search_results"] = None
+        st.session_state["cached_search_params"] = None
+        st.session_state["cached_search_timestamp"] = None
+        st.rerun()
+
+# Search controls
+col_search, col_pause, col_stop = st.columns([1, 1, 1])
+
+if col_search.button("🔍 Run Search", type="primary"):
     active_tags = tracker_db.list_search_tags(active_only=True)
     tag_strings = [t["tag"] for t in active_tags]
 
@@ -311,6 +346,25 @@ if col_search.button("🔍 Start Search", type="primary"):
             limit_reached=(len(discoveries) >= 250)
         )
 
+        # Cache results
+        from datetime import datetime
+        st.session_state["cached_search_results"] = {
+            "discoveries": discoveries,
+            "ranked_discoveries": ranked_discoveries,
+            "saved_count": saved,
+            "tag_strings": tag_strings,
+            "search_details": {
+                "tags": len(tag_strings),
+                "sources": len(sources),
+                "markets": len(selected_markets),
+                "total_combinations": len(tag_strings) * len(sources) * len(selected_markets),
+                "total_found": len(discoveries),
+                "new_saved": saved
+            }
+        }
+        st.session_state["cached_search_params"] = current_cache_key
+        st.session_state["cached_search_timestamp"] = datetime.now().isoformat()
+
         if len(discoveries) >= 250:
             st.warning(f"⚠️ Search limit reached: 250 results. Some results may have been skipped.")
         elif st.session_state["search_paused"]:
@@ -343,6 +397,24 @@ if col_stop.button("⏹️ Stop"):
 # --- Results ---
 st.markdown("---")
 st.subheader("Discovered Jobs")
+
+# Check if we should display cached results or prompt user to search
+if not cache_match or st.session_state["cached_search_results"] is None:
+    st.info("👆 Configure your search parameters above, then click **Run Search** to discover jobs.")
+    # Don't display results section if no cached results available
+    st.stop()
+
+# Display cached search summary
+if st.session_state["cached_search_results"]:
+    cached_data = st.session_state["cached_search_results"]
+    search_details = cached_data.get("search_details", {})
+
+    with st.expander("📊 Last Search Summary", expanded=False):
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("Total Found", search_details.get("total_found", 0))
+        col2.metric("New Saved", search_details.get("new_saved", 0))
+        col3.metric("Combinations", search_details.get("total_combinations", 0))
+        col4.metric("Tags Used", search_details.get("tags", 0))
 
 # Filters
 col1, col2, col3, col4 = st.columns(4)

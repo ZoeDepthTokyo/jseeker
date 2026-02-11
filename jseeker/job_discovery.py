@@ -674,7 +674,7 @@ def import_discovery_to_application(discovery_id: int) -> Optional[int]:
             if jd_text:
                 # Parse JD to extract salary, skills, etc.
                 jd_data = process_jd(
-                    jd_text=jd_text,
+                    raw_text=jd_text,
                     jd_url=disc["url"],
                     role_title=disc["title"],
                     company_name=disc.get("company", "")

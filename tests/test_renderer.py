@@ -26,6 +26,21 @@ class TestSanitize:
         result = _sanitize(long_string, max_len=20)
         assert len(result) <= 20
 
+    def test_sanitize_empty_string(self):
+        """Test sanitization returns 'Unknown' for empty string."""
+        result = _sanitize("")
+        assert result == "Unknown"
+
+    def test_sanitize_whitespace_only(self):
+        """Test sanitization returns 'Unknown' for whitespace-only string."""
+        result = _sanitize("   ")
+        assert result == "Unknown"
+
+    def test_sanitize_special_chars_only(self):
+        """Test sanitization returns 'Unknown' when only special chars remain."""
+        result = _sanitize("@#$%^&*()")
+        assert result == "Unknown"
+
 
 class TestGetNextVersion:
     """Test version number generation."""

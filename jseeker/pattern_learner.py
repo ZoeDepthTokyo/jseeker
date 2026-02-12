@@ -277,3 +277,61 @@ def get_pattern_stats(db_path: Optional[Path] = None) -> dict:
         "cost_saved": round(cost_saved, 2),
         "total_uses": total_uses,
     }
+
+
+def analyze_batch_patterns(completed_jobs: list, db_path: Optional[Path] = None) -> dict:
+    """Analyze patterns from a batch of completed jobs.
+
+    This is called during the learning pause between batch segments to extract
+    insights from the completed resumes that can be applied to the next segment.
+
+    Args:
+        completed_jobs: List of BatchJob objects with status=COMPLETED
+        db_path: Path to jseeker.db (auto-detected if None)
+
+    Returns:
+        Dict with analysis insights (pattern_count, common_roles, etc.)
+    """
+    if db_path is None:
+        from config import settings
+        db_path = settings.db_path
+
+    if not completed_jobs:
+        return {"pattern_count": 0, "message": "No completed jobs to analyze"}
+
+    logger.info(f"analyze_batch_patterns | analyzing {len(completed_jobs)} completed jobs")
+
+    # Extract patterns from job results
+    roles = []
+    companies = []
+    ats_scores = []
+
+    for job in completed_jobs:
+        if job.result:
+            if job.result.get("role"):
+                roles.append(job.result["role"])
+            if job.result.get("company"):
+                companies.append(job.result["company"])
+            if job.result.get("ats_score"):
+                ats_scores.append(job.result["ats_score"])
+
+    # Calculate insights
+    avg_ats = sum(ats_scores) / len(ats_scores) if ats_scores else 0
+    unique_roles = len(set(roles))
+    unique_companies = len(set(companies))
+
+    # Get current pattern stats from DB
+    stats = get_pattern_stats(db_path)
+
+    insights = {
+        "pattern_count": stats["total_patterns"],
+        "jobs_analyzed": len(completed_jobs),
+        "unique_roles": unique_roles,
+        "unique_companies": unique_companies,
+        "avg_ats_score": round(avg_ats, 1),
+        "cache_hit_rate": stats["cache_hit_rate"],
+        "message": f"Analyzed {len(completed_jobs)} resumes. Pattern library: {stats['total_patterns']} patterns, {stats['cache_hit_rate']}% cache hit rate."
+    }
+
+    logger.info(f"analyze_batch_patterns | complete | {insights['message']}")
+    return insights

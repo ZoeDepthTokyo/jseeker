@@ -63,13 +63,33 @@ with st.expander("Recent Applications", expanded=True):
 
 # --- Batch URL Intake ---
 with st.expander("Batch Generate From Job URLs", expanded=False):
-    st.caption("Paste one job URL per line. jSeeker will process them in parallel (5 at a time).")
+    st.caption("Paste up to 20 job URLs (one per line). jSeeker will process them in parallel with learning pauses every 10 resumes.")
+
+    # Import Starred Jobs button
+    col_import, col_spacer = st.columns([2, 3])
+    with col_import:
+        if st.button("⭐ Import Starred Jobs", help="Load URLs from starred job discoveries"):
+            starred_jobs = tracker_db.list_discoveries(status="starred")
+            if starred_jobs:
+                starred_urls = [job["url"] for job in starred_jobs if job.get("url")]
+                if starred_urls:
+                    st.session_state["dashboard_batch_urls_value"] = "\n".join(starred_urls)
+                    st.success(f"Loaded {len(starred_urls)} starred job URLs")
+                    st.rerun()
+                else:
+                    st.warning("No URLs found in starred jobs")
+            else:
+                st.info("No starred jobs found. Go to Job Discovery and star some jobs first.")
+
+    # Initialize batch URLs from session state if available
+    default_urls = st.session_state.pop("dashboard_batch_urls_value", "")
 
     url_blob = st.text_area(
         "Job URLs",
         placeholder="https://boards.greenhouse.io/company/jobs/123\nhttps://jobs.lever.co/company/456",
         height=140,
         key="dashboard_batch_urls",
+        value=default_urls,
     )
 
     raw_urls = [line.strip() for line in url_blob.splitlines() if line.strip()]
@@ -77,6 +97,10 @@ with st.expander("Batch Generate From Job URLs", expanded=False):
 
     if raw_urls and len(urls) != len(raw_urls):
         st.warning("Some lines were ignored because they are not valid http(s) URLs.")
+
+    # Show warning if exceeding max batch size
+    if len(urls) > 20:
+        st.warning(f"⚠️ You have {len(urls)} URLs. Only the first 20 will be processed (batch limit).")
 
     # Initialize batch processor in session state
     if "batch_processor" not in st.session_state:
@@ -141,11 +165,21 @@ with st.expander("Batch Generate From Job URLs", expanded=False):
         col_progress, col_refresh = st.columns([4, 1])
 
         with col_progress:
+            # Segment info
+            segment_text = ""
+            if progress.total_segments > 1:
+                segment_text = f"Batch {progress.current_segment}/{progress.total_segments} "
+                segment_range_start = (progress.current_segment - 1) * 10 + 1
+                segment_range_end = min(progress.current_segment * 10, progress.total)
+                segment_text += f"({segment_range_start}-{segment_range_end}) • "
+
             # Progress bar
+            progress_text = f"{segment_text}Processing {progress.completed + progress.running}/{progress.total} jobs "
+            progress_text += f"({progress.completed} completed, {progress.failed} failed, {progress.skipped} skipped)"
+
             st.progress(
                 progress.progress_pct / 100,
-                text=f"Processing {progress.completed + progress.running}/{progress.total} jobs "
-                     f"({progress.completed} completed, {progress.failed} failed, {progress.skipped} skipped)"
+                text=progress_text
             )
 
         with col_refresh:
@@ -162,7 +196,9 @@ with st.expander("Batch Generate From Job URLs", expanded=False):
                 st.rerun()
 
         # Status text
-        if progress.paused:
+        if progress.learning_phase:
+            st.info("🧠 Learning patterns from completed resumes... will auto-resume shortly.")
+        elif progress.paused:
             st.info("⏸️ Batch paused. Click Resume to continue.")
         elif progress.stopped:
             st.warning("⏹️ Batch stopped.")

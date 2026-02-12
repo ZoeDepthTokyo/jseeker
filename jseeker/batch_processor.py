@@ -87,6 +87,9 @@ class BatchProgress:
     created_at: datetime = field(default_factory=datetime.now)
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
+    current_segment: int = 1
+    total_segments: int = 1
+    learning_phase: bool = False
 
     @property
     def pending(self) -> int:
@@ -132,6 +135,9 @@ class BatchProgress:
             "progress_pct": round(self.progress_pct, 1),
             "elapsed_seconds": round(self.elapsed_seconds, 1),
             "estimated_remaining_seconds": round(self.estimated_remaining_seconds, 1) if self.estimated_remaining_seconds else None,
+            "current_segment": self.current_segment,
+            "total_segments": self.total_segments,
+            "learning_phase": self.learning_phase,
             "workers": {wid: {
                 "worker_id": w.worker_id,
                 "current_job": w.current_job,
@@ -185,6 +191,9 @@ class JDCache:
 class BatchProcessor:
     """Parallel batch processor with pause/resume/stop controls."""
 
+    BATCH_SEGMENT_SIZE = 10  # Pause for learning every 10 resumes
+    MAX_BATCH_SIZE = 20  # Maximum total resumes per batch
+
     def __init__(self, max_workers: int = 5, output_dir: Path = None):
         """Initialize batch processor.
 
@@ -208,6 +217,11 @@ class BatchProcessor:
         # Progress callback
         self._progress_callback: Optional[Callable[[BatchProgress], None]] = None
 
+        # Learning pause tracking
+        self._learning_pause_triggered = False
+        self._current_segment = 1
+        self._total_segments = 1
+
         logger.info(f"BatchProcessor initialized with {max_workers} workers")
 
     def submit_batch(
@@ -227,15 +241,30 @@ class BatchProcessor:
         if not urls:
             raise ValueError("URLs list cannot be empty")
 
+        # Enforce max batch size
+        if len(urls) > self.MAX_BATCH_SIZE:
+            logger.warning(f"Batch size {len(urls)} exceeds maximum {self.MAX_BATCH_SIZE}, truncating")
+            urls = urls[:self.MAX_BATCH_SIZE]
+
         # Reset state for new batch
         self.jobs.clear()
         self._stop_event.clear()
         self._pause_event.set()
         self._progress_callback = progress_callback
         self.jd_cache.clear()
+        self._learning_pause_triggered = False
+
+        # Calculate segments
+        total_segments = (len(urls) + self.BATCH_SEGMENT_SIZE - 1) // self.BATCH_SEGMENT_SIZE
+        self._total_segments = total_segments
+        self._current_segment = 1
 
         # Create progress tracker
-        self.progress = BatchProgress(total=len(urls))
+        self.progress = BatchProgress(
+            total=len(urls),
+            total_segments=total_segments,
+            current_segment=1
+        )
         self.progress.started_at = datetime.now()
 
         # Initialize worker status
@@ -246,7 +275,7 @@ class BatchProcessor:
         batch_id = tracker_db.create_batch_job(len(urls))
         self.progress.batch_id = batch_id
 
-        logger.info(f"Batch {batch_id} submitted with {len(urls)} URLs")
+        logger.info(f"Batch {batch_id} submitted with {len(urls)} URLs ({total_segments} segments)")
 
         # Create jobs
         for url in urls:
@@ -480,12 +509,74 @@ class BatchProcessor:
             elif event == "running_decrement":
                 self.progress.running -= 1
 
+            # Check if we've completed a segment (trigger learning pause)
+            jobs_processed = self.progress.completed + self.progress.failed + self.progress.skipped
+            segment_boundary = self._current_segment * self.BATCH_SEGMENT_SIZE
+
+            # Trigger learning pause at segment boundaries (but not at the end of the final segment)
+            if (jobs_processed == segment_boundary and
+                jobs_processed < self.progress.total and
+                not self._learning_pause_triggered and
+                self._current_segment < self._total_segments):
+                self._trigger_learning_pause()
+
         # Invoke callback
         if self._progress_callback:
             try:
                 self._progress_callback(self.progress)
             except Exception as e:
                 logger.error(f"Progress callback failed: {e}")
+
+    def _trigger_learning_pause(self):
+        """Trigger automatic learning pause at segment boundary."""
+        logger.info(f"Segment {self._current_segment} completed. Triggering learning pause...")
+        self._learning_pause_triggered = True
+        self.progress.learning_phase = True
+        self._pause_event.clear()
+        self.progress.paused = True
+
+        # Analyze patterns in background thread
+        import threading
+        def analyze_and_resume():
+            try:
+                self._analyze_patterns()
+                time.sleep(2)  # Brief pause to let UI update
+                # Auto-resume after analysis
+                self._current_segment += 1
+                self.progress.current_segment = self._current_segment
+                self.progress.learning_phase = False
+                self._learning_pause_triggered = False
+                self.resume()
+            except Exception as e:
+                logger.error(f"Pattern analysis failed: {e}")
+                # Resume anyway to prevent getting stuck
+                self._current_segment += 1
+                self.progress.current_segment = self._current_segment
+                self.progress.learning_phase = False
+                self._learning_pause_triggered = False
+                self.resume()
+
+        threading.Thread(target=analyze_and_resume, daemon=True).start()
+
+    def _analyze_patterns(self):
+        """Analyze patterns from completed jobs in current segment."""
+        from jseeker.pattern_learner import analyze_batch_patterns
+
+        completed_jobs = [job for job in self.jobs.values()
+                         if job.status == JobStatus.COMPLETED]
+
+        if not completed_jobs:
+            logger.info("No completed jobs to analyze patterns")
+            return
+
+        logger.info(f"Analyzing patterns from {len(completed_jobs)} completed jobs...")
+
+        try:
+            # Call pattern learner to extract insights
+            insights = analyze_batch_patterns(completed_jobs)
+            logger.info(f"Pattern analysis complete. Found {insights.get('pattern_count', 0)} patterns")
+        except Exception as e:
+            logger.warning(f"Pattern analysis encountered error: {e}")
 
     def pause(self):
         """Pause batch processing. Workers will block until resumed."""

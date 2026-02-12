@@ -1,0 +1,35 @@
+============================= test session starts =============================
+platform win32 -- Python 3.14.2, pytest-9.0.2, pluggy-1.6.0 -- C:\Python314\python.exe
+cachedir: .pytest_cache
+rootdir: X:\Projects\jSeeker
+configfile: pytest.ini
+plugins: anyio-4.12.1, cov-7.0.0
+collecting ... collected 25 items
+
+tests/test_batch_processor.py::test_batch_job_creation PASSED            [  4%]
+tests/test_batch_processor.py::test_batch_job_to_dict PASSED             [  8%]
+tests/test_batch_processor.py::test_worker_status PASSED                 [ 12%]
+tests/test_batch_processor.py::test_batch_progress_properties PASSED     [ 16%]
+tests/test_batch_processor.py::test_batch_progress_to_dict PASSED        [ 20%]
+tests/test_batch_processor.py::test_batch_progress_estimated_time PASSED [ 24%]
+tests/test_batch_processor.py::test_jd_cache_basic PASSED                [ 28%]
+tests/test_batch_processor.py::test_jd_cache_miss PASSED                 [ 32%]
+tests/test_batch_processor.py::test_jd_cache_clear PASSED                [ 36%]
+tests/test_batch_processor.py::test_batch_processor_init PASSED          [ 40%]
+tests/test_batch_processor.py::test_batch_processor_submit_empty_urls PASSED [ 44%]
+tests/test_batch_processor.py::test_batch_processor_submit_batch PASSED  [ 48%]
+tests/test_batch_processor.py::test_batch_processor_progress_callback PASSED [ 52%]
+tests/test_batch_processor.py::test_batch_processor_pause_resume PASSED  [ 56%]
+tests/test_batch_processor.py::test_batch_processor_stop PASSED          [ 60%]
+tests/test_batch_processor.py::test_batch_processor_skip_known_urls PASSED [ 64%]
+tests/test_batch_processor.py::test_batch_processor_handle_extraction_error PASSED [ 68%]
+tests/test_batch_processor.py::test_batch_processor_handle_pipeline_error PASSED [ 72%]
+tests/test_batch_processor.py::test_batch_processor_worker_limit PASSED  [ 76%]
+tests/test_batch_processor.py::test_batch_processor_get_progress PASSED  [ 80%]
+tests/test_batch_processor.py::test_batch_processor_get_job_status PASSED [ 84%]
+tests/test_batch_processor.py::test_batch_processor_get_all_jobs PASSED  [ 88%]
+tests/test_batch_processor.py::test_batch_processor_jd_cache_usage PASSED [ 92%]
+tests/test_batch_processor.py::test_batch_processor_full_pipeline PASSED [ 96%]
+tests/test_batch_processor.py::test_batch_processor_performance PASSED   [100%]
+
+============================= 25 passed in 9.87s ==============================

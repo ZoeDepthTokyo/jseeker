@@ -334,9 +334,9 @@ def get_available_template_styles() -> list[dict]:
     Returns:
         List of dicts with 'name', 'path', 'language', 'style' keys.
     """
-    from jseeker.resume_sources import load_resume_sources
+    from jseeker.resume_sources import load_full_resume_data
 
-    sources = load_resume_sources()
+    sources = load_full_resume_data()
     uploaded_templates = sources.get("uploaded_templates", [])
 
     template_styles = []

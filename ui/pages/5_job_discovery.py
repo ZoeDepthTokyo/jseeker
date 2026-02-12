@@ -48,7 +48,10 @@ with st.sidebar:
                     if search.get('location'):
                         st.session_state["loaded_location"] = search['location']
 
-                    st.success(f"Loaded: {search['name']}")
+                    # Set flag to auto-run search after page reloads
+                    st.session_state["auto_run_search"] = True
+
+                    st.success(f"Loaded: {search['name']} - Running search...")
                     st.rerun()
 
                 # Delete button
@@ -288,7 +291,10 @@ if cache_match and st.session_state["cached_search_timestamp"]:
 # Search controls
 col_search, col_pause, col_stop = st.columns([1, 1, 1])
 
-if col_search.button("🔍 Run Search", type="primary"):
+# Check for auto-run flag (set when loading saved search)
+auto_run = st.session_state.pop("auto_run_search", False)
+
+if col_search.button("🔍 Run Search", type="primary") or auto_run:
     active_tags = tracker_db.list_search_tags(active_only=True)
     tag_strings = [t["tag"] for t in active_tags]
 

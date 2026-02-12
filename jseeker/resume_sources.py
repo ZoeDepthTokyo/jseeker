@@ -40,6 +40,41 @@ def load_resume_sources(path: Path | None = None) -> dict[str, str]:
     return merged
 
 
+def load_full_resume_data(path: Path | None = None) -> dict:
+    """Load complete resume sources data including uploaded templates.
+
+    Returns full JSON structure with 'uploaded_templates' list preserved.
+    Used by style_extractor to get available PDF templates.
+    """
+    if path is None:
+        path = _sources_path()
+
+    if not path.exists():
+        return {
+            **DEFAULT_RESUME_SOURCES.copy(),
+            "uploaded_templates": []
+        }
+
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return {
+            **DEFAULT_RESUME_SOURCES.copy(),
+            "uploaded_templates": []
+        }
+
+    # Preserve uploaded_templates list
+    result = DEFAULT_RESUME_SOURCES.copy()
+    for key in result:
+        value = data.get(key, "")
+        result[key] = str(value).strip() if value is not None else ""
+
+    # Add uploaded_templates if present
+    result["uploaded_templates"] = data.get("uploaded_templates", [])
+
+    return result
+
+
 def save_resume_sources(values: dict[str, str], path: Path | None = None) -> dict[str, str]:
     """Persist base resume source paths and return normalized values."""
     if path is None:

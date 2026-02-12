@@ -1,8 +1,6 @@
 """Tests for tracker module."""
 
 import pytest
-import tempfile
-from pathlib import Path
 from jseeker.tracker import TrackerDB
 from jseeker.models import (
     Application,
@@ -10,9 +8,6 @@ from jseeker.models import (
     Resume,
     APICost,
     JobDiscovery,
-    ResumeStatus,
-    ApplicationStatus,
-    JobStatus,
     DiscoveryStatus,
     PipelineResult,
     ParsedJD,
@@ -241,7 +236,7 @@ class TestTrackerDB:
         app1 = Application(company_id=company_id, role_title="Role A")
         app2 = Application(company_id=company_id, role_title="Role B")
         id1 = db.add_application(app1)
-        id2 = db.add_application(app2)
+        db.add_application(app2)
 
         db.update_application_status(id1, "application_status", "applied")
 
@@ -495,7 +490,7 @@ class TestTrackerDB:
             pdf_path=str(pdf_path),
             ats_score=85,
         )
-        resume_id = db.add_resume(resume)
+        db.add_resume(resume)
 
         # Verify application and resume exist
         assert db.get_application(app_id) is not None
@@ -674,7 +669,6 @@ class TestTrackerConcurrency:
 
     def test_concurrent_updates_no_lock_error(self, tmp_db):
         """Test that concurrent updates don't cause 'database is locked' errors."""
-        import threading
         from concurrent.futures import ThreadPoolExecutor
 
         db = TrackerDB(tmp_db)

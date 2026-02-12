@@ -3,7 +3,6 @@
 import json
 import sqlite3
 from datetime import datetime
-from pathlib import Path
 
 import pandas as pd
 import plotly.express as px
@@ -236,7 +235,7 @@ try:
                         context = json.loads(pattern["jd_context"] or "{}")
                         role = context.get("role", "N/A")
                         keywords = ", ".join(context.get("keywords", [])[:5])
-                    except:
+                    except Exception:
                         role = "N/A"
                         keywords = "N/A"
 

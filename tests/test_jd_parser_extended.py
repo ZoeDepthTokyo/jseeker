@@ -1,6 +1,5 @@
 """Extended tests for jd_parser.py - targeting 80%+ coverage."""
 
-import pytest
 from unittest.mock import Mock, patch
 from jseeker.jd_parser import detect_ats_platform, detect_language, extract_jd_from_url
 from jseeker.models import ATSPlatform

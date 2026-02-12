@@ -11,7 +11,7 @@ from urllib.parse import quote_plus
 import requests
 from bs4 import BeautifulSoup
 
-from jseeker.models import DiscoveryStatus, JobDiscovery
+from jseeker.models import JobDiscovery
 from jseeker.tracker import tracker_db
 
 logger = logging.getLogger(__name__)
@@ -214,7 +214,7 @@ def _search_source(
         logger.info(
             "Response status: %d, content length: %d", response.status_code, len(response.text)
         )
-    except requests.HTTPError as e:
+    except requests.HTTPError:
         # Gracefully handle 403 Forbidden (anti-bot protection)
         if response.status_code == 403:
             logger.debug("403 blocked by %s (anti-bot) for market=%s", source, market)

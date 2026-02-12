@@ -51,7 +51,7 @@ def step_venv():
             print(f"  OK: .venv exists ({result.stdout.strip()})")
             return True
         else:
-            print(f"  WARN: .venv broken, recreating...")
+            print("  WARN: .venv broken, recreating...")
 
     print(f"  Creating .venv at {VENV_DIR}...")
     result = subprocess.run(
@@ -63,7 +63,7 @@ def step_venv():
         print(f"  FAIL: Could not create venv: {result.stderr}")
         return False
 
-    print(f"  OK: .venv created")
+    print("  OK: .venv created")
     return True
 
 
@@ -74,7 +74,7 @@ def step_dependencies():
     venv_python = get_venv_python()
 
     if not REQUIREMENTS.exists():
-        print(f"  WARN: No requirements.txt found")
+        print("  WARN: No requirements.txt found")
         return True
 
     # Install requirements
@@ -86,16 +86,16 @@ def step_dependencies():
         cwd=str(PROJECT_ROOT),
     )
     if result.returncode != 0:
-        print(f"  WARN: Some packages failed to install:")
+        print("  WARN: Some packages failed to install:")
         # Show only errors, not the full output
         for line in result.stderr.splitlines():
             if "ERROR" in line or "error" in line:
                 print(f"    {line}")
-        print(f"  Continuing anyway (some deps may be optional)...")
+        print("  Continuing anyway (some deps may be optional)...")
 
     # Install MYCEL (editable, local)
     if MYCEL_PATH.exists():
-        print(f"  Installing MYCEL (local editable)...")
+        print("  Installing MYCEL (local editable)...")
         subprocess.run(
             [str(venv_pip), "install", "-e", str(MYCEL_PATH), "--quiet"],
             capture_output=True,
@@ -117,7 +117,7 @@ def step_dependencies():
     if missing:
         print(f"  WARN: Missing imports: {', '.join(missing)}")
     else:
-        print(f"  OK: All key dependencies available")
+        print("  OK: All key dependencies available")
 
     return True
 
@@ -162,7 +162,7 @@ def step_launch():
     print(f"  App: {APP_ENTRY}")
     print(f"  Port: {PORT}")
     print(f"  URL: http://localhost:{PORT}")
-    print(f"  Press Ctrl+C to stop.\n")
+    print("  Press Ctrl+C to stop.\n")
 
     try:
         proc = subprocess.run(

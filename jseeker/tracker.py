@@ -6,7 +6,7 @@ import json
 import logging
 import sqlite3
 from contextlib import contextmanager
-from datetime import datetime, date
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -17,7 +17,6 @@ from jseeker.models import (
     DiscoveryStatus,
     JobDiscovery,
     Resume,
-    SearchTag,
 )
 
 

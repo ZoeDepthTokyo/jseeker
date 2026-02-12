@@ -401,7 +401,7 @@ if col_search.button("🔍 Run Search", type="primary") or auto_run:
         st.session_state["cached_search_timestamp"] = datetime.now().isoformat()
 
         if len(discoveries) >= 250:
-            st.warning(f"⚠️ Search limit reached: 250 results. Some results may have been skipped.")
+            st.warning("⚠️ Search limit reached: 250 results. Some results may have been skipped.")
         elif st.session_state["search_paused"]:
             st.info(f"Search paused at {len(discoveries)} results.")
         else:

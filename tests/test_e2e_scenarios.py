@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import json
 import sqlite3
-import tempfile
 import time
 from datetime import date, datetime
 from pathlib import Path

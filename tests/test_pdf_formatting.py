@@ -297,7 +297,7 @@ class TestIntegration:
         css_classes = set(re.findall(r"\.([a-z-]+)", css_content))
 
         # Find all classes in HTML
-        html_classes = set(re.findall(r'class="([a-z-]+)"', html_content))
+        set(re.findall(r'class="([a-z-]+)"', html_content))
 
         # Check that HTML classes that need styling are styled
         # Container divs like experience-section don't need their own styles

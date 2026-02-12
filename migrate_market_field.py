@@ -341,9 +341,9 @@ def migrate_market_field():
     conn.commit()
     conn.close()
 
-    print(f"\nMigration complete!")
+    print("\nMigration complete!")
     print(f"Updated {updated} jobs")
-    print(f"\nBreakdown by market:")
+    print("\nBreakdown by market:")
     for market, count in sorted(by_market.items(), key=lambda x: -x[1]):
         print(f"  {market}: {count} jobs")
 

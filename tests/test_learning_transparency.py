@@ -2,13 +2,11 @@
 
 import json
 import sqlite3
-from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 
 from jseeker.ats_scorer import explain_ats_score
-from jseeker.models import ATSPlatform, ATSScore
 from jseeker.pattern_learner import get_pattern_stats, learn_pattern
 
 

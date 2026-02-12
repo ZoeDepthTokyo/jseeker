@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import re
-from pathlib import Path
 
 import yaml
 
@@ -83,7 +82,7 @@ def local_format_score(adapted: AdaptedResume, platform: ATSPlatform) -> dict:
     """
     profile = _load_ats_profile(platform)
     rules = profile.get("scoring_rules", {})
-    fmt = rules.get("format_requirements", {})
+    rules.get("format_requirements", {})
     penalties = rules.get("penalties", {})
 
     score = 100

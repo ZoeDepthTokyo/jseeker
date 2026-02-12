@@ -1,9 +1,8 @@
 """Tests for job_monitor.py — Job URL status monitoring."""
 
 from datetime import datetime, timedelta
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
-import pytest
 import requests
 
 from jseeker import job_monitor

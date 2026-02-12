@@ -1,6 +1,5 @@
 """Tests for ATS scorer module."""
 
-import pytest
 from jseeker.ats_scorer import recommend_format, local_format_score
 from jseeker.models import ATSPlatform, AdaptedResume, ContactInfo
 

@@ -183,16 +183,16 @@ def _log_render_error(output_path: Path, attempt: int, stderr: str, stdout: str)
     error_log_path = error_log_dir / f"render_error_{timestamp}_attempt{attempt}.log"
 
     with open(error_log_path, "w", encoding="utf-8") as f:
-        f.write(f"Render Error Log\n")
-        f.write(f"================\n\n")
+        f.write("Render Error Log\n")
+        f.write("================\n\n")
         f.write(f"Timestamp: {datetime.now().isoformat()}\n")
         f.write(f"Attempt: {attempt}\n")
         f.write(f"Output Path: {output_path}\n\n")
-        f.write(f"STDERR (full, not truncated):\n")
+        f.write("STDERR (full, not truncated):\n")
         f.write(f"{'-' * 80}\n")
         f.write(stderr)
         f.write(f"\n{'-' * 80}\n\n")
-        f.write(f"STDOUT:\n")
+        f.write("STDOUT:\n")
         f.write(f"{'-' * 80}\n")
         f.write(stdout)
         f.write(f"\n{'-' * 80}\n")
@@ -261,9 +261,6 @@ with sync_playwright() as p:
                     return output_path
                 else:
                     # Non-zero return code
-                    error_msg = (
-                        f"Attempt {attempt}/{max_attempts} failed (returncode={result.returncode})"
-                    )
                     error_details.append(
                         {
                             "attempt": attempt,
@@ -282,7 +279,6 @@ with sync_playwright() as p:
                         time.sleep(delay)
 
             except subprocess.TimeoutExpired as e:
-                error_msg = f"Attempt {attempt}/{max_attempts} timeout after {e.timeout}s"
                 error_details.append(
                     {
                         "attempt": attempt,
@@ -383,7 +379,7 @@ def render_docx(adapted: AdaptedResume, output_path: Path, language: str = "en")
         Path to the generated DOCX file.
     """
     from docx import Document
-    from docx.shared import Inches, Pt, RGBColor
+    from docx.shared import Pt, RGBColor
     from docx.enum.text import WD_ALIGN_PARAGRAPH
 
     # Get section labels for the specified language
@@ -475,7 +471,7 @@ def render_docx(adapted: AdaptedResume, output_path: Path, language: str = "en")
         date_para = doc.add_paragraph()
         date_para.paragraph_format.space_before = Pt(0)
         date_para.paragraph_format.space_after = Pt(1)
-        date_run = date_para.add_run(f"{start_display} – {end_display}")
+        date_para.add_run(f"{start_display} – {end_display}")
         if exp.get("location"):
             date_para.add_run(f" | {exp['location']}")
         if is_condensed:
@@ -693,7 +689,7 @@ def generate_output(
     if not company or not company.strip():
         import logging
 
-        logging.warning(f"Company name is empty, using fallback 'Unknown_Company'")
+        logging.warning("Company name is empty, using fallback 'Unknown_Company'")
         company = "Unknown_Company"
 
     safe_company = _sanitize(company)

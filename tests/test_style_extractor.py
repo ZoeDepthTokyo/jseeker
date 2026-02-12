@@ -1,6 +1,5 @@
 """Tests for PDF style extraction and CSS generation."""
 
-import tempfile
 from pathlib import Path
 
 import pytest

@@ -8,9 +8,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import streamlit as st
 
-from config import settings
-from jseeker.jd_parser import extract_jd_from_url
-from jseeker.pipeline import run_pipeline
 from jseeker.tracker import tracker_db
 
 st.title("Dashboard")

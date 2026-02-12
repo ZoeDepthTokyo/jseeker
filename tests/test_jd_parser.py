@@ -1,6 +1,5 @@
 """Tests for JD parser module."""
 
-import pytest
 import requests
 from jseeker.jd_parser import (
     detect_ats_platform,

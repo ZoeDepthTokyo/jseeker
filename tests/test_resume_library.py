@@ -3,7 +3,7 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -96,7 +96,6 @@ class TestPDFUpload:
     def test_single_pdf_upload(self, temp_resume_dir, temp_sources_file, sample_pdf_bytes):
         """Test uploading a single PDF template."""
         # Setup
-        template_name = "Test Resume 2026"
         safe_name = "Test Resume 2026"
         pdf_path = temp_resume_dir / f"{safe_name}.pdf"
 
@@ -354,7 +353,7 @@ class TestPDFPreview:
         # Simulate missing PyMuPDF
         with patch.dict("sys.modules", {"fitz": None}):
             try:
-                import fitz
+                import fitz  # noqa: F401
 
                 pytest.fail("Should have raised ImportError")
             except (ImportError, AttributeError):
@@ -459,7 +458,6 @@ class TestEdgeCases:
         resume_dir = tmp_path / "Resume References"
         resume_dir.mkdir(parents=True, exist_ok=True)
 
-        template_name = "Director of AI & ML"
         safe_name = "Director of AI  ML"  # & removed
 
         pdf_path = resume_dir / f"{safe_name}.pdf"

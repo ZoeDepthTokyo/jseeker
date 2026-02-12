@@ -1,7 +1,5 @@
 """Tests for base resume source reference storage."""
 
-from pathlib import Path
-
 from jseeker.resume_sources import load_resume_sources, save_resume_sources
 
 

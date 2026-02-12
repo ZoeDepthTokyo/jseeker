@@ -1,7 +1,7 @@
 """Tests for adapter module."""
 
 import pytest
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 from jseeker.adapter import LOCATIONS_BY_MARKET, adapt_bullets_batch
 from jseeker.models import ParsedJD, TemplateType
 

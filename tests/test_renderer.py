@@ -1,7 +1,6 @@
 """Tests for renderer module."""
 
 import pytest
-from pathlib import Path
 from unittest.mock import patch, MagicMock
 import subprocess
 from jseeker.renderer import _sanitize, _get_next_version, SECTION_LABELS, _html_to_pdf_sync

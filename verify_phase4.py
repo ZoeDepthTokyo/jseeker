@@ -78,7 +78,7 @@ def verify_data_completeness():
         print(f"    Total included: {len(tagged) + len(non_tagged)} experiences")
 
         if non_tagged:
-            print(f"    Non-tagged companies:")
+            print("    Non-tagged companies:")
             for exp in non_tagged:
                 bullets_available = bool(exp.additional_bullets or exp.bullets)
                 bullet_status = "has bullets" if bullets_available else "no bullets"

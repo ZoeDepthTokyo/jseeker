@@ -3,13 +3,12 @@
 import pytest
 from datetime import date, timedelta
 from jseeker.models import JobDiscovery
-from jseeker.tracker import tracker_db, init_db
+from jseeker.tracker import init_db
 from jseeker.job_discovery import (
     rank_discoveries_by_tag_weight,
     search_jobs_async,
     format_freshness,
 )
-from pathlib import Path
 
 
 @pytest.fixture
@@ -64,7 +63,7 @@ def test_source_field_clean_no_suffix(test_db):
         search_tags="UX Designer",
     )
 
-    disc_id = test_db.add_discovery(discovery)
+    test_db.add_discovery(discovery)
     discoveries = test_db.list_discoveries()
 
     assert discoveries[0]["source"] == "linkedin"
@@ -425,7 +424,7 @@ def test_format_freshness():
 def test_rank_by_relevance_then_freshness():
     """Test that ranking prioritizes relevance (tag weight), then freshness."""
     today = date.today()
-    yesterday = today - timedelta(days=1)
+    today - timedelta(days=1)
     week_ago = today - timedelta(days=7)
 
     # Create discoveries with same tag weight but different dates

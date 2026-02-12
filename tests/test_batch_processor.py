@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import time
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import patch, MagicMock
 
 import pytest
 
@@ -550,7 +549,7 @@ def test_batch_processor_performance(mock_tracker_db, mock_pipeline):
     processor = BatchProcessor(max_workers=5)
     start_time = time.time()
 
-    batch_id = processor.submit_batch(urls)
+    processor.submit_batch(urls)
 
     # Wait for completion
     max_wait = 5  # seconds

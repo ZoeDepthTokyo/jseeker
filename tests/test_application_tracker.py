@@ -3,9 +3,8 @@
 import pytest
 import tempfile
 from pathlib import Path
-from datetime import datetime
 
-from jseeker.models import Application, ApplicationStatus, JobStatus, ResumeStatus
+from jseeker.models import Application, ApplicationStatus
 from jseeker.tracker import TrackerDB
 
 

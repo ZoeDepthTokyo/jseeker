@@ -8,7 +8,6 @@ After 50+ resumes: 60-70% cache hit rate
 from __future__ import annotations
 
 import difflib
-import hashlib
 import json
 import logging
 import sqlite3

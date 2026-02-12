@@ -40,7 +40,7 @@ def _kill_port(port: int) -> bool:
     try:
         import subprocess as sp
 
-        result = sp.run(
+        sp.run(
             [
                 "powershell.exe",
                 "-NoProfile",

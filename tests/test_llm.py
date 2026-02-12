@@ -362,7 +362,6 @@ def test_client_property_initialization(llm_instance):
 
 def test_budget_exceeded_error():
     """Test BudgetExceededError is raised when monthly budget is exceeded."""
-    from jseeker.llm import BudgetExceededError
 
     # Create error instance
     error = BudgetExceededError("Budget exceeded")

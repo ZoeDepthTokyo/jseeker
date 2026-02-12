@@ -7,6 +7,8 @@ Extract the following fields:
 - location: City/State or Remote
 - remote_policy: "remote", "hybrid", "onsite", or "not_specified"
 - salary_range: If mentioned, otherwise empty string
+- role_exp: Years of experience required in this role (e.g., "7+ years", "5-7 years")
+- management_exp: Years of management/leadership experience required (e.g., "2+ years", "3-5 years")
 - hard_requirements: Array of required skills/qualifications with keywords
 - soft_requirements: Array of preferred/nice-to-have qualifications
 - ats_keywords: Array of the top 20 most important keywords for ATS matching
@@ -22,6 +24,8 @@ Example output format:
   "location": "San Francisco, CA",
   "remote_policy": "hybrid",
   "salary_range": "$180,000 - $220,000",
+  "role_exp": "8+ years",
+  "management_exp": "3+ years",
   "hard_requirements": [
     {{"text": "8+ years of product design experience", "keywords": ["product design", "UX design"]}},
     {{"text": "Experience leading teams of 10+", "keywords": ["team leadership", "people management"]}}

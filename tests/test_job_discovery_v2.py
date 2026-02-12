@@ -454,17 +454,21 @@ def test_rank_by_relevance_then_freshness():
     )
 
     from unittest.mock import patch
-    with patch('jseeker.job_discovery.tracker_db.get_tag_weight') as mock_get_weight:
+    with patch('jseeker.job_discovery.tracker_db.get_tag_weight') as mock_get_weight, \
+         patch('jseeker.job_discovery._get_resume_keywords') as mock_keywords:
         def get_weight_side_effect(tag):
             weights = {"Product Designer": 80, "Junior": 30}
             return weights.get(tag, 50)
 
         mock_get_weight.side_effect = get_weight_side_effect
 
+        # Mock resume keywords to return empty set (isolates tag weight + freshness logic)
+        mock_keywords.return_value = set()
+
         # Rank discoveries
         ranked = rank_discoveries_by_tag_weight([disc1, disc2, disc3])
 
-        # Verify order: relevance first, then freshness
+        # Verify order: relevance first, then freshness (with no resume match influence)
         assert ranked[0].title == "Fresh High Priority"  # 80 weight, today
         assert ranked[1].title == "Old High Priority"    # 80 weight, week ago
         assert ranked[2].title == "Fresh Low Priority"   # 30 weight, today

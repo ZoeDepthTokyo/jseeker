@@ -96,6 +96,8 @@ class ParsedJD(BaseModel):
     salary_min: Optional[int] = None
     salary_max: Optional[int] = None
     salary_currency: str = "USD"
+    role_exp: str = ""  # Years of experience in role (e.g., "7+ years")
+    management_exp: str = ""  # Years of management experience (e.g., "2+ years")
     requirements: list[JDRequirement] = Field(default_factory=list)
     ats_keywords: list[str] = Field(default_factory=list)
     culture_signals: list[str] = Field(default_factory=list)
@@ -269,6 +271,8 @@ class Application(BaseModel):
     salary_min: Optional[int] = None
     salary_max: Optional[int] = None
     salary_currency: str = "USD"
+    role_exp: str = ""
+    management_exp: str = ""
     location: str = ""
     remote_policy: str = ""
     relevance_score: float = 0.0
@@ -326,6 +330,11 @@ class JobDiscovery(BaseModel):
     posting_date: Optional[date] = None
     search_tags: str = ""
     search_tag_weights: dict[str, int] = {}  # Tag weights for ranking (not persisted to DB)
+    resume_match_score: float = 0.0  # Resume library content match score (not persisted to DB)
+    composite_score: float = 0.0  # Composite relevance score (not persisted to DB)
+    tag_weight_contribution: float = 0.0  # Tag weight component of composite score (not persisted to DB)
+    resume_match_contribution: float = 0.0  # Resume match component of composite score (not persisted to DB)
+    freshness_contribution: float = 0.0  # Freshness bonus component of composite score (not persisted to DB)
     status: DiscoveryStatus = DiscoveryStatus.NEW
     imported_application_id: Optional[int] = None
     discovered_at: Optional[datetime] = None

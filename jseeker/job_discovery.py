@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import logging
 import re
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
+from functools import lru_cache
 from typing import Optional
 from urllib.parse import quote_plus
 
@@ -553,19 +554,109 @@ def format_freshness(posting_date: date | str | None) -> str:
         return f"Posted {months} months ago"
 
 
+@lru_cache(maxsize=1)
+def _get_resume_keywords() -> set[str]:
+    """Extract all keywords from resume library content (cached per session).
+
+    Returns:
+        Set of lowercase keywords from summaries, experience, and skills.
+    """
+    from jseeker.block_manager import block_manager
+
+    keywords = set()
+
+    try:
+        corpus = block_manager.load_corpus()
+
+        # Extract from summaries (all templates)
+        for summary_text in corpus.summaries.values():
+            # Split on whitespace and common delimiters, extract meaningful words
+            words = re.findall(r'\b[a-zA-Z]{3,}\b', summary_text.lower())
+            keywords.update(words)
+
+        # Extract from experience blocks
+        for exp in corpus.experience:
+            # Company and role names
+            words = re.findall(r'\b[a-zA-Z]{3,}\b', f"{exp.company} {exp.role}".lower())
+            keywords.update(words)
+
+            # All bullet points across templates
+            for bullets in exp.bullets.values():
+                for bullet in bullets:
+                    words = re.findall(r'\b[a-zA-Z]{3,}\b', bullet.lower())
+                    keywords.update(words)
+
+        # Extract from skills
+        for category in corpus.skills.values():
+            for skill_item in category.items:
+                words = re.findall(r'\b[a-zA-Z]{3,}\b', skill_item.name.lower())
+                keywords.update(words)
+
+        # Remove common stop words that add no value
+        stop_words = {
+            'the', 'and', 'for', 'with', 'from', 'into', 'that', 'this',
+            'have', 'has', 'had', 'was', 'were', 'are', 'been', 'being',
+            'can', 'will', 'would', 'should', 'could', 'may', 'might',
+            'such', 'than', 'then', 'there', 'their', 'what', 'when',
+            'where', 'which', 'who', 'whom', 'whose', 'why', 'how'
+        }
+        keywords = keywords - stop_words
+
+        logger.info(f"_get_resume_keywords | extracted {len(keywords)} keywords from resume library")
+        return keywords
+
+    except Exception as e:
+        logger.warning(f"_get_resume_keywords | failed to load resume library: {e}")
+        return set()
+
+
+def _calculate_resume_match_score(job_title: str, search_tags: str, resume_keywords: set[str]) -> float:
+    """Calculate how well a job matches the resume library content.
+
+    Args:
+        job_title: Job title string
+        search_tags: Comma-separated search tags
+        resume_keywords: Pre-computed set of resume keywords
+
+    Returns:
+        Float score between 0.0 (no match) and 1.0 (perfect match)
+    """
+    if not resume_keywords:
+        return 0.0
+
+    # Extract job keywords from title and tags
+    job_text = f"{job_title} {search_tags}".lower()
+    job_words = set(re.findall(r'\b[a-zA-Z]{3,}\b', job_text))
+
+    if not job_words:
+        return 0.0
+
+    # Calculate overlap
+    matched_words = job_words & resume_keywords
+    match_score = len(matched_words) / len(job_words) if job_words else 0.0
+
+    return min(match_score, 1.0)  # Cap at 1.0
+
+
 def rank_discoveries_by_tag_weight(discoveries: list[JobDiscovery | dict], max_per_country: int = None) -> list[JobDiscovery | dict]:
-    """Rank discoveries by sum of tag weights from their search_tags, then by freshness.
+    """Rank discoveries by tag weight, resume library match, and freshness.
 
     Applies per-country limits if specified, keeping only the top N results per country
     after ranking by relevance and freshness.
+
+    Ranking formula:
+        composite_score = (tag_weight * 0.35) + (resume_match * 0.65) + (freshness_bonus * 0.05)
 
     Args:
         discoveries: List of JobDiscovery objects or dicts with search_tags field
         max_per_country: Optional limit of results per country (None = unlimited)
 
     Returns:
-        Sorted list of discoveries (highest relevance + freshness first)
+        Sorted list of discoveries (highest composite score first)
     """
+    # Load resume keywords once for all discoveries
+    resume_keywords = _get_resume_keywords()
+
     for disc in discoveries:
         total_weight = 0
         # Handle both dict and object formats
@@ -578,20 +669,96 @@ def rank_discoveries_by_tag_weight(discoveries: list[JobDiscovery | dict], max_p
             tag_weights[tag] = weight
             total_weight += weight
 
+        # Calculate resume match score
+        job_title = disc.get("title") if isinstance(disc, dict) else disc.title
+        resume_match_score = _calculate_resume_match_score(
+            job_title or "",
+            search_tags or "",
+            resume_keywords
+        )
+
         if isinstance(disc, dict):
             disc["search_tag_weights"] = tag_weights
+            disc["resume_match_score"] = resume_match_score
         else:
             disc.search_tag_weights = tag_weights
+            disc.resume_match_score = resume_match_score
 
-    # Sort by total weight (descending), then by posting_date (descending for freshness)
-    sorted_discoveries = sorted(
-        discoveries,
-        key=lambda d: (
-            sum(d.get("search_tag_weights", {}).values() if isinstance(d, dict) else d.search_tag_weights.values()),
-            (d.get("posting_date") if isinstance(d, dict) else d.posting_date) or date.min
-        ),
-        reverse=True
-    )
+    # Sort by composite score: (tag_weight * 0.7) + (resume_match * 0.3) + freshness_bonus
+    def _get_sort_key(d):
+        """Extract composite sort key combining tag weight, resume match, and freshness."""
+        total_weight = sum(
+            d.get("search_tag_weights", {}).values() if isinstance(d, dict) else d.search_tag_weights.values()
+        )
+
+        # Get resume match score (0.0 to 1.0)
+        resume_match = d.get("resume_match_score", 0.0) if isinstance(d, dict) else getattr(d, "resume_match_score", 0.0)
+
+        # Get posting_date and calculate freshness bonus
+        posting_date = d.get("posting_date") if isinstance(d, dict) else d.posting_date
+
+        if posting_date is None:
+            posting_date_obj = date.min
+            freshness_bonus = 0.0
+        elif isinstance(posting_date, str):
+            # Parse string date from database (format: YYYY-MM-DD)
+            try:
+                posting_date_obj = datetime.strptime(posting_date, "%Y-%m-%d").date()
+            except (ValueError, AttributeError):
+                posting_date_obj = date.min
+                freshness_bonus = 0.0
+        elif isinstance(posting_date, date):
+            posting_date_obj = posting_date
+        else:
+            posting_date_obj = date.min
+            freshness_bonus = 0.0
+
+        # Calculate freshness bonus (0 to 1.0 scale, then weighted by 5%)
+        if posting_date_obj != date.min:
+            days_old = (date.today() - posting_date_obj).days
+            if days_old == 0:
+                freshness_raw = 1.0  # Posted today
+            elif days_old <= 7:
+                freshness_raw = 0.7  # Within a week
+            elif days_old <= 14:
+                freshness_raw = 0.4  # Within 2 weeks
+            elif days_old <= 30:
+                freshness_raw = 0.2  # Within a month
+            else:
+                freshness_raw = 0.0  # Older than a month
+        else:
+            freshness_raw = 0.0
+
+        # Composite score: tag_weight (35%) + resume_match (65%) + freshness_bonus (5%)
+        # Normalize tag_weight to 0-1 scale by dividing by 100 (tag weights range 0-100)
+        normalized_tag_weight = min(total_weight / 100.0, 1.0)
+        composite_score = (normalized_tag_weight * 0.35) + (resume_match * 0.65) + (freshness_raw * 0.05)
+
+        # Store composite score and breakdown in discovery for UI display
+        if isinstance(d, dict):
+            d["composite_score"] = composite_score
+            d["tag_weight_contribution"] = normalized_tag_weight * 0.35
+            d["resume_match_contribution"] = resume_match * 0.65
+            d["freshness_contribution"] = freshness_raw * 0.05
+        else:
+            d.composite_score = composite_score
+            d.tag_weight_contribution = normalized_tag_weight * 0.35
+            d.resume_match_contribution = resume_match * 0.65
+            d.freshness_contribution = freshness_raw * 0.05
+
+        # Return tuple: (composite_score, posting_date) for tie-breaking
+        return (composite_score, posting_date_obj)
+
+    sorted_discoveries = sorted(discoveries, key=_get_sort_key, reverse=True)
+
+    # Log ranking statistics
+    if sorted_discoveries:
+        top_3 = sorted_discoveries[:3]
+        logger.info(
+            f"rank_discoveries_by_tag_weight | ranked {len(sorted_discoveries)} jobs | "
+            f"resume_keywords={len(resume_keywords)} | "
+            f"top_scores=[{', '.join([f'{_get_sort_key(d)[0]:.2f}' for d in top_3])}]"
+        )
 
     # Apply per-country limit if specified
     if max_per_country is not None:
@@ -750,9 +917,7 @@ def import_discovery_to_application(discovery_id: int) -> Optional[int]:
                 # Parse JD to extract salary, skills, etc.
                 jd_data = process_jd(
                     raw_text=jd_text,
-                    jd_url=disc["url"],
-                    role_title=disc["title"],
-                    company_name=disc.get("company", "")
+                    jd_url=disc["url"]
                 )
         except Exception as e:
             logger.warning(f"Could not fetch/parse JD for import: {e}")
@@ -761,7 +926,7 @@ def import_discovery_to_application(discovery_id: int) -> Optional[int]:
     app = Application(
         company_id=company_id,
         role_title=disc["title"],
-        jd_text=jd_data.jd_text if jd_data else jd_text,
+        jd_text=jd_data.raw_text if jd_data else jd_text,
         jd_url=disc.get("url", ""),
         location=jd_data.location if jd_data else disc.get("location", ""),
         salary_range=jd_data.salary_range if jd_data else disc.get("salary_range", ""),
@@ -769,7 +934,6 @@ def import_discovery_to_application(discovery_id: int) -> Optional[int]:
         salary_max=jd_data.salary_max if jd_data else None,
         salary_currency=jd_data.salary_currency if jd_data else None,
         remote_policy=jd_data.remote_policy if jd_data else None,
-        relevance_score=jd_data.relevance_score if jd_data else None,
     )
 
     app_id = tracker_db.add_application(app)

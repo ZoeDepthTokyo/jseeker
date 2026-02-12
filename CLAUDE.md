@@ -95,6 +95,10 @@ python scripts/test_v0_3_2_complete.py
 - **ParsedJD model**: Has NO `relevance_score` field (computed during matching phase, not JD parsing)
 - **Version management**: Update version in BOTH `config.py` (app_version) AND `jseeker/__init__.py` (__version__)
 - **statsmodels dependency**: Required for Performance Trends trendline (ui/pages/7_learning_insights.py). Gracefully degrades to scatter plot if unavailable.
+- **Streamlit batch completion**: After setting `st.session_state.batch_running = False`, MUST call `st.rerun()` to trigger UI update showing completion/retry sections - auto-refresh loops stop when batch completes
+- **Streamlit background threads & polling**: Background thread callbacks can't trigger reruns - use explicit polling loop BEFORE conditionals: `get_progress()` + `st.rerun()` every 2s. Don't put rerun logic inside `if session_state.x:` blocks that depend on thread updates.
+- **URL company extraction**: `_extract_company_from_url()` in jd_parser.py handles Lever/Greenhouse/Workday + generic `careers.company.com` pattern - add new ATS platforms here when extraction fails
+- **Recurring errors**: If same bug appears 2+ times, root cause wasn't fixed - investigate state management, lifecycle, or async issues before patching symptoms
 
 ## DO NOT
 - Invent experience or metrics not in resume_blocks YAML

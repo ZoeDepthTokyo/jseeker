@@ -70,6 +70,8 @@ def init_db(db_path: Path = None) -> None:
         salary_range TEXT,
         location TEXT,
         remote_policy TEXT,
+        role_exp TEXT,
+        management_exp TEXT,
         relevance_score REAL,
         resume_status TEXT DEFAULT 'draft',
         application_status TEXT DEFAULT 'not_applied',
@@ -302,6 +304,26 @@ def _run_migrations(db_path: Path) -> None:
                 conn.commit()
                 logger = logging.getLogger(__name__)
                 logger.info("Added salary_currency column to applications table")
+            except sqlite3.OperationalError as e:
+                logger = logging.getLogger(__name__)
+                logger.debug("Migration error (may be expected): %s", e)
+
+        if "role_exp" not in app_columns:
+            try:
+                c.execute("ALTER TABLE applications ADD COLUMN role_exp TEXT")
+                conn.commit()
+                logger = logging.getLogger(__name__)
+                logger.info("Added role_exp column to applications table")
+            except sqlite3.OperationalError as e:
+                logger = logging.getLogger(__name__)
+                logger.debug("Migration error (may be expected): %s", e)
+
+        if "management_exp" not in app_columns:
+            try:
+                c.execute("ALTER TABLE applications ADD COLUMN management_exp TEXT")
+                conn.commit()
+                logger = logging.getLogger(__name__)
+                logger.info("Added management_exp column to applications table")
             except sqlite3.OperationalError as e:
                 logger = logging.getLogger(__name__)
                 logger.debug("Migration error (may be expected): %s", e)
@@ -963,6 +985,45 @@ class TrackerDB:
         conn.close()
         return (row["max_v"] or 0) + 1
 
+    def update_resume_paths(self, resume_id: int, pdf_path: str = None, docx_path: str = None) -> bool:
+        """Update file paths for a resume.
+
+        Args:
+            resume_id: Resume ID to update
+            pdf_path: New PDF path (optional)
+            docx_path: New DOCX path (optional)
+
+        Returns:
+            True if updated, False if not found
+        """
+        if pdf_path is None and docx_path is None:
+            return False
+
+        conn = self._conn()
+        c = conn.cursor()
+
+        updates = []
+        params = []
+
+        if pdf_path is not None:
+            updates.append("pdf_path = ?")
+            params.append(pdf_path)
+        if docx_path is not None:
+            updates.append("docx_path = ?")
+            params.append(docx_path)
+
+        if updates:
+            params.append(resume_id)
+            query = f"UPDATE resumes SET {', '.join(updates)} WHERE id = ?"
+            c.execute(query, params)
+            updated = c.rowcount > 0
+            conn.commit()
+            conn.close()
+            return updated
+
+        conn.close()
+        return False
+
     def delete_resume(self, resume_id: int) -> bool:
         """Delete a resume and its files from disk.
 
@@ -1193,6 +1254,40 @@ class TrackerDB:
         item_id = c.lastrowid
         conn.close()
         return item_id
+
+    def update_batch_job_item_status(
+        self,
+        batch_id: str,
+        url: str,
+        status: str,
+        error: str = None,
+        resume_id: int = None,
+        application_id: int = None,
+    ) -> None:
+        """Update batch job item status (for manual retries).
+
+        Args:
+            batch_id: Parent batch ID
+            url: Job URL to update
+            status: New status (completed, failed, etc.)
+            error: Error message (if any)
+            resume_id: Resume ID if completed
+            application_id: Application ID if completed
+        """
+        conn = self._get_conn()
+        c = conn.cursor()
+
+        now = datetime.now().isoformat()
+        completed_at = now if status in ("completed", "failed", "skipped") else None
+
+        c.execute(
+            """UPDATE batch_job_items
+            SET status = ?, error = ?, resume_id = ?, application_id = ?, completed_at = ?
+            WHERE batch_id = ? AND url = ?""",
+            (status, error, resume_id, application_id, completed_at, batch_id, url),
+        )
+        conn.commit()
+        conn.close()
 
     def list_batch_job_items(self, batch_id: str) -> list[dict]:
         """List all items for a batch job.

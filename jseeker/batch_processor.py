@@ -495,19 +495,19 @@ class BatchProcessor:
         with self._lock:
             if event == "completed":
                 self.progress.completed += 1
-                self.progress.running -= 1
+                self.progress.running = max(0, self.progress.running - 1)
             elif event == "failed":
                 self.progress.failed += 1
-                self.progress.running -= 1
+                self.progress.running = max(0, self.progress.running - 1)
             elif event == "skipped":
                 self.progress.skipped += 1
-                self.progress.running -= 1
+                self.progress.running = max(0, self.progress.running - 1)
             elif event == "stopped":
-                self.progress.running -= 1
+                self.progress.running = max(0, self.progress.running - 1)
             elif event == "running_increment":
                 self.progress.running += 1
             elif event == "running_decrement":
-                self.progress.running -= 1
+                self.progress.running = max(0, self.progress.running - 1)
 
             # Check if we've completed a segment (trigger learning pause)
             jobs_processed = self.progress.completed + self.progress.failed + self.progress.skipped

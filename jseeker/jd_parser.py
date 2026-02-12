@@ -195,6 +195,17 @@ def _extract_company_from_url(url: str) -> str | None:
     if workday_match:
         return workday_match.group(1).replace("-", " ").title()
 
+    # Generic careers sites: careers.company.com or company-careers.com
+    careers_match = re.search(r"(?:careers?\.)?([a-zA-Z0-9]+)(?:careers?)?\.com", url)
+    if careers_match:
+        company = careers_match.group(1)
+        # Skip generic words that aren't company names
+        if company.lower() not in ["www", "jobs", "apply", "talent", "recruiting"]:
+            # Handle compound names like "activisionblizzard" -> "Activision Blizzard"
+            # Split on common patterns: capitals, numbers, underscores
+            parts = re.findall(r'[A-Z][a-z]*|[0-9]+|[a-z]+', company)
+            return " ".join(p.capitalize() for p in parts if p)
+
     return None
 
 
@@ -321,6 +332,10 @@ def extract_jd_from_url(url: str, timeout: int = 20) -> tuple[str, dict]:
         "[data-testid*=description]",
         "[class*=description]",
         "[id*=description]",
+        "[class*=job-description]",
+        "[class*=posting]",
+        "[class*=content]",
+        "div[role='main']",
         "main",
         "article",
         "section",
@@ -757,6 +772,8 @@ def process_jd(raw_text: str, jd_url: str = "", use_semantic_cache: bool = True)
         salary_min=salary_min,
         salary_max=salary_max,
         salary_currency=salary_currency,
+        role_exp=parsed_data.get("role_exp", ""),
+        management_exp=parsed_data.get("management_exp", ""),
         requirements=requirements,
         ats_keywords=parsed_data.get("ats_keywords", []),
         culture_signals=parsed_data.get("culture_signals", []),

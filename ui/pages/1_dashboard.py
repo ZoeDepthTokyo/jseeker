@@ -157,6 +157,29 @@ with st.expander("Batch Generate From Job URLs", expanded=False):
             st.session_state.batch_running = False
             st.rerun()
 
+    # Polling mechanism: Update progress from batch processor (background thread can't trigger reruns)
+    if st.session_state.batch_running and "batch_processor" in st.session_state:
+        try:
+            current_progress = st.session_state.batch_processor.get_progress()
+            if current_progress:
+                st.session_state.batch_progress = current_progress
+
+                # Check if batch completed
+                if current_progress.completed + current_progress.failed + current_progress.skipped == current_progress.total:
+                    if st.session_state.batch_running:
+                        st.session_state.batch_running = False
+                        # Trigger rerun to show completion UI
+                        import time
+                        time.sleep(0.5)  # Brief delay to ensure state is persisted
+                        st.rerun()
+                else:
+                    # Keep polling while batch runs
+                    import time
+                    time.sleep(2)
+                    st.rerun()
+        except Exception as e:
+            st.error(f"Error polling batch progress: {e}")
+
     # Progress display
     if st.session_state.batch_progress:
         progress = st.session_state.batch_progress
@@ -173,8 +196,9 @@ with st.expander("Batch Generate From Job URLs", expanded=False):
                 segment_range_end = min(progress.current_segment * 10, progress.total)
                 segment_text += f"({segment_range_start}-{segment_range_end}) • "
 
-            # Progress bar
-            progress_text = f"{segment_text}Processing {progress.completed + progress.running}/{progress.total} jobs "
+            # Progress bar (ensure running count never goes negative)
+            running_count = max(0, progress.running)
+            progress_text = f"{segment_text}Processing {progress.completed + running_count}/{progress.total} jobs "
             progress_text += f"({progress.completed} completed, {progress.failed} failed, {progress.skipped} skipped)"
 
             st.progress(
@@ -203,8 +227,16 @@ with st.expander("Batch Generate From Job URLs", expanded=False):
         elif progress.stopped:
             st.warning("⏹️ Batch stopped.")
         elif progress.completed + progress.failed + progress.skipped == progress.total:
-            st.success(f"✅ Batch complete! {progress.completed} succeeded, {progress.failed} failed, {progress.skipped} skipped.")
-            st.session_state.batch_running = False
+            # Show completion summary with manual retry hint if failures exist
+            summary_msg = f"✅ Batch complete! {progress.completed} succeeded, {progress.failed} failed, {progress.skipped} skipped."
+            if progress.failed > 0:
+                summary_msg += f" ({progress.failed} pending manual retry)"
+            st.success(summary_msg)
+
+            # Mark batch as complete and trigger rerun to show manual retry UI
+            if st.session_state.batch_running:
+                st.session_state.batch_running = False
+                st.rerun()
         else:
             status_text = f"Running: {progress.running} active workers"
             if progress.estimated_remaining_seconds:
@@ -232,6 +264,83 @@ with st.expander("Batch Generate From Job URLs", expanded=False):
                         st.error(f"❌ {job.url}: {job.error}")
                     elif job.status.value == "skipped":
                         st.info(f"⏭️ {job.url}: {job.error}")
+
+        # Manual fallback for failed extractions (OUTSIDE expander, always visible when batch complete)
+        if progress.completed + progress.failed + progress.skipped == progress.total and not progress.stopped:
+            failed_jobs = [job for job in st.session_state.batch_processor.get_all_jobs()
+                          if job.status.value == "failed"]
+
+            if failed_jobs:
+                st.markdown("---")
+                st.subheader(f"⚠️ Manual Retry Required ({len(failed_jobs)} failed)")
+                st.caption("JD extraction failed for these URLs. Paste the job description text manually to retry.")
+
+                for job in failed_jobs:
+                    with st.expander(f"🔧 Retry: {job.url}", expanded=False):
+                        st.caption(f"**Error**: {job.error}")
+                        st.caption(f"**URL**: {job.url}")
+
+                        # Manual JD paste area
+                        manual_jd = st.text_area(
+                            "Paste Job Description",
+                            placeholder="Paste the full job description text here...",
+                            height=200,
+                            key=f"manual_jd_{job.id}"
+                        )
+
+                        col_retry, col_spacer = st.columns([1, 3])
+                        with col_retry:
+                            if st.button(
+                                "🔄 Retry with Manual JD",
+                                key=f"retry_btn_{job.id}",
+                                disabled=not manual_jd or len(manual_jd.strip()) < 100,
+                                help="Retry pipeline with manually pasted JD text"
+                            ):
+                                with st.spinner(f"Processing {job.url}..."):
+                                    try:
+                                        # Run pipeline with manual JD text
+                                        result = run_pipeline(
+                                            jd_text=manual_jd.strip(),
+                                            jd_url=job.url,
+                                            output_dir=settings.output_dir
+                                        )
+
+                                        # Create application in tracker
+                                        created = tracker_db.create_from_pipeline(result)
+                                        tracker_db.update_application(created["application_id"], resume_status="exported")
+
+                                        # Update batch_job_items status
+                                        tracker_db.update_batch_job_item_status(
+                                            st.session_state.batch_id,
+                                            job.url,
+                                            status="completed",
+                                            resume_id=created.get("resume_id"),
+                                            application_id=created["application_id"]
+                                        )
+
+                                        # Update job status in memory
+                                        job.status = job.status.__class__("completed")
+                                        job.result = {
+                                            "application_id": created["application_id"],
+                                            "company": result.company,
+                                            "role": result.role,
+                                            "ats_score": result.ats_score.overall_score,
+                                            "cost_usd": result.total_cost,
+                                        }
+                                        job.error = None
+
+                                        # Update progress counters
+                                        st.session_state.batch_progress.completed += 1
+                                        st.session_state.batch_progress.failed -= 1
+
+                                        st.success(f"✅ Successfully processed: {result.company} - {result.role}")
+                                        st.rerun()
+
+                                    except Exception as e:
+                                        st.error(f"❌ Retry failed: {str(e)}")
+
+                        if len(manual_jd.strip()) > 0 and len(manual_jd.strip()) < 100:
+                            st.warning("⚠️ JD text too short (minimum 100 characters)")
 
 st.markdown("---")
 

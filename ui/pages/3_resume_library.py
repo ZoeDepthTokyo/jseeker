@@ -303,8 +303,7 @@ else:
         "version": st.column_config.NumberColumn("Version", disabled=True),
         "ats_score": st.column_config.NumberColumn("ATS Score", disabled=True),
         "template_used": st.column_config.TextColumn("Template", disabled=True),
-        "pdf_folder": st.column_config.TextColumn("Output Folder", disabled=True, width="small"),
-        "docx_folder": st.column_config.TextColumn("Output Folder", disabled=True, width="small"),
+        "output_folder": st.column_config.TextColumn("Output Folder", width="medium"),
         "created_at": st.column_config.DatetimeColumn("Created", disabled=True),
         "generation_cost": st.column_config.NumberColumn("Cost ($)", format="%.4f", disabled=True),
     }
@@ -317,29 +316,58 @@ else:
         key="resume_library_editor",
     )
 
-    if not df[available].equals(edited_df):
-        changed_count = 0
-        for idx, row in edited_df.iterrows():
-            original = df.iloc[idx]
-            application_id = int(df.iloc[idx]["application_id"])
-            company_id = int(df.iloc[idx]["company_id"])
+    # Auto-save changes (no button required per user feedback)
+    has_changes = not df[available].equals(edited_df)
 
-            if "company_name" in edited_df.columns and "company_name" in original:
-                new_val = row.get("company_name")
-                old_val = original.get("company_name")
-                if pd.notna(new_val) and pd.notna(old_val) and new_val != old_val:
-                    tracker_db.update_company_name(company_id, str(new_val))
-                    changed_count += 1
+    if has_changes:
+        with st.spinner("💾 Auto-saving changes..."):
+            changed_count = 0
+            for idx, row in edited_df.iterrows():
+                original = df.iloc[idx]
+                resume_id = int(original["id"])
+                application_id = int(original["application_id"])
+                company_id = int(original["company_id"])
 
-            if "role_title" in edited_df.columns and "role_title" in original:
-                new_val = row.get("role_title")
-                old_val = original.get("role_title")
-                if pd.notna(new_val) and pd.notna(old_val) and new_val != old_val:
-                    tracker_db.update_application(application_id, role_title=str(new_val))
-                    changed_count += 1
+                # Handle company_name edits
+                if "company_name" in edited_df.columns and "company_name" in original:
+                    new_val = row.get("company_name")
+                    old_val = original.get("company_name")
+                    if not (pd.isna(new_val) and pd.isna(old_val)) and new_val != old_val:
+                        # Create new company to avoid affecting other applications
+                        new_company_id = tracker_db.get_or_create_company(str(new_val))
+                        conn = tracker_db._conn()
+                        c = conn.cursor()
+                        c.execute("UPDATE applications SET company_id = ? WHERE id = ?", (new_company_id, application_id))
+                        conn.commit()
+                        conn.close()
+                        changed_count += 1
+
+                # Handle role_title edits
+                if "role_title" in edited_df.columns and "role_title" in original:
+                    new_val = row.get("role_title")
+                    old_val = original.get("role_title")
+                    if not (pd.isna(new_val) and pd.isna(old_val)) and new_val != old_val:
+                        tracker_db.update_application(application_id, role_title=str(new_val))
+                        changed_count += 1
+
+                # Handle output_folder edits (update both pdf_path and docx_path)
+                if "output_folder" in edited_df.columns and "output_folder" in original:
+                    new_folder = row.get("output_folder")
+                    old_folder = original.get("output_folder")
+                    if not (pd.isna(new_folder) and pd.isna(old_folder)) and new_folder != old_folder:
+                        # Build new paths by replacing folder portion
+                        new_folder_str = str(new_folder).strip()
+                        old_pdf = original.get("pdf_path", "")
+                        old_docx = original.get("docx_path", "")
+
+                        if new_folder_str and (old_pdf or old_docx):
+                            new_pdf = str(Path(new_folder_str) / Path(old_pdf).name) if old_pdf else None
+                            new_docx = str(Path(new_folder_str) / Path(old_docx).name) if old_docx else None
+                            tracker_db.update_resume_paths(resume_id, pdf_path=new_pdf, docx_path=new_docx)
+                            changed_count += 1
 
         if changed_count > 0:
-            st.toast(f"Saved {changed_count} change(s) to backend.")
+            st.success(f"✅ Auto-saved {changed_count} change(s)!")
             st.rerun()
 
     st.markdown("---")

@@ -9,10 +9,12 @@ import time
 import yaml
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 from jinja2 import Environment, FileSystemLoader
 
 from jseeker.models import AdaptedResume, RenderError
+from jseeker.style_extractor import ExtractedStyle, generate_css_from_style
 
 # Section labels for bilingual support
 SECTION_LABELS = {
@@ -52,16 +54,22 @@ def _get_templates_env() -> Environment:
     )
 
 
-def _render_html(adapted: AdaptedResume, template_name: str, language: str = "en") -> str:
+def _render_html(
+    adapted: AdaptedResume,
+    template_name: str,
+    language: str = "en",
+    custom_style: Optional[ExtractedStyle] = None,
+) -> str:
     """Render resume data into HTML using a Jinja2 template.
 
     Args:
         adapted: Adapted resume content.
         template_name: Name of the Jinja2 template to use.
         language: Language code for section labels ("en" or "es").
+        custom_style: Optional custom style extracted from PDF template.
 
     Returns:
-        Rendered HTML string.
+        Rendered HTML string with optional custom CSS.
     """
     env = _get_templates_env()
     template = env.get_template(template_name)
@@ -93,6 +101,11 @@ def _render_html(adapted: AdaptedResume, template_name: str, language: str = "en
     # Get section labels for the specified language
     section_labels = SECTION_LABELS.get(language, SECTION_LABELS["en"])
 
+    # Generate custom CSS if style provided
+    custom_css = ""
+    if custom_style:
+        custom_css = generate_css_from_style(custom_style)
+
     return template.render(
         name=adapted.contact.full_name,
         target_title=adapted.target_title,
@@ -110,17 +123,41 @@ def _render_html(adapted: AdaptedResume, template_name: str, language: str = "en
         awards=adapted.awards,
         early_career=adapted.early_career,
         section_labels=section_labels,
+        custom_css=custom_css,
     )
 
 
 def _format_date(date_str: str) -> str:
-    """Convert YYYY-MM or YYYY to MM/YYYY format."""
+    """Convert date string to Month YYYY format for ATS compliance.
+
+    Accepts: YYYY-MM, YYYY-MM-DD, or YYYY.
+    Returns: Month YYYY (e.g., "January 2023").
+
+    ATS systems expect consistent date formatting. Month YYYY format
+    is widely recognized across all platforms.
+    """
     if not date_str:
         return ""
+
+    from datetime import datetime
+
     parts = date_str.split("-")
-    if len(parts) == 2:
-        return f"{parts[1]}/{parts[0]}"
-    return date_str
+
+    # Handle YYYY-MM-DD or YYYY-MM
+    if len(parts) >= 2:
+        try:
+            year = int(parts[0])
+            month = int(parts[1])
+            date_obj = datetime(year, month, 1)
+            return date_obj.strftime("%B %Y")  # "January 2023"
+        except (ValueError, IndexError):
+            pass
+
+    # Handle YYYY only
+    if len(parts) == 1 and parts[0].isdigit():
+        return parts[0]  # Just year
+
+    return date_str  # Fallback: return as-is
 
 
 def _log_render_error(output_path: Path, attempt: int, stderr: str, stdout: str) -> None:
@@ -291,6 +328,7 @@ def render_pdf(
     two_column: bool = True,
     language: str = "en",
     use_fast_renderer: bool = True,
+    custom_style: Optional[ExtractedStyle] = None,
 ) -> Path:
     """Render resume to PDF via HTML + Playwright.
 
@@ -300,12 +338,13 @@ def render_pdf(
         two_column: Use two-column (visual) or single-column (ATS-safe) template.
         language: Language code for section labels ("en" or "es").
         use_fast_renderer: Use persistent browser (90% faster after first call).
+        custom_style: Optional custom style extracted from PDF template.
 
     Returns:
         Path to generated PDF.
     """
     template_name = "two_column.html" if two_column else "single_column.html"
-    html = _render_html(adapted, template_name, language=language)
+    html = _render_html(adapted, template_name, language=language, custom_style=custom_style)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     if use_fast_renderer:
@@ -599,6 +638,7 @@ def generate_output(
     formats: list[str] = None,
     filename_override: str = None,
     language: str = "en",
+    custom_style: Optional[ExtractedStyle] = None,
 ) -> dict[str, Path]:
     """Generate all output files for a resume.
 
@@ -613,6 +653,7 @@ def generate_output(
         formats: List of formats to generate ("pdf", "docx", or both).
         filename_override: Override the base filename (sanitized, version still appended).
         language: Language code for section labels ("en" or "es").
+        custom_style: Optional custom style extracted from PDF template.
 
     Returns:
         Dict of {format: path} for generated files.
@@ -651,7 +692,7 @@ def generate_output(
 
     if "pdf" in formats:
         pdf_path = folder / f"{base_name}_v{version}.pdf"
-        render_pdf(adapted, pdf_path, two_column=True, language=language)
+        render_pdf(adapted, pdf_path, two_column=True, language=language, custom_style=custom_style)
         results["pdf"] = pdf_path
 
     if "docx" in formats:

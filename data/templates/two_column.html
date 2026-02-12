@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <link rel="stylesheet" href="two_column.css">
+{% if custom_css %}
+<style>
+{{ custom_css }}
+</style>
+{% endif %}
 </head>
 <body>
 <div class="resume-grid">

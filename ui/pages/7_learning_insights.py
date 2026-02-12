@@ -362,14 +362,27 @@ try:
     if len(resume_costs) >= 2:
         cost_df = pd.DataFrame(resume_costs)
 
-        fig = px.scatter(
-            cost_df,
-            x="resume_number",
-            y="cost",
-            title="Cost per Resume Over Time (Should Decrease)",
-            labels={"resume_number": "Resume Number", "cost": "Generation Cost ($)"},
-            trendline="lowess",
-        )
+        # Try to add trendline if statsmodels is available
+        try:
+            fig = px.scatter(
+                cost_df,
+                x="resume_number",
+                y="cost",
+                title="Cost per Resume Over Time (Should Decrease)",
+                labels={"resume_number": "Resume Number", "cost": "Generation Cost ($)"},
+                trendline="lowess",
+            )
+        except Exception:
+            # Fallback: simple scatter plot without trendline
+            fig = px.scatter(
+                cost_df,
+                x="resume_number",
+                y="cost",
+                title="Cost per Resume Over Time (Should Decrease)",
+                labels={"resume_number": "Resume Number", "cost": "Generation Cost ($)"},
+            )
+            st.info("📊 Trendline unavailable (statsmodels not installed). Run: `pip install statsmodels`")
+
         fig.update_traces(marker=dict(size=10, color="blue"))
         st.plotly_chart(fig, width="stretch")
 

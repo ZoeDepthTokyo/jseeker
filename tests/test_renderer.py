@@ -212,3 +212,284 @@ class TestPDFRendering:
 
             # Verify error mentions retries exhausted
             assert "3 attempts" in str(exc_info.value) or "retries" in str(exc_info.value).lower()
+
+
+class TestDOCXStructure:
+    """Test DOCX structure for ATS compliance."""
+
+    def test_company_title_separation(self, tmp_path):
+        """Test that company name and job title are on separate paragraphs.
+
+        CRITICAL for ATS parsing (Workday, Greenhouse, etc.).
+        Single-line formats like 'Engineer — Acme' cause field misidentification.
+        """
+        from jseeker.models import AdaptedResume, ContactInfo
+        from jseeker.renderer import render_docx
+        from docx import Document
+
+        # Create minimal adapted resume
+        adapted = AdaptedResume(
+            contact=ContactInfo(
+                full_name="Test User",
+                email="test@example.com",
+                phone="555-1234",
+                locations=["Remote"],
+            ),
+            target_title="Software Engineer",
+            summary="Test summary",
+            experience_blocks=[
+                {
+                    "role": "Senior Software Engineer",
+                    "company": "Acme Corporation",
+                    "start": "2022-01-01",
+                    "end": "2023-12-31",
+                    "location": "Remote",
+                    "bullets": ["Led team of 5 engineers"],
+                }
+            ],
+            skills_ordered=[{"category": "Languages", "skills": ["Python", "JavaScript"]}],
+            education=[
+                {
+                    "degree": "BS Computer Science",
+                    "institution": "State University",
+                    "end": "2020-05-01",
+                }
+            ],
+            languages=[],
+            certifications=[],
+            awards=[],
+            template="A",
+        )
+
+        # Render DOCX
+        output_path = tmp_path / "test_resume.docx"
+        result_path = render_docx(adapted, output_path)
+
+        # Parse DOCX with python-docx
+        doc = Document(result_path)
+
+        # Find experience section paragraphs
+        experience_start = None
+        for i, para in enumerate(doc.paragraphs):
+            if "EXPERIENCE" in para.text.upper():
+                experience_start = i + 1
+                break
+
+        assert experience_start is not None, "Experience section not found"
+
+        # Verify structure: title (bold) -> company (not bold) -> date
+        title_para = doc.paragraphs[experience_start]
+        company_para = doc.paragraphs[experience_start + 1]
+        date_para = doc.paragraphs[experience_start + 2]
+
+        # Check content
+        assert "Senior Software Engineer" in title_para.text
+        assert "Acme Corporation" in company_para.text
+        assert "2022" in date_para.text
+
+        # Check title is bold
+        assert any(run.bold for run in title_para.runs), "Job title should be bold"
+
+        # Check company is NOT bold (or at least separate paragraph)
+        assert title_para.text != company_para.text, "Company and title must be separate paragraphs"
+
+    def test_condensed_experience_structure(self, tmp_path):
+        """Test that condensed experience entries maintain company/title separation."""
+        from jseeker.models import AdaptedResume, ContactInfo
+        from jseeker.renderer import render_docx
+        from docx import Document
+
+        adapted = AdaptedResume(
+            contact=ContactInfo(
+                full_name="Test User",
+                email="test@example.com",
+            ),
+            target_title="Software Engineer",
+            summary="Test summary",
+            experience_blocks=[
+                {
+                    "role": "Junior Developer",
+                    "company": "StartupCo",
+                    "start": "2020-01-01",
+                    "end": "2021-12-31",
+                    "condensed": True,  # Condensed entry
+                    "bullets": ["Built features", "Wrote tests", "Deployed code", "Extra bullet"],
+                }
+            ],
+            skills_ordered=[],
+            education=[],
+            languages=[],
+            certifications=[],
+            awards=[],
+            template="A",
+        )
+
+        output_path = tmp_path / "test_condensed.docx"
+        result_path = render_docx(adapted, output_path)
+
+        doc = Document(result_path)
+
+        # Find experience section
+        experience_start = None
+        for i, para in enumerate(doc.paragraphs):
+            if "EXPERIENCE" in para.text.upper():
+                experience_start = i + 1
+                break
+
+        assert experience_start is not None
+
+        title_para = doc.paragraphs[experience_start]
+        company_para = doc.paragraphs[experience_start + 1]
+
+        # Verify separation even for condensed entries
+        assert "Junior Developer" in title_para.text
+        assert "StartupCo" in company_para.text
+        assert title_para.text != company_para.text
+
+        # Verify bullet limit (max 3 for condensed)
+        bullets_found = 0
+        for i in range(experience_start, len(doc.paragraphs)):
+            para = doc.paragraphs[i]
+            if para.style.name == "List Bullet":
+                bullets_found += 1
+            elif "SKILLS" in para.text.upper() or "EDUCATION" in para.text.upper():
+                break
+
+        assert bullets_found <= 3, f"Condensed entry should have max 3 bullets, found {bullets_found}"
+
+    def test_date_format_consistency(self, tmp_path):
+        """Test that date format is consistent across all experience entries."""
+        from jseeker.models import AdaptedResume, ContactInfo
+        from jseeker.renderer import render_docx
+        from docx import Document
+        import re
+
+        adapted = AdaptedResume(
+            contact=ContactInfo(full_name="Test User", email="test@example.com"),
+            target_title="Engineer",
+            summary="Test",
+            experience_blocks=[
+                {
+                    "role": "Role 1",
+                    "company": "Company 1",
+                    "start": "2020-01-01",
+                    "end": "2021-06-30",
+                    "bullets": [],
+                },
+                {
+                    "role": "Role 2",
+                    "company": "Company 2",
+                    "start": "2021-07-01",
+                    "end": None,  # Present
+                    "bullets": [],
+                },
+            ],
+            skills_ordered=[],
+            education=[],
+            languages=[],
+            certifications=[],
+            awards=[],
+            template="A",
+        )
+
+        output_path = tmp_path / "test_dates.docx"
+        result_path = render_docx(adapted, output_path)
+
+        doc = Document(result_path)
+
+        # Extract all date lines (contain "–" en-dash)
+        date_lines = [p.text for p in doc.paragraphs if "–" in p.text]
+
+        assert len(date_lines) >= 2, "Should find at least 2 date lines"
+
+        # Check format: "Month YYYY – Month YYYY" or "Month YYYY – Present"
+        date_pattern = r"[A-Z][a-z]+ \d{4} – ([A-Z][a-z]+ \d{4}|Present)"
+        for date_line in date_lines:
+            # Extract date portion (before "|" if location exists)
+            date_text = date_line.split("|")[0].strip()
+            assert re.search(date_pattern, date_text), f"Date format invalid: {date_text}"
+
+    def test_no_tables_in_experience(self, tmp_path):
+        """Test that experience section uses paragraphs, not tables (ATS fails on tables)."""
+        from jseeker.models import AdaptedResume, ContactInfo
+        from jseeker.renderer import render_docx
+        from docx import Document
+
+        adapted = AdaptedResume(
+            contact=ContactInfo(full_name="Test User", email="test@example.com"),
+            target_title="Engineer",
+            summary="Test",
+            experience_blocks=[
+                {
+                    "role": "Engineer",
+                    "company": "Company",
+                    "start": "2020-01-01",
+                    "end": "2023-12-31",
+                    "bullets": ["Bullet 1", "Bullet 2"],
+                }
+            ],
+            skills_ordered=[],
+            education=[],
+            languages=[],
+            certifications=[],
+            awards=[],
+            template="A",
+        )
+
+        output_path = tmp_path / "test_no_tables.docx"
+        result_path = render_docx(adapted, output_path)
+
+        doc = Document(result_path)
+
+        # Verify no tables used in document
+        assert len(doc.tables) == 0, "DOCX should not contain tables (ATS parsing failure)"
+
+    def test_standard_section_headers(self, tmp_path):
+        """Test that section headers use standard ATS-recognized names."""
+        from jseeker.models import AdaptedResume, ContactInfo
+        from jseeker.renderer import render_docx
+        from docx import Document
+
+        adapted = AdaptedResume(
+            contact=ContactInfo(full_name="Test User", email="test@example.com"),
+            target_title="Engineer",
+            summary="Professional summary text",
+            experience_blocks=[
+                {
+                    "role": "Engineer",
+                    "company": "Company",
+                    "start": "2020-01-01",
+                    "end": "2023-12-31",
+                    "bullets": [],
+                }
+            ],
+            skills_ordered=[{"category": "Tech", "skills": ["Python"]}],
+            education=[
+                {
+                    "degree": "BS Computer Science",
+                    "institution": "University",
+                    "end": "2020-05-01",
+                }
+            ],
+            languages=[],
+            certifications=[],
+            awards=[],
+            template="A",
+        )
+
+        output_path = tmp_path / "test_headers.docx"
+        result_path = render_docx(adapted, output_path)
+
+        doc = Document(result_path)
+        all_text = "\n".join(p.text for p in doc.paragraphs)
+
+        # Check for standard ATS-recognized headers (uppercase)
+        assert "SUMMARY" in all_text or "PROFESSIONAL SUMMARY" in all_text
+        assert "EXPERIENCE" in all_text or "PROFESSIONAL EXPERIENCE" in all_text
+        assert "SKILLS" in all_text or "TECHNICAL SKILLS" in all_text
+        assert "EDUCATION" in all_text
+
+        # Check for non-standard headers (should NOT exist)
+        assert "MY JOURNEY" not in all_text.upper()
+        assert "TOOLBOX" not in all_text.upper()
+        assert "WHAT I'VE BUILT" not in all_text.upper()

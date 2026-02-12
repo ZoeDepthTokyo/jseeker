@@ -23,6 +23,7 @@ from jseeker.models import (
     ResumeStatus,
 )
 from jseeker.renderer import generate_output
+from jseeker.style_extractor import get_available_template_styles, load_template_style
 from jseeker.tracker import tracker_db
 
 
@@ -74,6 +75,36 @@ jd_url = st.text_input(
 )
 
 st.caption("Paste JD text, or provide only a job URL and jSeeker will try to extract the JD.")
+
+st.markdown("---")
+
+# --- Style Template Selection ---
+st.subheader("Visual Style (Optional)")
+
+try:
+    available_styles = get_available_template_styles()
+    style_names = [s["name"] for s in available_styles]
+
+    selected_style_name = st.selectbox(
+        "Choose PDF template style:",
+        options=style_names,
+        index=0,  # Default to "Built-in Default"
+        help="Select a PDF template to extract visual formatting (fonts, colors, layout). Built-in Default uses hardcoded styles.",
+        key="style_template_selector",
+    )
+
+    # Find selected template
+    selected_template = next((s for s in available_styles if s["name"] == selected_style_name), None)
+
+    if selected_template and selected_template.get("path"):
+        # Show template metadata
+        st.caption(
+            f"Language: {selected_template.get('language', 'Unknown')} | "
+            f"Source: {Path(selected_template['path']).name if selected_template['path'] else 'Built-in'}"
+        )
+except Exception as e:
+    st.warning(f"Could not load template styles: {e}")
+    selected_template = {"name": "Built-in Default", "path": "", "language": "English"}
 
 st.markdown("---")
 
@@ -156,12 +187,23 @@ if generate_button:
             progress.progress(85, text="Step 5/5: Rendering PDF and DOCX...")
             company = parsed_jd.company or "Unknown"
             role = parsed_jd.title or "Role"
+
+            # Load custom style if template selected
+            custom_style = None
+            if selected_template and selected_template.get("path"):
+                try:
+                    custom_style = load_template_style(selected_template["path"])
+                    st.caption(f"Applying style from: {selected_template['name']}")
+                except Exception as style_error:
+                    st.warning(f"Could not load template style, using default: {style_error}")
+
             outputs = generate_output(
                 adapted,
                 company,
                 role,
                 output_dir=settings.output_dir,
                 language=parsed_jd.language,
+                custom_style=custom_style,
             )
             progress.progress(95, text="Step 5/5: Files rendered.")
 

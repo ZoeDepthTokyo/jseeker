@@ -179,8 +179,8 @@ if apps:
         ),
         "role_title": st.column_config.TextColumn(
             "Role",
-            help="Job title (click link icon → to view posting)",
-            disabled=True,
+            help="Job title (editable)",
+            disabled=False,
             width="large"
         ),
         "jd_url": st.column_config.LinkColumn(
@@ -270,6 +270,7 @@ if apps:
 
                 # Handle other application fields
                 for col in [
+                    "role_title",
                     "application_status",
                     "resume_status",
                     "job_status",
@@ -295,6 +296,40 @@ if apps:
         if changed_count > 0:
             st.success(f"✅ Auto-saved {changed_count} change(s)!")
             st.rerun()
+
+    # --- Delete Row ---
+    st.markdown("---")
+    with st.expander("🗑️ Delete Application", expanded=False):
+        st.warning("⚠️ Warning: This will permanently delete the application and all associated resumes and files.")
+
+        delete_id = st.number_input(
+            "Application ID to delete",
+            min_value=1,
+            step=1,
+            help="Enter the ID from the leftmost column"
+        )
+
+        if delete_id:
+            # Show preview of what will be deleted
+            app_to_delete = next((a for a in apps if a["id"] == delete_id), None)
+            if app_to_delete:
+                st.info(
+                    f"**Preview:** {app_to_delete['role_title']} at {app_to_delete['company_name']} "
+                    f"(Status: {app_to_delete['application_status']})"
+                )
+
+                # Double confirmation
+                confirm = st.checkbox(f"I confirm I want to delete application #{delete_id}")
+
+                if confirm:
+                    if st.button("🗑️ Delete Permanently", type="primary"):
+                        if tracker_db.delete_application(delete_id):
+                            st.success(f"✅ Deleted application #{delete_id}")
+                            st.rerun()
+                        else:
+                            st.error(f"❌ Failed to delete application #{delete_id}")
+            else:
+                st.error(f"Application ID {delete_id} not found in current filtered view.")
 else:
     st.info("No applications match your filters.")
 

@@ -329,10 +329,11 @@ if col_search.button("🔍 Run Search", type="primary"):
             markets=selected_markets,
             pause_check=pause_check,
             progress_callback=progress_callback,
-            max_results=250
+            max_results=250,
+            max_results_per_country=100
         )
 
-        # Rank by tag weights
+        # Rank by tag weights and freshness (already applied per-country limit in search)
         ranked_discoveries = rank_discoveries_by_tag_weight(discoveries)
 
         # Save to database
@@ -471,10 +472,9 @@ discoveries = _get_discoveries(
 )
 
 if discoveries:
-    discoveries.sort(
-        key=lambda d: (d.get("posting_date") or "", d.get("discovered_at") or ""),
-        reverse=True,
-    )
+    # Rank by tag weight + freshness (same logic as search)
+    from jseeker.job_discovery import rank_discoveries_by_tag_weight
+    discoveries = rank_discoveries_by_tag_weight(discoveries)
 
 if discoveries:
     # Group discoveries by hierarchical location: Country > State/Province > City
@@ -566,16 +566,26 @@ if discoveries:
     # Helper function to render job card
     def render_job_card(disc):
         """Render a single job discovery card."""
-        with st.container():
-            col1, col2, col3 = st.columns([4, 2, 2])
-            col1.markdown(f"**{disc['title']}** - {disc.get('company', '')}")
-            col2.caption(disc.get("location", ""))
-            posting_date = disc.get("posting_date", "")
-            source = disc.get("source", "")
-            status = str(disc.get("status", "new")).strip().lower()
-            col3.caption(f"{posting_date} | {source} | {status}")
+        from jseeker.job_discovery import format_freshness
 
+        with st.container():
+            # Main info row: title, company, freshness
+            col1, col2, col3 = st.columns([5, 2, 2])
+            col1.markdown(f"**{disc['title']}** - {disc.get('company', '')}")
+
+            # Display freshness prominently
+            posting_date = disc.get("posting_date", "")
+            freshness_text = format_freshness(posting_date)
+            col2.caption(f"🕒 {freshness_text}")
+
+            # Location + source
+            location = disc.get("location", "Unknown")
+            source = disc.get("source", "")
+            col3.caption(f"📍 {location} · {source}")
+
+            # Action buttons row
             action_cols = st.columns(4)
+            status = str(disc.get("status", "new")).strip().lower()
 
             if status == "new":
                 if action_cols[0].button("Star", key=f"star_{disc['id']}"):

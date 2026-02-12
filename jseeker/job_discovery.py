@@ -512,14 +512,59 @@ def _parse_relative_date(text: str) -> date:
     return date.today()
 
 
-def rank_discoveries_by_tag_weight(discoveries: list[JobDiscovery | dict]) -> list[JobDiscovery | dict]:
-    """Rank discoveries by sum of tag weights from their search_tags.
+def format_freshness(posting_date: date | str | None) -> str:
+    """Format posting date as relative freshness string (e.g., 'Posted 2 days ago').
+
+    Args:
+        posting_date: Date object, ISO date string, or None
+
+    Returns:
+        Formatted freshness string (e.g., 'Posted today', 'Posted 3 days ago')
+    """
+    if posting_date is None:
+        return "Posted recently"
+
+    # Convert string to date if needed
+    if isinstance(posting_date, str):
+        try:
+            from datetime import datetime
+            posting_date = datetime.fromisoformat(posting_date.split()[0]).date()
+        except (ValueError, AttributeError):
+            return "Posted recently"
+
+    today = date.today()
+    delta = (today - posting_date).days
+
+    if delta == 0:
+        return "Posted today"
+    elif delta == 1:
+        return "Posted yesterday"
+    elif delta < 7:
+        return f"Posted {delta} days ago"
+    elif delta < 14:
+        return "Posted 1 week ago"
+    elif delta < 30:
+        weeks = delta // 7
+        return f"Posted {weeks} weeks ago"
+    elif delta < 60:
+        return "Posted 1 month ago"
+    else:
+        months = delta // 30
+        return f"Posted {months} months ago"
+
+
+def rank_discoveries_by_tag_weight(discoveries: list[JobDiscovery | dict], max_per_country: int = None) -> list[JobDiscovery | dict]:
+    """Rank discoveries by sum of tag weights from their search_tags, then by freshness.
+
+    Applies per-country limits if specified, keeping only the top N results per country
+    after ranking by relevance and freshness.
 
     Args:
         discoveries: List of JobDiscovery objects or dicts with search_tags field
+        max_per_country: Optional limit of results per country (None = unlimited)
 
     Returns:
-        Sorted list of discoveries (highest weight first)
+        Sorted list of discoveries (highest relevance + freshness first)
     """
     for disc in discoveries:
         total_weight = 0
@@ -538,7 +583,7 @@ def rank_discoveries_by_tag_weight(discoveries: list[JobDiscovery | dict]) -> li
         else:
             disc.search_tag_weights = tag_weights
 
-    # Sort by total weight (descending), then by posting_date (descending)
+    # Sort by total weight (descending), then by posting_date (descending for freshness)
     sorted_discoveries = sorted(
         discoveries,
         key=lambda d: (
@@ -547,6 +592,22 @@ def rank_discoveries_by_tag_weight(discoveries: list[JobDiscovery | dict]) -> li
         ),
         reverse=True
     )
+
+    # Apply per-country limit if specified
+    if max_per_country is not None:
+        country_counts = {}
+        filtered_discoveries = []
+
+        for disc in sorted_discoveries:
+            market = disc.get("market") if isinstance(disc, dict) else disc.market
+            market = market or "unknown"
+
+            if country_counts.get(market, 0) < max_per_country:
+                filtered_discoveries.append(disc)
+                country_counts[market] = country_counts.get(market, 0) + 1
+
+        logger.debug("Applied per-country limit %d: %s", max_per_country, country_counts)
+        return filtered_discoveries
 
     return sorted_discoveries
 
@@ -558,9 +619,10 @@ def search_jobs_async(
     markets: list[str] = None,
     pause_check: callable = None,
     progress_callback: callable = None,
-    max_results: int = 250
+    max_results: int = 250,
+    max_results_per_country: int = 100
 ) -> list[JobDiscovery]:
-    """Search jobs with pause/resume support and result limit.
+    """Search jobs with pause/resume support and result limits.
 
     Args:
         tags: List of search tags
@@ -569,7 +631,8 @@ def search_jobs_async(
         markets: List of markets to search (us, mx, ca, uk, es, de)
         pause_check: Callback that returns True if search should pause
         progress_callback: Callback(current_count, total_found) for progress updates
-        max_results: Maximum number of results to find (default 250)
+        max_results: Maximum number of total results to find (default 250)
+        max_results_per_country: Maximum results per country/market (default 100)
 
     Returns:
         List of JobDiscovery objects (may be paused before completion)
@@ -578,6 +641,7 @@ def search_jobs_async(
     markets = markets or ["us"]
 
     all_discoveries = []
+    market_counts = {market: 0 for market in markets}  # Track per-market results
     total_combinations = len(tags) * len(sources) * len(markets)
     current = 0
 
@@ -589,19 +653,29 @@ def search_jobs_async(
                     logger.info("Search paused at %d/%d combinations", current, total_combinations)
                     return all_discoveries
 
-                # Check result limit BEFORE searching
+                # Check global result limit
                 if len(all_discoveries) >= max_results:
                     logger.info("Search limit reached: %d results", len(all_discoveries))
                     return all_discoveries
 
+                # Check per-market limit
+                if market_counts[market] >= max_results_per_country:
+                    logger.debug("Market %s limit reached: %d results", market, market_counts[market])
+                    current += 1
+                    continue
+
                 # Perform search
                 results = _search_source(tag, location, source, market)
 
-                # Add results but respect limit
+                # Add results but respect both limits
                 for result in results:
                     if len(all_discoveries) >= max_results:
                         break
+                    if market_counts[market] >= max_results_per_country:
+                        break
+                    result.market = market  # Ensure market is set
                     all_discoveries.append(result)
+                    market_counts[market] += 1
 
                 current += 1
 
@@ -610,16 +684,17 @@ def search_jobs_async(
                     progress_callback(current, len(all_discoveries))
 
                 logger.debug(
-                    "Search progress: %d/%d combinations, %d total results",
-                    current, total_combinations, len(all_discoveries)
+                    "Search progress: %d/%d combinations, %d total results (%s: %d)",
+                    current, total_combinations, len(all_discoveries), market, market_counts[market]
                 )
 
-                # Check limit again after adding results
+                # Check limits again after adding results
                 if len(all_discoveries) >= max_results:
                     logger.info("Search limit reached: %d results", len(all_discoveries))
                     return all_discoveries
 
-    logger.info("Search completed: %d total results from %d combinations", len(all_discoveries), total_combinations)
+    logger.info("Search completed: %d total results from %d combinations (per-country: %s)",
+                len(all_discoveries), total_combinations, market_counts)
     return all_discoveries
 
 

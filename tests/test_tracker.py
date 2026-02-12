@@ -1,6 +1,7 @@
 """Tests for tracker module."""
 
 import pytest
+import tempfile
 from pathlib import Path
 from jseeker.tracker import TrackerDB
 from jseeker.models import (
@@ -462,6 +463,111 @@ class TestTrackerDB:
         assert result["notes"] == "test note"
         assert result["location"] == "SF"
         assert result["salary_range"] == "$150k - $200k"
+
+    def test_delete_application(self, tmp_db, tmp_path):
+        """Test deleting an application and its associated resumes."""
+        db = TrackerDB(tmp_db)
+        company_id = db.get_or_create_company("TestCorp")
+
+        # Create application
+        app = Application(company_id=company_id, role_title="Designer")
+        app_id = db.add_application(app)
+
+        # Create resume with file
+        pdf_path = tmp_path / "test_resume.pdf"
+        pdf_path.write_text("fake pdf content")
+        resume = Resume(
+            application_id=app_id,
+            template_used="ai_ux",
+            pdf_path=str(pdf_path),
+            ats_score=85,
+        )
+        resume_id = db.add_resume(resume)
+
+        # Verify application and resume exist
+        assert db.get_application(app_id) is not None
+        assert len(db.get_resumes_for_application(app_id)) == 1
+        assert pdf_path.exists()
+
+        # Delete application
+        result = db.delete_application(app_id)
+        assert result is True
+
+        # Verify application is gone
+        assert db.get_application(app_id) is None
+
+        # Verify resumes are gone
+        assert len(db.get_resumes_for_application(app_id)) == 0
+
+        # Verify file was deleted
+        assert not pdf_path.exists()
+
+    def test_delete_application_with_multiple_resumes(self, tmp_db, tmp_path):
+        """Test deleting an application with multiple resume versions."""
+        db = TrackerDB(tmp_db)
+        company_id = db.get_or_create_company("TestCorp")
+
+        # Create application
+        app = Application(company_id=company_id, role_title="Designer")
+        app_id = db.add_application(app)
+
+        # Create multiple resume versions with files
+        resume_files = []
+        for i in range(3):
+            pdf_path = tmp_path / f"resume_v{i+1}.pdf"
+            pdf_path.write_text(f"fake pdf v{i+1}")
+            resume_files.append(pdf_path)
+
+            resume = Resume(
+                application_id=app_id,
+                version=i+1,
+                template_used="ai_ux",
+                pdf_path=str(pdf_path),
+            )
+            db.add_resume(resume)
+
+        # Verify all resumes exist
+        assert len(db.get_resumes_for_application(app_id)) == 3
+        for path in resume_files:
+            assert path.exists()
+
+        # Delete application
+        result = db.delete_application(app_id)
+        assert result is True
+
+        # Verify all resumes are gone
+        assert len(db.get_resumes_for_application(app_id)) == 0
+
+        # Verify all files are deleted
+        for path in resume_files:
+            assert not path.exists()
+
+    def test_delete_application_nonexistent(self, tmp_db):
+        """Test deleting a non-existent application returns False."""
+        db = TrackerDB(tmp_db)
+        result = db.delete_application(9999)
+        assert result is False
+
+    def test_delete_application_preserves_company(self, tmp_db):
+        """Test that deleting an application doesn't delete the company."""
+        db = TrackerDB(tmp_db)
+        company_id = db.get_or_create_company("TestCorp")
+
+        # Create two applications for same company
+        app1 = Application(company_id=company_id, role_title="Designer")
+        app1_id = db.add_application(app1)
+
+        app2 = Application(company_id=company_id, role_title="Product Manager")
+        app2_id = db.add_application(app2)
+
+        # Delete first application
+        db.delete_application(app1_id)
+
+        # Verify second application still exists with company
+        app2_result = db.get_application(app2_id)
+        assert app2_result is not None
+        assert app2_result["company_name"] == "TestCorp"
+        assert app2_result["company_id"] == company_id
 
 
 class TestTrackerConcurrency:

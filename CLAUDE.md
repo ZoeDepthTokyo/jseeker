@@ -94,6 +94,7 @@ python scripts/test_v0_3_2_complete.py
 - **process_jd() signature**: Only accepts (`raw_text`, `jd_url`, `use_semantic_cache`) - NOT `role_title` or `company_name`
 - **ParsedJD model**: Has NO `relevance_score` field (computed during matching phase, not JD parsing)
 - **Version management**: Update version in BOTH `config.py` (app_version) AND `jseeker/__init__.py` (__version__)
+- **statsmodels dependency**: Required for Performance Trends trendline (ui/pages/7_learning_insights.py). Gracefully degrades to scatter plot if unavailable.
 
 ## DO NOT
 - Invent experience or metrics not in resume_blocks YAML

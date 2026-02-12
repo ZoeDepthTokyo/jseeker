@@ -526,6 +526,46 @@ class TrackerDB:
         conn.commit()
         conn.close()
 
+    def delete_application(self, app_id: int) -> bool:
+        """Delete an application and all associated resumes and files.
+
+        Args:
+            app_id: Application ID to delete
+
+        Returns:
+            True if deleted, False if not found
+
+        Note:
+            This is a CASCADE delete that removes:
+            - All associated resumes (and their PDF/DOCX files from disk)
+            - The application record
+            Does NOT delete the company record (may be used by other applications)
+        """
+        conn = self._conn()
+        c = conn.cursor()
+
+        # First check if application exists
+        c.execute("SELECT id FROM applications WHERE id = ?", (app_id,))
+        if not c.fetchone():
+            conn.close()
+            return False
+
+        # Delete all associated resumes and their files
+        c.execute("SELECT id FROM resumes WHERE application_id = ?", (app_id,))
+        resume_ids = [row[0] for row in c.fetchall()]
+        for resume_id in resume_ids:
+            # delete_resume handles file deletion
+            self.delete_resume(resume_id)
+
+        # Delete the application
+        c.execute("DELETE FROM applications WHERE id = ?", (app_id,))
+        conn.commit()
+        conn.close()
+
+        logger = logging.getLogger(__name__)
+        logger.info(f"Deleted application {app_id} and {len(resume_ids)} associated resume(s)")
+        return True
+
     # ── Resumes ────────────────────────────────────────────────────
 
     def add_resume(self, resume: Resume) -> int:

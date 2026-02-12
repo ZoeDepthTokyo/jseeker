@@ -23,6 +23,7 @@ def disable_cache(monkeypatch):
     """Disable local cache for all tests."""
     monkeypatch.setenv("ENABLE_LOCAL_CACHE", "false")
     from config import settings
+
     settings.enable_local_cache = False
 
 
@@ -134,9 +135,7 @@ def test_retry_on_connection_error(llm_instance, mock_anthropic_client):
 def test_retry_on_internal_server_error(llm_instance, mock_anthropic_client):
     """Test that InternalServerError (500) triggers retry."""
     mock_anthropic_client.messages.create.side_effect = [
-        InternalServerError(
-            message="Internal server error", response=Mock(), body={}
-        ),
+        InternalServerError(message="Internal server error", response=Mock(), body={}),
         mock_anthropic_client.messages.create.return_value,
     ]
 
@@ -509,6 +508,7 @@ def test_client_initialization_without_api_key(monkeypatch):
     # Remove API key from environment
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     from config import settings
+
     original_key = settings.anthropic_api_key
     settings.anthropic_api_key = None
 

@@ -14,6 +14,7 @@ from jseeker.models import ATSPlatform, ATSScore, AdaptedResume, ParsedJD
 
 def _load_prompt(name: str) -> str:
     from config import settings
+
     path = settings.prompts_dir / f"{name}.txt"
     return path.read_text(encoding="utf-8")
 
@@ -21,6 +22,7 @@ def _load_prompt(name: str) -> str:
 def _load_ats_profile(platform: ATSPlatform) -> dict:
     """Load ATS profile rules for a platform."""
     from config import settings
+
     profile_path = settings.ats_profiles_dir / f"{platform.value}.yaml"
     if not profile_path.exists():
         return {}
@@ -148,8 +150,7 @@ def score_resume(
     # LLM-based scoring
     prompt_template = _load_prompt("ats_scorer")
     prompt = (
-        prompt_template
-        .replace("{ats_platform}", platform.value)
+        prompt_template.replace("{ats_platform}", platform.value)
         .replace("{platform_rules}", platform_rules)
         .replace("{ats_keywords}", ", ".join(parsed_jd.ats_keywords))
         .replace("{resume_content}", resume_text)

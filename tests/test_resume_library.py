@@ -105,13 +105,15 @@ class TestPDFUpload:
 
         # Update metadata
         sources_data = json.loads(temp_sources_file.read_text(encoding="utf-8"))
-        sources_data["uploaded_templates"] = [{
-            "name": safe_name,
-            "path": str(pdf_path),
-            "language": "English",
-            "uploaded_at": datetime.now().isoformat(),
-            "size_kb": len(sample_pdf_bytes) / 1024,
-        }]
+        sources_data["uploaded_templates"] = [
+            {
+                "name": safe_name,
+                "path": str(pdf_path),
+                "language": "English",
+                "uploaded_at": datetime.now().isoformat(),
+                "size_kb": len(sample_pdf_bytes) / 1024,
+            }
+        ]
         temp_sources_file.write_text(json.dumps(sources_data, indent=2), encoding="utf-8")
 
         # Verify
@@ -135,13 +137,15 @@ class TestPDFUpload:
             pdf_path = temp_resume_dir / f"{template_name}.pdf"
             pdf_path.write_bytes(sample_pdf_bytes)
 
-            sources_data["uploaded_templates"].append({
-                "name": template_name,
-                "path": str(pdf_path),
-                "language": "English",
-                "uploaded_at": datetime.now().isoformat(),
-                "size_kb": len(sample_pdf_bytes) / 1024,
-            })
+            sources_data["uploaded_templates"].append(
+                {
+                    "name": template_name,
+                    "path": str(pdf_path),
+                    "language": "English",
+                    "uploaded_at": datetime.now().isoformat(),
+                    "size_kb": len(sample_pdf_bytes) / 1024,
+                }
+            )
 
         temp_sources_file.write_text(json.dumps(sources_data, indent=2), encoding="utf-8")
 
@@ -150,20 +154,24 @@ class TestPDFUpload:
         assert len(metadata["uploaded_templates"]) == 3
         assert all((temp_resume_dir / f"{t}.pdf").exists() for t in templates)
 
-    def test_duplicate_template_detection(self, temp_resume_dir, temp_sources_file, sample_pdf_bytes):
+    def test_duplicate_template_detection(
+        self, temp_resume_dir, temp_sources_file, sample_pdf_bytes
+    ):
         """Test that duplicate template names are handled correctly."""
         template_name = "Duplicate_Resume"
         pdf_path = temp_resume_dir / f"{template_name}.pdf"
         pdf_path.write_bytes(sample_pdf_bytes)
 
         sources_data = {
-            "uploaded_templates": [{
-                "name": template_name,
-                "path": str(pdf_path),
-                "language": "English",
-                "uploaded_at": datetime.now().isoformat(),
-                "size_kb": len(sample_pdf_bytes) / 1024,
-            }]
+            "uploaded_templates": [
+                {
+                    "name": template_name,
+                    "path": str(pdf_path),
+                    "language": "English",
+                    "uploaded_at": datetime.now().isoformat(),
+                    "size_kb": len(sample_pdf_bytes) / 1024,
+                }
+            ]
         }
         temp_sources_file.write_text(json.dumps(sources_data, indent=2), encoding="utf-8")
 
@@ -173,8 +181,8 @@ class TestPDFUpload:
 
     def test_filename_sanitization(self, temp_resume_dir, temp_sources_file, sample_pdf_bytes):
         """Test that unsafe characters are removed from filenames."""
-        unsafe_name = "Resume<>/\\:*?\"| Test@2026"
-        safe_name = "".join(c for c in unsafe_name if c.isalnum() or c in (' ', '-', '_')).strip()
+        unsafe_name = 'Resume<>/\\:*?"| Test@2026'
+        safe_name = "".join(c for c in unsafe_name if c.isalnum() or c in (" ", "-", "_")).strip()
 
         assert safe_name == "Resume Test2026"
 
@@ -196,13 +204,15 @@ class TestPDFUpload:
     def test_metadata_structure(self, temp_sources_file, sample_pdf_bytes):
         """Test that metadata follows expected structure."""
         sources_data = {
-            "uploaded_templates": [{
-                "name": "Test_Resume",
-                "path": "X:/Projects/jSeeker/docs/Resume References/Test_Resume.pdf",
-                "language": "Spanish",
-                "uploaded_at": "2026-02-10T15:30:00",
-                "size_kb": len(sample_pdf_bytes) / 1024,
-            }]
+            "uploaded_templates": [
+                {
+                    "name": "Test_Resume",
+                    "path": "X:/Projects/jSeeker/docs/Resume References/Test_Resume.pdf",
+                    "language": "Spanish",
+                    "uploaded_at": "2026-02-10T15:30:00",
+                    "size_kb": len(sample_pdf_bytes) / 1024,
+                }
+            ]
         }
         temp_sources_file.write_text(json.dumps(sources_data, indent=2), encoding="utf-8")
 
@@ -228,13 +238,15 @@ class TestTemplateManagement:
         pdf_path.write_bytes(sample_pdf_bytes)
 
         sources_data = {
-            "uploaded_templates": [{
-                "name": template_name,
-                "path": str(pdf_path),
-                "language": "English",
-                "uploaded_at": datetime.now().isoformat(),
-                "size_kb": len(sample_pdf_bytes) / 1024,
-            }]
+            "uploaded_templates": [
+                {
+                    "name": template_name,
+                    "path": str(pdf_path),
+                    "language": "English",
+                    "uploaded_at": datetime.now().isoformat(),
+                    "size_kb": len(sample_pdf_bytes) / 1024,
+                }
+            ]
         }
         temp_sources_file.write_text(json.dumps(sources_data, indent=2), encoding="utf-8")
 
@@ -261,13 +273,15 @@ class TestTemplateManagement:
         pdf_path.write_bytes(sample_pdf_bytes)
 
         sources_data = {
-            "uploaded_templates": [{
-                "name": old_name,
-                "path": str(pdf_path),
-                "language": "English",
-                "uploaded_at": datetime.now().isoformat(),
-                "size_kb": len(sample_pdf_bytes) / 1024,
-            }]
+            "uploaded_templates": [
+                {
+                    "name": old_name,
+                    "path": str(pdf_path),
+                    "language": "English",
+                    "uploaded_at": datetime.now().isoformat(),
+                    "size_kb": len(sample_pdf_bytes) / 1024,
+                }
+            ]
         }
         temp_sources_file.write_text(json.dumps(sources_data, indent=2), encoding="utf-8")
 
@@ -338,9 +352,10 @@ class TestPDFPreview:
         pdf_path.write_bytes(sample_pdf_bytes)
 
         # Simulate missing PyMuPDF
-        with patch.dict('sys.modules', {'fitz': None}):
+        with patch.dict("sys.modules", {"fitz": None}):
             try:
                 import fitz
+
                 pytest.fail("Should have raised ImportError")
             except (ImportError, AttributeError):
                 # Expected - fallback to message
@@ -357,7 +372,9 @@ class TestLanguageSupport:
         for lang in languages:
             assert lang in ["English", "Spanish", "French", "Other"]
 
-    def test_template_with_different_languages(self, temp_resume_dir, temp_sources_file, sample_pdf_bytes):
+    def test_template_with_different_languages(
+        self, temp_resume_dir, temp_sources_file, sample_pdf_bytes
+    ):
         """Test uploading templates in different languages."""
         templates = [
             ("Resume_EN", "English"),
@@ -372,13 +389,15 @@ class TestLanguageSupport:
             pdf_path = temp_resume_dir / f"{name}.pdf"
             pdf_path.write_bytes(sample_pdf_bytes)
 
-            sources_data["uploaded_templates"].append({
-                "name": name,
-                "path": str(pdf_path),
-                "language": lang,
-                "uploaded_at": datetime.now().isoformat(),
-                "size_kb": len(sample_pdf_bytes) / 1024,
-            })
+            sources_data["uploaded_templates"].append(
+                {
+                    "name": name,
+                    "path": str(pdf_path),
+                    "language": lang,
+                    "uploaded_at": datetime.now().isoformat(),
+                    "size_kb": len(sample_pdf_bytes) / 1024,
+                }
+            )
 
         temp_sources_file.write_text(json.dumps(sources_data, indent=2), encoding="utf-8")
 
@@ -461,13 +480,15 @@ class TestIntegration:
         pdf_path.write_bytes(sample_pdf_bytes)
 
         sources_data = {
-            "uploaded_templates": [{
-                "name": template_name,
-                "path": str(pdf_path),
-                "language": "English",
-                "uploaded_at": datetime.now().isoformat(),
-                "size_kb": len(sample_pdf_bytes) / 1024,
-            }]
+            "uploaded_templates": [
+                {
+                    "name": template_name,
+                    "path": str(pdf_path),
+                    "language": "English",
+                    "uploaded_at": datetime.now().isoformat(),
+                    "size_kb": len(sample_pdf_bytes) / 1024,
+                }
+            ]
         }
         temp_sources_file.write_text(json.dumps(sources_data, indent=2), encoding="utf-8")
 
@@ -500,7 +521,9 @@ class TestIntegration:
         assert len(final_metadata["uploaded_templates"]) == 0
         assert not new_path.exists()
 
-    def test_multiple_templates_concurrent_operations(self, temp_resume_dir, temp_sources_file, sample_pdf_bytes):
+    def test_multiple_templates_concurrent_operations(
+        self, temp_resume_dir, temp_sources_file, sample_pdf_bytes
+    ):
         """Test handling multiple templates with concurrent operations."""
         # Upload multiple templates
         templates = ["Template_1", "Template_2", "Template_3"]
@@ -510,13 +533,15 @@ class TestIntegration:
             pdf_path = temp_resume_dir / f"{template_name}.pdf"
             pdf_path.write_bytes(sample_pdf_bytes)
 
-            sources_data["uploaded_templates"].append({
-                "name": template_name,
-                "path": str(pdf_path),
-                "language": "English",
-                "uploaded_at": datetime.now().isoformat(),
-                "size_kb": len(sample_pdf_bytes) / 1024,
-            })
+            sources_data["uploaded_templates"].append(
+                {
+                    "name": template_name,
+                    "path": str(pdf_path),
+                    "language": "English",
+                    "uploaded_at": datetime.now().isoformat(),
+                    "size_kb": len(sample_pdf_bytes) / 1024,
+                }
+            )
 
         temp_sources_file.write_text(json.dumps(sources_data, indent=2), encoding="utf-8")
 

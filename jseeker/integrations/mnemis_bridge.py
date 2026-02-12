@@ -26,6 +26,7 @@ def store_pattern(
     """
     try:
         from rag_intelligence.memory import MnemisClient
+
         client = MnemisClient()
         return client.store(
             component="jseeker",
@@ -48,6 +49,7 @@ def recall_patterns(
     """
     try:
         from rag_intelligence.memory import MnemisClient
+
         client = MnemisClient()
         return client.recall(
             component="jseeker",

@@ -48,6 +48,7 @@ SECTION_LABELS = {
 def _get_templates_env() -> Environment:
     """Create Jinja2 environment for templates."""
     from config import settings
+
     return Environment(
         loader=FileSystemLoader(str(settings.templates_dir)),
         autoescape=True,
@@ -82,21 +83,25 @@ def _render_html(
             end_display = "Present" if language == "en" else "Presente"
         else:
             end_display = _format_date(end)
-        experiences.append({
-            **exp,
-            "start_display": _format_date(exp.get("start", "")),
-            "end_display": end_display,
-        })
+        experiences.append(
+            {
+                **exp,
+                "start_display": _format_date(exp.get("start", "")),
+                "end_display": end_display,
+            }
+        )
 
     education = []
     for edu in adapted.education:
-        education.append({
-            "institution": edu.institution,
-            "degree": edu.degree or "",
-            "field": edu.field,
-            "start": edu.start,
-            "end": edu.end,
-        })
+        education.append(
+            {
+                "institution": edu.institution,
+                "degree": edu.degree or "",
+                "field": edu.field,
+                "start": edu.start,
+                "end": edu.end,
+            }
+        )
 
     # Get section labels for the specified language
     section_labels = SECTION_LABELS.get(language, SECTION_LABELS["en"])
@@ -170,6 +175,7 @@ def _log_render_error(output_path: Path, attempt: int, stderr: str, stdout: str)
         stdout: Full stdout from subprocess.
     """
     from config import settings
+
     error_log_dir = settings.gaia_root / "logs" / "jseeker_render_errors"
     error_log_dir.mkdir(parents=True, exist_ok=True)
 
@@ -245,22 +251,27 @@ with sync_playwright() as p:
                 if result.returncode == 0:
                     # Success
                     from jseeker.integrations.argus_telemetry import log_runtime_event
+
                     log_runtime_event(
                         task="pdf_render",
                         model="playwright",
                         cost_usd=0.0,
-                        details=f"Success on attempt {attempt}/{max_attempts}"
+                        details=f"Success on attempt {attempt}/{max_attempts}",
                     )
                     return output_path
                 else:
                     # Non-zero return code
-                    error_msg = f"Attempt {attempt}/{max_attempts} failed (returncode={result.returncode})"
-                    error_details.append({
-                        "attempt": attempt,
-                        "returncode": result.returncode,
-                        "stderr": result.stderr,
-                        "stdout": result.stdout,
-                    })
+                    error_msg = (
+                        f"Attempt {attempt}/{max_attempts} failed (returncode={result.returncode})"
+                    )
+                    error_details.append(
+                        {
+                            "attempt": attempt,
+                            "returncode": result.returncode,
+                            "stderr": result.stderr,
+                            "stdout": result.stdout,
+                        }
+                    )
                     last_error = result.stderr
 
                     # Log detailed error
@@ -272,11 +283,13 @@ with sync_playwright() as p:
 
             except subprocess.TimeoutExpired as e:
                 error_msg = f"Attempt {attempt}/{max_attempts} timeout after {e.timeout}s"
-                error_details.append({
-                    "attempt": attempt,
-                    "error": "TimeoutExpired",
-                    "timeout": e.timeout,
-                })
+                error_details.append(
+                    {
+                        "attempt": attempt,
+                        "error": "TimeoutExpired",
+                        "timeout": e.timeout,
+                    }
+                )
                 last_error = f"Subprocess timeout after {e.timeout}s"
 
                 # Log timeout error
@@ -288,16 +301,16 @@ with sync_playwright() as p:
 
         # All retries exhausted
         from jseeker.integrations.argus_telemetry import log_runtime_event
+
         log_runtime_event(
             task="pdf_render",
             model="playwright",
             cost_usd=0.0,
-            details=f"Failed after {max_attempts} attempts"
+            details=f"Failed after {max_attempts} attempts",
         )
 
         raise RenderError(
-            f"PDF generation failed after {max_attempts} attempts. "
-            f"Last error: {last_error}"
+            f"PDF generation failed after {max_attempts} attempts. " f"Last error: {last_error}"
         )
 
     finally:
@@ -314,10 +327,12 @@ def _html_to_pdf_fast(html: str, output_path: Path) -> Path:
     """
     try:
         from jseeker.browser_manager import html_to_pdf_fast
+
         return html_to_pdf_fast(html, output_path)
     except Exception as e:
         # Fallback to slow method if persistent browser fails
         import warnings
+
         warnings.warn(f"Fast PDF rendering failed ({e}), falling back to slow method")
         return _html_to_pdf_sync(html, output_path)
 
@@ -432,7 +447,9 @@ def render_docx(adapted: AdaptedResume, output_path: Path, language: str = "en")
     _add_section_header(doc, section_labels["experience"])
     for exp in adapted.experience_blocks:
         end = exp.get("end")
-        end_display = ("Present" if language == "en" else "Presente") if end is None else _format_date(end)
+        end_display = (
+            ("Present" if language == "en" else "Presente") if end is None else _format_date(end)
+        )
         start_display = _format_date(exp.get("start", ""))
 
         # Check if this is a condensed entry
@@ -531,7 +548,7 @@ def render_docx(adapted: AdaptedResume, output_path: Path, language: str = "en")
                 run.font.size = Pt(9.5)
 
     # Languages
-    if hasattr(adapted.contact, 'languages') and adapted.contact.languages:
+    if hasattr(adapted.contact, "languages") and adapted.contact.languages:
         _add_section_header(doc, section_labels["languages"])
         lang_strs = [
             f"{lang['lang']} ({lang['level']})" if isinstance(lang, dict) else str(lang)
@@ -557,14 +574,14 @@ def _add_bottom_border(paragraph, color: str = "2B5797") -> None:
     from lxml import etree
 
     pPr = paragraph._p.get_or_add_pPr()
-    pBdr = pPr.find(qn('w:pBdr'))
+    pBdr = pPr.find(qn("w:pBdr"))
     if pBdr is None:
-        pBdr = etree.SubElement(pPr, qn('w:pBdr'))
-    bottom = etree.SubElement(pBdr, qn('w:bottom'))
-    bottom.set(qn('w:val'), 'single')
-    bottom.set(qn('w:sz'), '4')  # 0.5pt
-    bottom.set(qn('w:space'), '1')
-    bottom.set(qn('w:color'), color)
+        pBdr = etree.SubElement(pPr, qn("w:pBdr"))
+    bottom = etree.SubElement(pBdr, qn("w:bottom"))
+    bottom.set(qn("w:val"), "single")
+    bottom.set(qn("w:sz"), "4")  # 0.5pt
+    bottom.set(qn("w:space"), "1")
+    bottom.set(qn("w:color"), color)
 
 
 def _add_section_header(doc, text: str) -> None:
@@ -575,6 +592,7 @@ def _add_section_header(doc, text: str) -> None:
         text: Section header text.
     """
     from docx.shared import Pt, RGBColor
+
     para = doc.add_paragraph()
     run = para.add_run(text)
     run.bold = True
@@ -590,6 +608,7 @@ def _add_section_header(doc, text: str) -> None:
 def _get_display_name() -> str:
     """Read display_name from contact.yaml."""
     from config import settings
+
     contact_path = settings.resume_blocks_dir / "contact.yaml"
     data = yaml.safe_load(contact_path.read_text(encoding="utf-8"))
     return data.get("contact", {}).get("display_name", "Resume")
@@ -660,6 +679,7 @@ def generate_output(
     """
     if output_dir is None:
         from config import settings
+
         output_dir = settings.output_dir
 
     if formats is None:
@@ -672,6 +692,7 @@ def generate_output(
     # Log when company name fallback is used
     if not company or not company.strip():
         import logging
+
         logging.warning(f"Company name is empty, using fallback 'Unknown_Company'")
         company = "Unknown_Company"
 

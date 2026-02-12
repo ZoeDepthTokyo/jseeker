@@ -13,7 +13,6 @@ import streamlit as st
 from config import settings
 from jseeker.pattern_learner import get_pattern_stats
 
-
 st.set_page_config(page_title="Learning Insights - jSeeker", page_icon="🧠", layout="wide")
 
 st.title("🧠 Learning Insights")
@@ -31,7 +30,9 @@ try:
     stats = get_pattern_stats(db_path=settings.db_path)
 
     if stats["total_patterns"] == 0:
-        st.info("No patterns learned yet. Generate a few resumes to start building the pattern library.")
+        st.info(
+            "No patterns learned yet. Generate a few resumes to start building the pattern library."
+        )
     else:
         col1, col2, col3 = st.columns(3)
 
@@ -56,8 +57,18 @@ try:
             st.markdown("These patterns are reused most frequently across resumes:")
 
             pattern_df = pd.DataFrame(stats["top_patterns"])
-            pattern_df = pattern_df[["id", "type", "frequency", "confidence", "context", "source", "target"]]
-            pattern_df.columns = ["ID", "Type", "Uses", "Confidence", "JD Context", "Source Text", "Target Text"]
+            pattern_df = pattern_df[
+                ["id", "type", "frequency", "confidence", "context", "source", "target"]
+            ]
+            pattern_df.columns = [
+                "ID",
+                "Type",
+                "Uses",
+                "Confidence",
+                "JD Context",
+                "Source Text",
+                "Target Text",
+            ]
 
             st.dataframe(
                 pattern_df,
@@ -215,7 +226,10 @@ try:
 
         # Display grouped by type
         for ptype, type_patterns in pattern_types.items():
-            with st.expander(f"**{ptype.replace('_', ' ').title()}** ({len(type_patterns)} patterns)", expanded=False):
+            with st.expander(
+                f"**{ptype.replace('_', ' ').title()}** ({len(type_patterns)} patterns)",
+                expanded=False,
+            ):
                 for pattern in type_patterns:
                     # Parse JD context
                     try:
@@ -235,10 +249,18 @@ try:
 
                         # Show before/after
                         st.markdown("**Before:**")
-                        st.code(pattern["source_text"][:200] + ("..." if len(pattern["source_text"]) > 200 else ""), language="text")
+                        st.code(
+                            pattern["source_text"][:200]
+                            + ("..." if len(pattern["source_text"]) > 200 else ""),
+                            language="text",
+                        )
 
                         st.markdown("**After:**")
-                        st.code(pattern["target_text"][:200] + ("..." if len(pattern["target_text"]) > 200 else ""), language="text")
+                        st.code(
+                            pattern["target_text"][:200]
+                            + ("..." if len(pattern["target_text"]) > 200 else ""),
+                            language="text",
+                        )
 
                     with col2:
                         st.metric("Used", f"{pattern['frequency']}x")
@@ -246,7 +268,9 @@ try:
 
                         # Format dates
                         created = datetime.fromisoformat(pattern["created_at"]).strftime("%b %d")
-                        last_used = datetime.fromisoformat(pattern["last_used_at"]).strftime("%b %d")
+                        last_used = datetime.fromisoformat(pattern["last_used_at"]).strftime(
+                            "%b %d"
+                        )
 
                         st.caption(f"Created: {created}")
                         st.caption(f"Last used: {last_used}")
@@ -269,13 +293,15 @@ try:
             timeline_df["cumulative"] = timeline_df["count"].cumsum()
 
             fig = go.Figure()
-            fig.add_trace(go.Scatter(
-                x=timeline_df["date"],
-                y=timeline_df["cumulative"],
-                mode="lines+markers",
-                name="Total Patterns",
-                line=dict(color="blue", width=2),
-            ))
+            fig.add_trace(
+                go.Scatter(
+                    x=timeline_df["date"],
+                    y=timeline_df["cumulative"],
+                    mode="lines+markers",
+                    name="Total Patterns",
+                    line=dict(color="blue", width=2),
+                )
+            )
 
             fig.update_layout(
                 title="Pattern Library Growth",
@@ -304,13 +330,15 @@ try:
         savings_data = []
         for row in c.fetchall():
             cost_saved = row["cache_hits"] * 0.01  # $0.01 per cache hit
-            savings_data.append({
-                "Type": row["pattern_type"].replace("_", " ").title(),
-                "Patterns": row["pattern_count"],
-                "Total Uses": row["total_uses"],
-                "Cache Hits": row["cache_hits"],
-                "Cost Saved": f"${cost_saved:.2f}",
-            })
+            savings_data.append(
+                {
+                    "Type": row["pattern_type"].replace("_", " ").title(),
+                    "Patterns": row["pattern_count"],
+                    "Total Uses": row["total_uses"],
+                    "Cache Hits": row["cache_hits"],
+                    "Cost Saved": f"${cost_saved:.2f}",
+                }
+            )
 
         if savings_data:
             savings_df = pd.DataFrame(savings_data)
@@ -324,7 +352,9 @@ try:
             st.success(f"💰 Total saved from pattern reuse: **${total_saved:.2f}**")
 
     else:
-        st.info("No patterns learned yet. Generate a few resumes and the system will start learning adaptation patterns.")
+        st.info(
+            "No patterns learned yet. Generate a few resumes and the system will start learning adaptation patterns."
+        )
 
     conn.close()
 
@@ -381,27 +411,39 @@ try:
                 title="Cost per Resume Over Time (Should Decrease)",
                 labels={"resume_number": "Resume Number", "cost": "Generation Cost ($)"},
             )
-            st.info("📊 Trendline unavailable (statsmodels not installed). Run: `pip install statsmodels`")
+            st.info(
+                "📊 Trendline unavailable (statsmodels not installed). Run: `pip install statsmodels`"
+            )
 
         fig.update_traces(marker=dict(size=10, color="blue"))
         st.plotly_chart(fig, width="stretch")
 
         # Calculate trend
-        first_5_avg = cost_df.head(5)["cost"].mean() if len(cost_df) >= 5 else cost_df["cost"].mean()
+        first_5_avg = (
+            cost_df.head(5)["cost"].mean() if len(cost_df) >= 5 else cost_df["cost"].mean()
+        )
         last_5_avg = cost_df.tail(5)["cost"].mean()
         improvement = ((first_5_avg - last_5_avg) / first_5_avg * 100) if first_5_avg > 0 else 0
 
         if improvement > 0:
-            st.success(f"✅ Cost optimization working! Average cost decreased by {improvement:.1f}% from first 5 to last 5 resumes.")
+            st.success(
+                f"✅ Cost optimization working! Average cost decreased by {improvement:.1f}% from first 5 to last 5 resumes."
+            )
         elif improvement < -10:
-            st.warning("⚠️ Costs increasing. This may indicate more complex JDs or different patterns.")
+            st.warning(
+                "⚠️ Costs increasing. This may indicate more complex JDs or different patterns."
+            )
         else:
-            st.info("📊 Cost trend is stable. Continue generating resumes to build pattern library.")
+            st.info(
+                "📊 Cost trend is stable. Continue generating resumes to build pattern library."
+            )
 
     elif len(resume_costs) == 1:
         st.info("Generate at least 2 resumes to see cost trends.")
     else:
-        st.info("No resume generation data yet. Create your first resume to start tracking performance.")
+        st.info(
+            "No resume generation data yet. Create your first resume to start tracking performance."
+        )
 
     conn.close()
 
@@ -412,4 +454,6 @@ except Exception as exc:
 # ── Footer ──────────────────────────────────────────────────────────────────
 
 st.markdown("---")
-st.caption("💡 **Tip**: The more resumes you generate, the smarter jSeeker becomes and the less each resume costs.")
+st.caption(
+    "💡 **Tip**: The more resumes you generate, the smarter jSeeker becomes and the less each resume costs."
+)

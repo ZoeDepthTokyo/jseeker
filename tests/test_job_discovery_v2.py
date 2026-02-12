@@ -7,7 +7,7 @@ from jseeker.tracker import tracker_db, init_db
 from jseeker.job_discovery import (
     rank_discoveries_by_tag_weight,
     search_jobs_async,
-    format_freshness
+    format_freshness,
 )
 from pathlib import Path
 
@@ -19,10 +19,11 @@ def test_db(tmp_path, monkeypatch):
     init_db(db_path)
 
     # Patch the _get_db_path function to return our test DB
-    monkeypatch.setattr('jseeker.tracker._get_db_path', lambda: db_path)
+    monkeypatch.setattr("jseeker.tracker._get_db_path", lambda: db_path)
 
     # Create a new TrackerDB instance
     from jseeker.tracker import TrackerDB
+
     test_tracker = TrackerDB()
 
     yield test_tracker
@@ -38,7 +39,7 @@ def test_market_field_stored_correctly(test_db):
         source="indeed",  # Clean source, no suffix
         market="us",  # Separate market field
         posting_date=date.today(),
-        search_tags="Product Designer"
+        search_tags="Product Designer",
     )
 
     # Save discovery
@@ -60,7 +61,7 @@ def test_source_field_clean_no_suffix(test_db):
         url="https://example.com/job/2",
         source="linkedin",  # Clean: no "_mx" suffix
         market="mx",
-        search_tags="UX Designer"
+        search_tags="UX Designer",
     )
 
     disc_id = test_db.add_discovery(discovery)
@@ -98,7 +99,7 @@ def test_tag_weights_clamped_to_range(test_db):
     test_db.set_tag_weight("Just Right", 75)
 
     assert test_db.get_tag_weight("Too High") == 100  # Clamped to max
-    assert test_db.get_tag_weight("Too Low") == 1    # Clamped to min
+    assert test_db.get_tag_weight("Too Low") == 1  # Clamped to min
     assert test_db.get_tag_weight("Just Right") == 75
 
 
@@ -111,7 +112,7 @@ def test_rank_discoveries_by_tag_weight():
         source="indeed",
         market="us",
         search_tags="Product Designer, Senior",  # 80 + 70 = 150
-        posting_date=date.today()
+        posting_date=date.today(),
     )
     disc2 = JobDiscovery(
         title="Medium Priority Job",
@@ -119,7 +120,7 @@ def test_rank_discoveries_by_tag_weight():
         source="linkedin",
         market="mx",
         search_tags="UX Designer",  # 60
-        posting_date=date.today()
+        posting_date=date.today(),
     )
     disc3 = JobDiscovery(
         title="Low Priority Job",
@@ -127,19 +128,16 @@ def test_rank_discoveries_by_tag_weight():
         source="wellfound",
         market="ca",
         search_tags="Junior",  # 30
-        posting_date=date.today()
+        posting_date=date.today(),
     )
 
     # Mock tag weights
     from unittest.mock import patch
-    with patch('jseeker.job_discovery.tracker_db.get_tag_weight') as mock_get_weight:
+
+    with patch("jseeker.job_discovery.tracker_db.get_tag_weight") as mock_get_weight:
+
         def get_weight_side_effect(tag):
-            weights = {
-                "Product Designer": 80,
-                "Senior": 70,
-                "UX Designer": 60,
-                "Junior": 30
-            }
+            weights = {"Product Designer": 80, "Senior": 70, "UX Designer": 60, "Junior": 30}
             return weights.get(tag, 50)
 
         mock_get_weight.side_effect = get_weight_side_effect
@@ -163,7 +161,7 @@ def test_search_sessions_create_and_retrieve(test_db):
     session_id = test_db.create_search_session(
         tags=["Product Designer", "UX Designer"],
         markets=["us", "mx"],
-        sources=["indeed", "linkedin"]
+        sources=["indeed", "linkedin"],
     )
 
     assert session_id is not None
@@ -183,12 +181,7 @@ def test_search_sessions_update(test_db):
     session_id = test_db.create_search_session(["Test"], ["us"], ["indeed"])
 
     # Update session
-    test_db.update_search_session(
-        session_id,
-        status="paused",
-        total_found=25,
-        limit_reached=False
-    )
+    test_db.update_search_session(session_id, status="paused", total_found=25, limit_reached=False)
 
     # Verify update
     session = test_db.get_search_session(session_id)
@@ -211,13 +204,11 @@ def test_pause_resume_search():
 
     # Mock _search_source to return predictable results
     from unittest.mock import patch
-    with patch('jseeker.job_discovery._search_source') as mock_search:
+
+    with patch("jseeker.job_discovery._search_source") as mock_search:
         mock_search.return_value = [
             JobDiscovery(
-                title=f"Job {i}",
-                url=f"http://example.com/{i}",
-                source="indeed",
-                market="us"
+                title=f"Job {i}", url=f"http://example.com/{i}", source="indeed", market="us"
             )
             for i in range(5)
         ]
@@ -233,7 +224,7 @@ def test_pause_resume_search():
                 sources=["indeed", "linkedin"],
                 pause_check=pause_check,
                 progress_callback=progress_callback,
-                max_results=100
+                max_results=100,
             )
             discoveries.extend(results)
             if paused:
@@ -248,23 +239,17 @@ def test_250_job_limit_enforcement():
     """Test that search stops at 250-job limit."""
     from unittest.mock import patch
 
-    with patch('jseeker.job_discovery._search_source') as mock_search:
+    with patch("jseeker.job_discovery._search_source") as mock_search:
         # Each search returns 30 jobs
         mock_search.return_value = [
             JobDiscovery(
-                title=f"Job {i}",
-                url=f"http://example.com/{i}",
-                source="indeed",
-                market="us"
+                title=f"Job {i}", url=f"http://example.com/{i}", source="indeed", market="us"
             )
             for i in range(30)
         ]
 
         discoveries = search_jobs_async(
-            tags=["Test"] * 10,  # 10 tags
-            markets=["us"],
-            sources=["indeed"],
-            max_results=250
+            tags=["Test"] * 10, markets=["us"], sources=["indeed"], max_results=250  # 10 tags
         )
 
         # Should stop at 250 even though 10 tags * 30 results = 300 potential
@@ -274,18 +259,33 @@ def test_250_job_limit_enforcement():
 def test_filters_work_correctly(test_db):
     """Test that market, location, and source filters work."""
     # Add test discoveries
-    test_db.add_discovery(JobDiscovery(
-        title="US Job", url="http://ex.com/1",
-        source="indeed", market="us", location="San Francisco"
-    ))
-    test_db.add_discovery(JobDiscovery(
-        title="MX Job", url="http://ex.com/2",
-        source="linkedin", market="mx", location="Ciudad de Mexico"
-    ))
-    test_db.add_discovery(JobDiscovery(
-        title="CA Job", url="http://ex.com/3",
-        source="wellfound", market="ca", location="Toronto"
-    ))
+    test_db.add_discovery(
+        JobDiscovery(
+            title="US Job",
+            url="http://ex.com/1",
+            source="indeed",
+            market="us",
+            location="San Francisco",
+        )
+    )
+    test_db.add_discovery(
+        JobDiscovery(
+            title="MX Job",
+            url="http://ex.com/2",
+            source="linkedin",
+            market="mx",
+            location="Ciudad de Mexico",
+        )
+    )
+    test_db.add_discovery(
+        JobDiscovery(
+            title="CA Job",
+            url="http://ex.com/3",
+            source="wellfound",
+            market="ca",
+            location="Toronto",
+        )
+    )
 
     # Filter by market
     us_jobs = test_db.list_discoveries(market="us")
@@ -317,7 +317,9 @@ def test_integration_search_save_filter_group(test_db):
 
     # Mock search - return different results based on market parameter
     from unittest.mock import patch
-    with patch('jseeker.job_discovery._search_source') as mock_search:
+
+    with patch("jseeker.job_discovery._search_source") as mock_search:
+
         def search_side_effect(tag, location, source, market):
             """Return market-specific jobs."""
             if market == "us":
@@ -327,14 +329,14 @@ def test_integration_search_save_filter_group(test_db):
                         url="http://ex.com/sf1",
                         source="indeed",
                         location="San Francisco",
-                        search_tags="Product Designer"
+                        search_tags="Product Designer",
                     ),
                     JobDiscovery(
                         title="NYC Job",
                         url="http://ex.com/nyc1",
                         source="indeed",
                         location="New York",
-                        search_tags="Product Designer"
+                        search_tags="Product Designer",
                     ),
                 ]
             elif market == "mx":
@@ -344,7 +346,7 @@ def test_integration_search_save_filter_group(test_db):
                         url="http://ex.com/mx1",
                         source="indeed",
                         location="Ciudad de Mexico",
-                        search_tags="Product Designer"
+                        search_tags="Product Designer",
                     ),
                 ]
             return []
@@ -353,14 +355,12 @@ def test_integration_search_save_filter_group(test_db):
 
         # Search
         discoveries = search_jobs_async(
-            tags=["Product Designer"],
-            markets=["us", "mx"],
-            sources=["indeed"],
-            max_results=250
+            tags=["Product Designer"], markets=["us", "mx"], sources=["indeed"], max_results=250
         )
 
         # Rank and save
         from jseeker.job_discovery import rank_discoveries_by_tag_weight
+
         ranked = rank_discoveries_by_tag_weight(discoveries)
 
         # Save manually using test_db
@@ -379,6 +379,7 @@ def test_integration_search_save_filter_group(test_db):
 
         # Group by (market, location)
         from collections import defaultdict
+
         by_market_location = defaultdict(list)
         for d in test_db.list_discoveries():
             key = (d.get("market"), d.get("location"))
@@ -434,7 +435,7 @@ def test_rank_by_relevance_then_freshness():
         source="indeed",
         market="us",
         search_tags="Product Designer",  # 80 weight
-        posting_date=today  # Freshest
+        posting_date=today,  # Freshest
     )
     disc2 = JobDiscovery(
         title="Old High Priority",
@@ -442,7 +443,7 @@ def test_rank_by_relevance_then_freshness():
         source="linkedin",
         market="us",
         search_tags="Product Designer",  # 80 weight
-        posting_date=week_ago  # Older
+        posting_date=week_ago,  # Older
     )
     disc3 = JobDiscovery(
         title="Fresh Low Priority",
@@ -450,11 +451,13 @@ def test_rank_by_relevance_then_freshness():
         source="wellfound",
         market="ca",
         search_tags="Junior",  # 30 weight
-        posting_date=today  # Fresh but low relevance
+        posting_date=today,  # Fresh but low relevance
     )
 
     from unittest.mock import patch
-    with patch('jseeker.job_discovery.tracker_db.get_tag_weight') as mock_get_weight:
+
+    with patch("jseeker.job_discovery.tracker_db.get_tag_weight") as mock_get_weight:
+
         def get_weight_side_effect(tag):
             weights = {"Product Designer": 80, "Junior": 30}
             return weights.get(tag, 50)
@@ -466,8 +469,8 @@ def test_rank_by_relevance_then_freshness():
 
         # Verify order: relevance first, then freshness
         assert ranked[0].title == "Fresh High Priority"  # 80 weight, today
-        assert ranked[1].title == "Old High Priority"    # 80 weight, week ago
-        assert ranked[2].title == "Fresh Low Priority"   # 30 weight, today
+        assert ranked[1].title == "Old High Priority"  # 80 weight, week ago
+        assert ranked[2].title == "Fresh Low Priority"  # 30 weight, today
 
 
 def test_per_country_limit():
@@ -482,7 +485,7 @@ def test_per_country_limit():
             source="indeed",
             market="us",
             search_tags="Designer",
-            posting_date=today
+            posting_date=today,
         )
         for i in range(5)
     ]
@@ -493,7 +496,7 @@ def test_per_country_limit():
             source="linkedin",
             market="mx",
             search_tags="Designer",
-            posting_date=today
+            posting_date=today,
         )
         for i in range(3)
     ]
@@ -501,7 +504,8 @@ def test_per_country_limit():
     all_jobs = us_jobs + mx_jobs
 
     from unittest.mock import patch
-    with patch('jseeker.job_discovery.tracker_db.get_tag_weight') as mock_get_weight:
+
+    with patch("jseeker.job_discovery.tracker_db.get_tag_weight") as mock_get_weight:
         mock_get_weight.return_value = 50
 
         # Apply per-country limit of 2
@@ -520,7 +524,7 @@ def test_search_with_per_country_limit():
     """Test that search_jobs_async respects max_results_per_country."""
     from unittest.mock import patch
 
-    with patch('jseeker.job_discovery._search_source') as mock_search:
+    with patch("jseeker.job_discovery._search_source") as mock_search:
         # Each search returns 50 jobs
         def search_side_effect(tag, location, source, market):
             return [
@@ -528,7 +532,7 @@ def test_search_with_per_country_limit():
                     title=f"{market.upper()} Job {i}",
                     url=f"http://example.com/{market}{i}",
                     source=source,
-                    market=market
+                    market=market,
                 )
                 for i in range(50)
             ]
@@ -541,7 +545,7 @@ def test_search_with_per_country_limit():
             markets=["us", "mx"],
             sources=["indeed"],
             max_results=250,
-            max_results_per_country=30
+            max_results_per_country=30,
         )
 
         # Count per market

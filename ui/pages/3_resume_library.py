@@ -11,7 +11,6 @@ import streamlit as st
 from jseeker.resume_sources import load_resume_sources, save_resume_sources
 from jseeker.tracker import tracker_db
 
-
 st.title("Resume Library")
 
 # --- PDF Template Upload ---
@@ -26,7 +25,7 @@ with st.expander("Upload PDF Templates", expanded=False):
         "Choose PDF template(s)",
         type=["pdf"],
         accept_multiple_files=True,
-        key="pdf_template_uploader"
+        key="pdf_template_uploader",
     )
 
     if uploaded_files:
@@ -43,13 +42,13 @@ with st.expander("Upload PDF Templates", expanded=False):
         template_name = st.text_input(
             "Template Name",
             placeholder="e.g., Resume_DirectorAI_2026 (leave empty for filename)",
-            key="template_name_input"
+            key="template_name_input",
         )
     with col2:
         template_lang = st.selectbox(
             "Language",
             options=["English", "Spanish", "French", "Other"],
-            key="template_lang_select"
+            key="template_lang_select",
         )
 
     if st.button("Upload Template(s)", width="stretch", disabled=not uploaded_files):
@@ -70,11 +69,15 @@ with st.expander("Upload PDF Templates", expanded=False):
             for uploaded_file in uploaded_files:
                 # Use custom name if provided (single file) or filename (batch)
                 if len(uploaded_files) == 1 and template_name:
-                    safe_name = "".join(c for c in template_name if c.isalnum() or c in (' ', '-', '_')).strip()
+                    safe_name = "".join(
+                        c for c in template_name if c.isalnum() or c in (" ", "-", "_")
+                    ).strip()
                 else:
                     # Use original filename without extension
                     safe_name = Path(uploaded_file.name).stem
-                    safe_name = "".join(c for c in safe_name if c.isalnum() or c in (' ', '-', '_')).strip()
+                    safe_name = "".join(
+                        c for c in safe_name if c.isalnum() or c in (" ", "-", "_")
+                    ).strip()
 
                 pdf_path = save_dir / f"{safe_name}.pdf"
 
@@ -87,13 +90,15 @@ with st.expander("Upload PDF Templates", expanded=False):
                 pdf_path.write_bytes(uploaded_file.getvalue())
 
                 # Add metadata
-                sources_data["uploaded_templates"].append({
-                    "name": safe_name,
-                    "path": str(pdf_path),
-                    "language": template_lang,
-                    "uploaded_at": datetime.now().isoformat(),
-                    "size_kb": len(uploaded_file.getvalue()) / 1024,
-                })
+                sources_data["uploaded_templates"].append(
+                    {
+                        "name": safe_name,
+                        "path": str(pdf_path),
+                        "language": template_lang,
+                        "uploaded_at": datetime.now().isoformat(),
+                        "size_kb": len(uploaded_file.getvalue()) / 1024,
+                    }
+                )
                 uploaded_count += 1
 
             sources_path.write_text(json.dumps(sources_data, indent=2), encoding="utf-8")
@@ -113,7 +118,7 @@ with st.expander("Upload PDF Templates", expanded=False):
 
             for idx, tmpl in enumerate(uploaded_templates):
                 with st.expander(f"📄 {tmpl['name']}", expanded=False):
-                    tmpl_path = Path(tmpl['path'])
+                    tmpl_path = Path(tmpl["path"])
 
                     # Metadata display
                     col1, col2, col3 = st.columns([2, 1, 1])
@@ -140,17 +145,23 @@ with st.expander("Upload PDF Templates", expanded=False):
 
                     # Confirmation dialog
                     if st.session_state.get(f"confirm_delete_template_{idx}"):
-                        st.warning("⚠️ Are you sure? This will permanently delete the template file.")
+                        st.warning(
+                            "⚠️ Are you sure? This will permanently delete the template file."
+                        )
                         col_a, col_b = st.columns(2)
                         with col_a:
-                            if st.button("✓ Confirm Delete", key=f"confirm_yes_{idx}", type="primary"):
+                            if st.button(
+                                "✓ Confirm Delete", key=f"confirm_yes_{idx}", type="primary"
+                            ):
                                 # Delete file
                                 if tmpl_path.exists():
                                     tmpl_path.unlink()
 
                                 # Remove from metadata
                                 sources_data["uploaded_templates"].pop(idx)
-                                sources_path.write_text(json.dumps(sources_data, indent=2), encoding="utf-8")
+                                sources_path.write_text(
+                                    json.dumps(sources_data, indent=2), encoding="utf-8"
+                                )
 
                                 st.session_state.pop(f"confirm_delete_template_{idx}", None)
                                 st.success("Template deleted")
@@ -161,7 +172,9 @@ with st.expander("Upload PDF Templates", expanded=False):
                                 st.rerun()
 
                     # PDF Preview (first page)
-                    if tmpl_path.exists() and not st.session_state.get(f"confirm_delete_template_{idx}"):
+                    if tmpl_path.exists() and not st.session_state.get(
+                        f"confirm_delete_template_{idx}"
+                    ):
                         try:
                             import fitz  # PyMuPDF
 
@@ -172,7 +185,11 @@ with st.expander("Upload PDF Templates", expanded=False):
 
                                 # Convert to bytes
                                 img_bytes = pix.tobytes("png")
-                                st.image(img_bytes, caption=f"Preview - Page 1/{len(doc)}", use_container_width=True)
+                                st.image(
+                                    img_bytes,
+                                    caption=f"Preview - Page 1/{len(doc)}",
+                                    use_container_width=True,
+                                )
                                 doc.close()
                         except ImportError:
                             st.info("💡 Install PyMuPDF for PDF preview: `pip install PyMuPDF`")
@@ -182,19 +199,23 @@ with st.expander("Upload PDF Templates", expanded=False):
                     # Edit metadata
                     with st.form(key=f"edit_form_{idx}"):
                         st.markdown("**Edit Metadata**")
-                        new_name = st.text_input("Template Name", value=tmpl['name'], key=f"edit_name_{idx}")
+                        new_name = st.text_input(
+                            "Template Name", value=tmpl["name"], key=f"edit_name_{idx}"
+                        )
                         new_lang = st.selectbox(
                             "Language",
                             options=["English", "Spanish", "French", "Other"],
-                            index=["English", "Spanish", "French", "Other"].index(tmpl['language']),
-                            key=f"edit_lang_{idx}"
+                            index=["English", "Spanish", "French", "Other"].index(tmpl["language"]),
+                            key=f"edit_lang_{idx}",
                         )
 
                         if st.form_submit_button("Save Changes"):
                             # Validate new name
-                            safe_new_name = "".join(c for c in new_name if c.isalnum() or c in (' ', '-', '_')).strip()
+                            safe_new_name = "".join(
+                                c for c in new_name if c.isalnum() or c in (" ", "-", "_")
+                            ).strip()
 
-                            if safe_new_name != tmpl['name']:
+                            if safe_new_name != tmpl["name"]:
                                 # Rename file
                                 new_path = save_dir / f"{safe_new_name}.pdf"
                                 if new_path.exists() and new_path != tmpl_path:
@@ -208,7 +229,9 @@ with st.expander("Upload PDF Templates", expanded=False):
                             # Update language
                             sources_data["uploaded_templates"][idx]["language"] = new_lang
 
-                            sources_path.write_text(json.dumps(sources_data, indent=2), encoding="utf-8")
+                            sources_path.write_text(
+                                json.dumps(sources_data, indent=2), encoding="utf-8"
+                            )
                             st.success("Metadata updated")
                             st.rerun()
 
@@ -226,6 +249,7 @@ with st.expander("Base Resume References", expanded=True):
             if p.exists():
                 size_kb = p.stat().st_size / 1024
                 from datetime import datetime
+
                 modified = datetime.fromtimestamp(p.stat().st_mtime).strftime("%Y-%m-%d %H:%M")
                 st.caption(f"  {key}: {size_kb:.1f} KB, modified {modified}")
             else:
@@ -236,11 +260,17 @@ with st.expander("Base Resume References", expanded=True):
     col1, col2 = st.columns(2)
 
     with col1:
-        base_a = st.text_input("Base Resume A", value=current_sources["base_a"], key="base_resume_a")
-        base_b = st.text_input("Base Resume B", value=current_sources["base_b"], key="base_resume_b")
+        base_a = st.text_input(
+            "Base Resume A", value=current_sources["base_a"], key="base_resume_a"
+        )
+        base_b = st.text_input(
+            "Base Resume B", value=current_sources["base_b"], key="base_resume_b"
+        )
 
     with col2:
-        base_c = st.text_input("Base Resume C", value=current_sources["base_c"], key="base_resume_c")
+        base_c = st.text_input(
+            "Base Resume C", value=current_sources["base_c"], key="base_resume_c"
+        )
         linkedin_pdf = st.text_input(
             "LinkedIn Profile PDF",
             value=current_sources["linkedin_pdf"],
@@ -351,7 +381,9 @@ else:
         col1, col2 = st.columns(2)
 
         with col1:
-            st.markdown(f"**{selected.get('role_title', '')}** at {selected.get('company_name', '')}")
+            st.markdown(
+                f"**{selected.get('role_title', '')}** at {selected.get('company_name', '')}"
+            )
             st.markdown(f"Version: {selected.get('version', 1)}")
             st.markdown(f"ATS Score: {selected.get('ats_score', 'N/A')}")
             st.markdown(f"Template: {selected.get('template_used', 'N/A')}")

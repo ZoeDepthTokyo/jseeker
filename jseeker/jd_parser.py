@@ -35,6 +35,7 @@ ATS_DETECTION = {
 def _load_prompt(name: str) -> str:
     """Load a prompt template from data/prompts/."""
     from config import settings
+
     path = settings.prompts_dir / f"{name}.txt"
     return path.read_text(encoding="utf-8")
 
@@ -60,16 +61,52 @@ def detect_language(text: str) -> str:
 
     # Common Spanish words
     spanish_words = [
-        "de", "en", "para", "con", "los", "las", "del", "una", "por", "que",
-        "como", "sobre", "experiencia", "responsabilidades", "requisitos",
-        "empresa", "puesto", "trabajo", "años", "área", "desarrollo",
+        "de",
+        "en",
+        "para",
+        "con",
+        "los",
+        "las",
+        "del",
+        "una",
+        "por",
+        "que",
+        "como",
+        "sobre",
+        "experiencia",
+        "responsabilidades",
+        "requisitos",
+        "empresa",
+        "puesto",
+        "trabajo",
+        "años",
+        "área",
+        "desarrollo",
     ]
 
     # Common English words
     english_words = [
-        "the", "and", "for", "with", "our", "you", "this", "that", "from",
-        "have", "will", "are", "your", "requirements", "responsibilities",
-        "experience", "position", "company", "years", "team", "work",
+        "the",
+        "and",
+        "for",
+        "with",
+        "our",
+        "you",
+        "this",
+        "that",
+        "from",
+        "have",
+        "will",
+        "are",
+        "your",
+        "requirements",
+        "responsibilities",
+        "experience",
+        "position",
+        "company",
+        "years",
+        "team",
+        "work",
     ]
 
     spanish_count = sum(1 for word in words if word in spanish_words)
@@ -151,13 +188,19 @@ def _extract_workday_jd(url: str) -> str:
             # Wait for Workday job description to render
             # Workday uses data-automation-id="jobPostingDescription" for the main JD content
             try:
-                page.wait_for_selector('[data-automation-id="jobPostingDescription"]', timeout=10000)
+                page.wait_for_selector(
+                    '[data-automation-id="jobPostingDescription"]', timeout=10000
+                )
                 desc_el = page.query_selector('[data-automation-id="jobPostingDescription"]')
                 text = desc_el.inner_text() if desc_el else ""
             except Exception as selector_error:
                 # Fallback: try alternative selectors
-                logger.warning(f"_extract_workday_jd | primary selector failed, trying fallbacks: {selector_error}")
-                desc_el = page.query_selector('.css-cygeeu') or page.query_selector('[class*="jobDescription"]')
+                logger.warning(
+                    f"_extract_workday_jd | primary selector failed, trying fallbacks: {selector_error}"
+                )
+                desc_el = page.query_selector(".css-cygeeu") or page.query_selector(
+                    '[class*="jobDescription"]'
+                )
                 text = desc_el.inner_text() if desc_el else ""
 
             browser.close()
@@ -218,33 +261,36 @@ def _extract_company_fallback(text: str) -> str | None:
 
     # Pattern 1: "Company: Name" or "Company Name:"
     company_label_match = re.search(
-        r'(?:Company|Organization|Employer)(?:\s*name)?[\s:]+([A-Z][A-Za-z0-9\s&.,\'-]+?)(?:\n|$|\.(?:\s|$))',
+        r"(?:Company|Organization|Employer)(?:\s*name)?[\s:]+([A-Z][A-Za-z0-9\s&.,\'-]+?)(?:\n|$|\.(?:\s|$))",
         text,
-        re.IGNORECASE | re.MULTILINE
+        re.IGNORECASE | re.MULTILINE,
     )
     if company_label_match:
         company = company_label_match.group(1).strip()
         # Filter out common false positives
-        if len(company) > 3 and not company.lower().startswith(("about", "overview", "description")):
+        if len(company) > 3 and not company.lower().startswith(
+            ("about", "overview", "description")
+        ):
             return company
 
     # Pattern 2: "About [Company]" at start of section
     about_match = re.search(
-        r'About\s+([A-Z][A-Za-z0-9\s&.,\'-]{2,40}?)(?:\n|$|:)',
-        text,
-        re.MULTILINE
+        r"About\s+([A-Z][A-Za-z0-9\s&.,\'-]{2,40}?)(?:\n|$|:)", text, re.MULTILINE
     )
     if about_match:
         company = about_match.group(1).strip()
         # Filter out generic phrases
-        if not any(word in company.lower() for word in ["the role", "this position", "the job", "us", "the company"]):
+        if not any(
+            word in company.lower()
+            for word in ["the role", "this position", "the job", "us", "the company"]
+        ):
             return company
 
     # Pattern 3: "Join [Company]" or "Work at [Company]"
     join_match = re.search(
-        r'(?:Join|Work at|Apply to)\s+(?:the\s+team\s+at\s+)?([A-Z][A-Za-z0-9\s&.,\'-]{2,40}?)(?:\n|$|\.|!)',
+        r"(?:Join|Work at|Apply to)\s+(?:the\s+team\s+at\s+)?([A-Z][A-Za-z0-9\s&.,\'-]{2,40}?)(?:\n|$|\.|!)",
         text,
-        re.MULTILINE
+        re.MULTILINE,
     )
     if join_match:
         company = join_match.group(1).strip()
@@ -253,9 +299,9 @@ def _extract_company_fallback(text: str) -> str | None:
 
     # Pattern 4: First capitalized name after "We are" at document start
     we_are_match = re.search(
-        r'(?:^|^\n)([A-Z][A-Za-z0-9\s&.,\'-]{2,40}?)\s+(?:is|are)\s+(?:hiring|looking|seeking)',
+        r"(?:^|^\n)([A-Z][A-Za-z0-9\s&.,\'-]{2,40}?)\s+(?:is|are)\s+(?:hiring|looking|seeking)",
         text[:500],  # Only check first 500 chars
-        re.MULTILINE
+        re.MULTILINE,
     )
     if we_are_match:
         company = we_are_match.group(1).strip()
@@ -279,7 +325,7 @@ def extract_jd_from_url(url: str, timeout: int = 20) -> tuple[str, dict]:
         "success": False,
         "company": _extract_company_from_url(url),
         "selectors_tried": [],
-        "method": "failed"
+        "method": "failed",
     }
 
     if not url or not url.strip():
@@ -300,12 +346,12 @@ def extract_jd_from_url(url: str, timeout: int = 20) -> tuple[str, dict]:
         response = requests.get(
             url.strip(),
             timeout=timeout,
-            headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-            },
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"},
         )
         response.raise_for_status()
-        logger.info(f"extract_jd_from_url | status={response.status_code} | content_length={len(response.text)}")
+        logger.info(
+            f"extract_jd_from_url | status={response.status_code} | content_length={len(response.text)}"
+        )
     except requests.RequestException:
         logger.exception("Failed to fetch JD URL: %s", url)
         metadata["method"] = "request_failed"
@@ -369,7 +415,9 @@ def prune_jd(raw_text: str) -> str:
 
     pruned = llm.call_haiku(prompt, task="jd_prune")
     output_length = len(pruned)
-    logger.info(f"prune_jd | output_length={output_length} | reduction={input_length - output_length}")
+    logger.info(
+        f"prune_jd | output_length={output_length} | reduction={input_length - output_length}"
+    )
     return pruned.strip()
 
 
@@ -434,19 +482,19 @@ def _extract_salary(text: str) -> tuple[Optional[int], Optional[int], str]:
     # Patterns to match salary ranges
     patterns = [
         # "$120,000 - $150,000", "£60,000-£80,000" (with comma separators)
-        r'([€£¥₹$]|C\$|A\$)\s*(\d{1,3}),(\d{3}),?(\d{3})?\s*[-–—to]+\s*\1?\s*(\d{1,3}),(\d{3}),?(\d{3})?',
+        r"([€£¥₹$]|C\$|A\$)\s*(\d{1,3}),(\d{3}),?(\d{3})?\s*[-–—to]+\s*\1?\s*(\d{1,3}),(\d{3}),?(\d{3})?",
         # "$100k-150k", "$100K-$150K", "€80k-€100k"
-        r'([€£¥₹$]|C\$|A\$)\s*(\d+)[\.,]?(\d*)\s*k?\s*[-–—to]+\s*\1?\s*(\d+)[\.,]?(\d*)\s*k',
+        r"([€£¥₹$]|C\$|A\$)\s*(\d+)[\.,]?(\d*)\s*k?\s*[-–—to]+\s*\1?\s*(\d+)[\.,]?(\d*)\s*k",
         # "100000-150000 USD", "100,000-150,000 EUR"
-        r'(\d{2,3})[\.,]?(\d{3})[\.,]?(\d{3})?\s*[-–—to]+\s*(\d{2,3})[\.,]?(\d{3})[\.,]?(\d{3})?\s*(USD|EUR|GBP|CAD|AUD|JPY|INR)',
+        r"(\d{2,3})[\.,]?(\d{3})[\.,]?(\d{3})?\s*[-–—to]+\s*(\d{2,3})[\.,]?(\d{3})[\.,]?(\d{3})?\s*(USD|EUR|GBP|CAD|AUD|JPY|INR)",
         # "100k-150k USD", "80k-100k"
-        r'(\d+)[\.,]?(\d*)\s*k\s*[-–—to]+\s*(\d+)[\.,]?(\d*)\s*k\s*(USD|EUR|GBP|CAD|AUD|JPY|INR)?',
+        r"(\d+)[\.,]?(\d*)\s*k\s*[-–—to]+\s*(\d+)[\.,]?(\d*)\s*k\s*(USD|EUR|GBP|CAD|AUD|JPY|INR)?",
         # "100000 - 150000" (no currency symbol, assume USD if 5+ digits)
-        r'(?<![€£¥₹$\d])(\d{5,7})\s*[-–—to]+\s*(\d{5,7})(?!\d)',
+        r"(?<![€£¥₹$\d])(\d{5,7})\s*[-–—to]+\s*(\d{5,7})(?!\d)",
         # "Up to $150k", "Up to 150000 USD"
-        r'(?:up\s+to|maximum|max)\s+(?:of\s+)?([€£¥₹$]|C\$|A\$)?\s*(\d+)[\.,]?(\d*)\s*k?\s*(USD|EUR|GBP|CAD|AUD|JPY|INR)?',
+        r"(?:up\s+to|maximum|max)\s+(?:of\s+)?([€£¥₹$]|C\$|A\$)?\s*(\d+)[\.,]?(\d*)\s*k?\s*(USD|EUR|GBP|CAD|AUD|JPY|INR)?",
         # "Starting at $100k", "Starting from 100000 USD"
-        r'(?:starting\s+(?:at|from)|minimum|min)\s+(?:of\s+)?([€£¥₹$]|C\$|A\$)?\s*(\d+)[\.,]?(\d*)\s*k?\s*(USD|EUR|GBP|CAD|AUD|JPY|INR)?',
+        r"(?:starting\s+(?:at|from)|minimum|min)\s+(?:of\s+)?([€£¥₹$]|C\$|A\$)?\s*(\d+)[\.,]?(\d*)\s*k?\s*(USD|EUR|GBP|CAD|AUD|JPY|INR)?",
     ]
 
     for pattern in patterns:
@@ -456,23 +504,31 @@ def _extract_salary(text: str) -> tuple[Optional[int], Optional[int], str]:
 
             try:
                 # Pattern 1: "$120,000 - $150,000" (comma-separated)
-                if len(groups) >= 7 and groups[0] in currency_map and ',' in match.group():
+                if len(groups) >= 7 and groups[0] in currency_map and "," in match.group():
                     currency = currency_map.get(groups[0], "USD")
                     # Join all digit groups for min and max, ignoring None values
                     min_parts = [g for g in groups[1:4] if g and g.isdigit()]
                     max_parts = [g for g in groups[4:7] if g and g.isdigit()]
 
                     if min_parts and max_parts:
-                        min_sal = int(''.join(min_parts))
-                        max_sal = int(''.join(max_parts))
+                        min_sal = int("".join(min_parts))
+                        max_sal = int("".join(max_parts))
                         return min_sal, max_sal, currency
 
                 # Pattern 2: "$100k-150k"
                 elif len(groups) >= 5 and groups[0] in currency_map:
                     currency = currency_map.get(groups[0], "USD")
                     # Handle None and empty string
-                    min_sal = int(groups[1]) * 1000 if (not groups[2] or groups[2] == '') else int(groups[1] + (groups[2] or ''))
-                    max_sal = int(groups[3]) * 1000 if (not groups[4] or groups[4] == '') else int(groups[3] + (groups[4] or ''))
+                    min_sal = (
+                        int(groups[1]) * 1000
+                        if (not groups[2] or groups[2] == "")
+                        else int(groups[1] + (groups[2] or ""))
+                    )
+                    max_sal = (
+                        int(groups[3]) * 1000
+                        if (not groups[4] or groups[4] == "")
+                        else int(groups[3] + (groups[4] or ""))
+                    )
 
                     # Multiply by 1000 if values look like "k" format (< 10000)
                     if min_sal < 10000:
@@ -483,15 +539,19 @@ def _extract_salary(text: str) -> tuple[Optional[int], Optional[int], str]:
                     return min_sal, max_sal, currency
 
                 # Pattern 3: "100000-150000 USD"
-                elif len(groups) >= 7 and groups[-1] and groups[-1] in ["USD", "EUR", "GBP", "CAD", "AUD", "JPY", "INR"]:
+                elif (
+                    len(groups) >= 7
+                    and groups[-1]
+                    and groups[-1] in ["USD", "EUR", "GBP", "CAD", "AUD", "JPY", "INR"]
+                ):
                     currency = groups[-1]
                     # Join digits without separators
                     min_parts = [g for g in groups[:3] if g and g.isdigit()]
                     max_parts = [g for g in groups[3:6] if g and g.isdigit()]
 
                     if min_parts and max_parts:
-                        min_sal = int(''.join(min_parts))
-                        max_sal = int(''.join(max_parts))
+                        min_sal = int("".join(min_parts))
+                        max_sal = int("".join(max_parts))
                         return min_sal, max_sal, currency
 
                 # Pattern 4: "100k-150k" or "100k-150k USD"
@@ -508,14 +568,14 @@ def _extract_salary(text: str) -> tuple[Optional[int], Optional[int], str]:
                     return min_sal, max_sal, "USD"
 
                 # Pattern 6: "Up to $150k" or "Up to 150000 USD"
-                elif len(groups) >= 2 and 'up' in match.group().lower():
+                elif len(groups) >= 2 and "up" in match.group().lower():
                     currency_symbol = groups[0] if groups[0] in currency_map else None
                     amount_str = groups[1] if groups[1] and groups[1].isdigit() else None
 
                     if amount_str:
                         amount = int(amount_str)
                         # Check if 'k' format
-                        if 'k' in match.group().lower() and amount < 10000:
+                        if "k" in match.group().lower() and amount < 10000:
                             amount *= 1000
                         # Determine currency
                         if currency_symbol:
@@ -528,14 +588,16 @@ def _extract_salary(text: str) -> tuple[Optional[int], Optional[int], str]:
                         return None, amount, currency
 
                 # Pattern 7: "Starting at $100k" or "Starting from 100000 USD"
-                elif len(groups) >= 2 and ('starting' in match.group().lower() or 'minimum' in match.group().lower()):
+                elif len(groups) >= 2 and (
+                    "starting" in match.group().lower() or "minimum" in match.group().lower()
+                ):
                     currency_symbol = groups[0] if groups[0] in currency_map else None
                     amount_str = groups[1] if groups[1] and groups[1].isdigit() else None
 
                     if amount_str:
                         amount = int(amount_str)
                         # Check if 'k' format
-                        if 'k' in match.group().lower() and amount < 10000:
+                        if "k" in match.group().lower() and amount < 10000:
                             amount *= 1000
                         # Determine currency
                         if currency_symbol:
@@ -555,7 +617,9 @@ def _extract_salary(text: str) -> tuple[Optional[int], Optional[int], str]:
     # Log if no salary was extracted
     salary_keywords = ["salary", "compensation", "pay", "$", "€", "£", "k", "usd", "eur", "gbp"]
     if any(keyword in text.lower() for keyword in salary_keywords):
-        logger.debug(f"_extract_salary | salary keywords found but no match | text_sample: {text[:200]}")
+        logger.debug(
+            f"_extract_salary | salary keywords found but no match | text_sample: {text[:200]}"
+        )
 
     return None, None, "USD"
 
@@ -573,9 +637,24 @@ def _compute_jd_similarity(text1: str, text2: str) -> float:
     def normalize_and_tokenize(text: str) -> set[str]:
         """Normalize and extract meaningful tokens."""
         # Lowercase and extract words (alphanumeric + hyphen)
-        tokens = re.findall(r'\b[a-z0-9]+(?:-[a-z0-9]+)?\b', text.lower())
+        tokens = re.findall(r"\b[a-z0-9]+(?:-[a-z0-9]+)?\b", text.lower())
         # Filter stopwords
-        stopwords = {"the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for", "of", "with", "by"}
+        stopwords = {
+            "the",
+            "a",
+            "an",
+            "and",
+            "or",
+            "but",
+            "in",
+            "on",
+            "at",
+            "to",
+            "for",
+            "of",
+            "with",
+            "by",
+        }
         return {t for t in tokens if t not in stopwords and len(t) > 2}
 
     tokens1 = normalize_and_tokenize(text1)
@@ -606,19 +685,25 @@ def _get_cached_jd(pruned_text: str) -> Optional[dict]:
 
     conn = tracker_db._conn()
     c = conn.cursor()
-    c.execute("""
+    c.execute(
+        """
         SELECT parsed_json FROM jd_cache
         WHERE pruned_text_hash = ?
-    """, (text_hash,))
+    """,
+        (text_hash,),
+    )
     row = c.fetchone()
 
     if row:
         # Update hit count and last_used
-        c.execute("""
+        c.execute(
+            """
             UPDATE jd_cache
             SET hit_count = hit_count + 1, last_used_at = CURRENT_TIMESTAMP
             WHERE pruned_text_hash = ?
-        """, (text_hash,))
+        """,
+            (text_hash,),
+        )
         conn.commit()
         conn.close()
         logger.info(f"_get_cached_jd | cache HIT | hash={text_hash[:16]}...")
@@ -643,17 +728,20 @@ def _cache_jd(pruned_text: str, parsed_data: dict) -> None:
 
     conn = tracker_db._conn()
     c = conn.cursor()
-    c.execute("""
+    c.execute(
+        """
         INSERT OR REPLACE INTO jd_cache
         (pruned_text_hash, parsed_json, title, company, ats_keywords)
         VALUES (?, ?, ?, ?, ?)
-    """, (
-        text_hash,
-        json.dumps(parsed_data),
-        parsed_data.get("title", ""),
-        parsed_data.get("company", ""),
-        json.dumps(parsed_data.get("ats_keywords", [])),
-    ))
+    """,
+        (
+            text_hash,
+            json.dumps(parsed_data),
+            parsed_data.get("title", ""),
+            parsed_data.get("company", ""),
+            json.dumps(parsed_data.get("ats_keywords", [])),
+        ),
+    )
     conn.commit()
     conn.close()
 
@@ -701,19 +789,23 @@ def process_jd(raw_text: str, jd_url: str = "", use_semantic_cache: bool = True)
     # Step 4: Build requirements list
     requirements = []
     for req in parsed_data.get("hard_requirements", []):
-        requirements.append(JDRequirement(
-            text=req.get("text", ""),
-            category="hard_skill",
-            priority="required",
-            keywords=req.get("keywords", []),
-        ))
+        requirements.append(
+            JDRequirement(
+                text=req.get("text", ""),
+                category="hard_skill",
+                priority="required",
+                keywords=req.get("keywords", []),
+            )
+        )
     for req in parsed_data.get("soft_requirements", []):
-        requirements.append(JDRequirement(
-            text=req.get("text", ""),
-            category="soft_skill",
-            priority="preferred",
-            keywords=req.get("keywords", []),
-        ))
+        requirements.append(
+            JDRequirement(
+                text=req.get("text", ""),
+                category="soft_skill",
+                priority="preferred",
+                keywords=req.get("keywords", []),
+            )
+        )
 
     # Step 5: Detect ATS platform
     ats_platform = detect_ats_platform(jd_url)

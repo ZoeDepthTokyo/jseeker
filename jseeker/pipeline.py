@@ -71,7 +71,10 @@ def run_pipeline(
     if pdf_path:
         _write_metadata(
             Path(pdf_path).parent,
-            parsed_jd, match_result, ats_score, total_cost,
+            parsed_jd,
+            match_result,
+            ats_score,
+            total_cost,
         )
 
     return PipelineResult(

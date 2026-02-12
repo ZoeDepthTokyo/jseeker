@@ -29,4 +29,3 @@ def test_resume_sources_round_trip(tmp_path):
 
     assert target.exists()
     assert saved == loaded
-

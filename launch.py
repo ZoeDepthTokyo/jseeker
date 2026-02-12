@@ -39,11 +39,18 @@ def _kill_port(port: int) -> bool:
     """Attempt to kill whatever process is using a port. Returns True if freed."""
     try:
         import subprocess as sp
+
         result = sp.run(
-            ["powershell.exe", "-NoProfile", "-Command",
-             f"Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue | "
-             f"ForEach-Object {{ Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }}"],
-            capture_output=True, text=True, timeout=10,
+            [
+                "powershell.exe",
+                "-NoProfile",
+                "-Command",
+                f"Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue | "
+                f"ForEach-Object {{ Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }}",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=10,
         )
         time.sleep(1)
         return _check_port(port)
@@ -57,6 +64,7 @@ def _clear_pycache():
     for cache_dir in JSEEKER_DIR.rglob("__pycache__"):
         if cache_dir.is_dir():
             import shutil
+
             shutil.rmtree(cache_dir, ignore_errors=True)
             count += 1
     if count:
@@ -81,7 +89,7 @@ def launch():
                 print(f"  Port {port} freed successfully.")
             else:
                 print(f"  ERROR: Cannot free port {port}. Please close the process manually.")
-                print(f"  Run: powershell -Command \"Get-NetTCPConnection -LocalPort {port}\"")
+                print(f'  Run: powershell -Command "Get-NetTCPConnection -LocalPort {port}"')
                 return
         else:
             print(f"  Port {port} ({name}): available")
@@ -91,11 +99,17 @@ def launch():
         print(f"\n  Starting ARGUS (GAIA Ecosystem Monitor) on port {ARGUS_PORT}...")
         argus_proc = subprocess.Popen(
             [
-                sys.executable, "-m", "streamlit", "run",
+                sys.executable,
+                "-m",
+                "streamlit",
+                "run",
                 str(ARGUS_APP),
-                "--server.port", str(ARGUS_PORT),
-                "--server.headless", "true",
-                "--browser.serverAddress", "localhost",
+                "--server.port",
+                str(ARGUS_PORT),
+                "--server.headless",
+                "true",
+                "--browser.serverAddress",
+                "localhost",
             ],
             cwd=str(ARGUS_DIR / "dashboard"),
         )
@@ -110,11 +124,17 @@ def launch():
     print(f"  Starting jSeeker (Resume Engine) on port {JSEEKER_PORT}...")
     jseeker_proc = subprocess.Popen(
         [
-            sys.executable, "-m", "streamlit", "run",
+            sys.executable,
+            "-m",
+            "streamlit",
+            "run",
             str(JSEEKER_APP),
-            "--server.port", str(JSEEKER_PORT),
-            "--server.headless", "true",
-            "--browser.serverAddress", "localhost",
+            "--server.port",
+            str(JSEEKER_PORT),
+            "--server.headless",
+            "true",
+            "--browser.serverAddress",
+            "localhost",
         ],
         cwd=str(JSEEKER_DIR),
     )

@@ -47,6 +47,7 @@ def get_address_for_language(language: str) -> str:
 
 def _load_prompt(name: str) -> str:
     from config import settings
+
     path = settings.prompts_dir / f"{name}.txt"
     return path.read_text(encoding="utf-8")
 
@@ -54,6 +55,7 @@ def _load_prompt(name: str) -> str:
 def _load_preferences() -> str:
     """Load user editing preferences if they exist."""
     from config import settings
+
     prefs_path = settings.data_dir / "preferences.json"
     if prefs_path.exists():
         data = json.loads(prefs_path.read_text(encoding="utf-8"))
@@ -85,6 +87,7 @@ def adapt_summary(
     # Check learned patterns first
     if use_learned_patterns:
         from jseeker.pattern_learner import find_matching_pattern
+
         jd_dict = {
             "title": parsed_jd.title,
             "ats_keywords": parsed_jd.ats_keywords,
@@ -103,13 +106,10 @@ def adapt_summary(
     logger.info("adapt_summary | pattern cache MISS | calling LLM")
     prompt_template = _load_prompt("summary_writer")
 
-    req_text = "\n".join(
-        f"- {r.text}" for r in parsed_jd.requirements[:10]
-    )
+    req_text = "\n".join(f"- {r.text}" for r in parsed_jd.requirements[:10])
 
     prompt = (
-        prompt_template
-        .replace("{original_summary}", original)
+        prompt_template.replace("{original_summary}", original)
         .replace("{job_title}", parsed_jd.title)
         .replace("{ats_keywords}", ", ".join(parsed_jd.ats_keywords[:15]))
         .replace("{requirements}", req_text)
@@ -130,6 +130,7 @@ def adapt_summary(
 
     # Learn pattern from this LLM adaptation for future cache hits
     from jseeker.pattern_learner import learn_pattern
+
     jd_dict = {
         "title": parsed_jd.title,
         "ats_keywords": parsed_jd.ats_keywords,
@@ -217,9 +218,7 @@ def adapt_bullets_batch(
         results = None
         needs_llm_indices = None
 
-    req_text = "\n".join(
-        f"- {r.text}" for r in parsed_jd.requirements[:10]
-    )
+    req_text = "\n".join(f"- {r.text}" for r in parsed_jd.requirements[:10])
     ats_keywords = ", ".join(parsed_jd.ats_keywords[:15])
     preferences = _load_preferences()
 
@@ -268,6 +267,7 @@ Output format: [["bullet1", "bullet2", ...], ["bullet1", "bullet2", ...], ...]
     # Check for empty response
     if not json_str:
         from jseeker.integrations.argus_telemetry import log_runtime_event
+
         log_runtime_event(
             task="bullet_adapt_batch",
             model="sonnet",
@@ -289,6 +289,7 @@ Output format: [["bullet1", "bullet2", ...], ["bullet1", "bullet2", ...], ...]
         llm_results = json.loads(json_str)
     except json.JSONDecodeError as e:
         from jseeker.integrations.argus_telemetry import log_runtime_event
+
         log_runtime_event(
             task="bullet_adapt_batch",
             model="sonnet",
@@ -296,7 +297,7 @@ Output format: [["bullet1", "bullet2", ...], ["bullet1", "bullet2", ...], ...]
             details=f"ERROR: JSON parse failed - {str(e)[:100]}",
         )
         logger.error(f"adapt_bullets_batch | JSON parse failed | error={e}")
-        companies = ", ".join(exp.get('company', 'Unknown') for exp in experience_blocks)
+        companies = ", ".join(exp.get("company", "Unknown") for exp in experience_blocks)
         raise AdaptationError(
             f"Failed to parse LLM response as JSON for bullet adaptation. "
             f"Affected experiences: {companies}. "
@@ -307,13 +308,16 @@ Output format: [["bullet1", "bullet2", ...], ["bullet1", "bullet2", ...], ...]
     # Validate response structure
     if not isinstance(llm_results, list):
         from jseeker.integrations.argus_telemetry import log_runtime_event
+
         log_runtime_event(
             task="bullet_adapt_batch",
             model="sonnet",
             cost_usd=0.0,
             details=f"ERROR: Expected array, got {type(llm_results).__name__}",
         )
-        logger.error(f"adapt_bullets_batch | malformed response | type={type(llm_results).__name__}")
+        logger.error(
+            f"adapt_bullets_batch | malformed response | type={type(llm_results).__name__}"
+        )
         raise AdaptationError(
             f"Expected array of bullet arrays from LLM, got {type(llm_results).__name__}. "
             f"Raw response (first 200 chars): {raw[:200]}"
@@ -321,6 +325,7 @@ Output format: [["bullet1", "bullet2", ...], ["bullet1", "bullet2", ...], ...]
 
     if len(llm_results) != len(experience_blocks):
         from jseeker.integrations.argus_telemetry import log_runtime_event
+
         log_runtime_event(
             task="bullet_adapt_batch",
             model="sonnet",
@@ -340,6 +345,7 @@ Output format: [["bullet1", "bullet2", ...], ["bullet1", "bullet2", ...], ...]
 
     # Learn patterns from LLM adaptations for future cache hits
     from jseeker.pattern_learner import learn_pattern
+
     jd_dict = {
         "title": parsed_jd.title,
         "ats_keywords": parsed_jd.ats_keywords,
@@ -347,7 +353,11 @@ Output format: [["bullet1", "bullet2", ...], ["bullet1", "bullet2", ...], ...]
     }
     for idx, exp in enumerate(experience_blocks):
         original_bullets = "\n".join(exp.get("bullets", []))
-        adapted_bullets = "\n".join(llm_results[idx]) if isinstance(llm_results[idx], list) else str(llm_results[idx])
+        adapted_bullets = (
+            "\n".join(llm_results[idx])
+            if isinstance(llm_results[idx], list)
+            else str(llm_results[idx])
+        )
         learn_pattern(
             pattern_type="bullet_adaptation",
             source_text=original_bullets,
@@ -391,7 +401,9 @@ def adapt_resume(
     template = match_result.template_type
     corpus = block_manager.load_corpus()
 
-    logger.info(f"adapt_resume | starting adaptation | template={template.value} | jd_title={parsed_jd.title}")
+    logger.info(
+        f"adapt_resume | starting adaptation | template={template.value} | jd_title={parsed_jd.title}"
+    )
 
     # 1. Adapt summary
     logger.info("adapt_resume | step 1: adapting summary")
@@ -406,27 +418,33 @@ def adapt_resume(
     experience_blocks = []
     for exp in tagged_experiences:
         bullets = block_manager.get_bullets(exp, template)
-        experience_blocks.append({
-            "company": exp.company,
-            "role": exp.role,
-            "bullets": bullets,
-        })
+        experience_blocks.append(
+            {
+                "company": exp.company,
+                "role": exp.role,
+                "bullets": bullets,
+            }
+        )
 
-    logger.info(f"adapt_resume | step 2: adapting {len(experience_blocks)} experience blocks in batch")
+    logger.info(
+        f"adapt_resume | step 2: adapting {len(experience_blocks)} experience blocks in batch"
+    )
     # Single batched LLM call for all bullets (75% cost reduction)
     all_adapted_bullets = adapt_bullets_batch(experience_blocks, template, parsed_jd)
 
     # Reconstruct adapted experiences with results
     adapted_experiences = []
     for exp, adapted_bullets in zip(tagged_experiences, all_adapted_bullets):
-        adapted_experiences.append({
-            "company": exp.company,
-            "role": exp.role,
-            "start": exp.start,
-            "end": exp.end,
-            "location": exp.location,
-            "bullets": adapted_bullets,
-        })
+        adapted_experiences.append(
+            {
+                "company": exp.company,
+                "role": exp.role,
+                "start": exp.start,
+                "end": exp.end,
+                "location": exp.location,
+                "bullets": adapted_bullets,
+            }
+        )
 
     # 2b. Include non-tagged experiences in condensed form (no LLM cost)
     for exp in corpus.experience:
@@ -438,38 +456,42 @@ def adapt_resume(
                 for template_key, bullet_list in exp.bullets.items():
                     fallback_bullets = bullet_list[:3]  # Max 3 condensed bullets
                     break
-            adapted_experiences.append({
-                "company": exp.company,
-                "role": exp.role,
-                "start": exp.start,
-                "end": exp.end,
-                "location": exp.location,
-                "bullets": fallback_bullets,
-                "condensed": True,  # Flag for renderer to style differently if needed
-            })
+            adapted_experiences.append(
+                {
+                    "company": exp.company,
+                    "role": exp.role,
+                    "start": exp.start,
+                    "end": exp.end,
+                    "location": exp.location,
+                    "bullets": fallback_bullets,
+                    "condensed": True,  # Flag for renderer to style differently if needed
+                }
+            )
 
     # 3. Reorder skills to prioritize JD matches
     logger.info("adapt_resume | step 3: reordering skills")
-    matched_skills = block_manager.get_skills_matching_keywords(
-        parsed_jd.ats_keywords
-    )
+    matched_skills = block_manager.get_skills_matching_keywords(parsed_jd.ats_keywords)
     logger.info(f"adapt_resume | matched skill categories: {len(matched_skills)}")
     skills_ordered = []
     # First: categories with matches
     for cat_name, skill_names in matched_skills.items():
-        skills_ordered.append({
-            "category": cat_name,
-            "skills": skill_names,
-            "matched": True,
-        })
+        skills_ordered.append(
+            {
+                "category": cat_name,
+                "skills": skill_names,
+                "matched": True,
+            }
+        )
     # Then: categories without matches
     for cat_key, category in corpus.skills.items():
         if category.display_name not in matched_skills:
-            skills_ordered.append({
-                "category": category.display_name,
-                "skills": [item.name for item in category.items],
-                "matched": False,
-            })
+            skills_ordered.append(
+                {
+                    "category": category.display_name,
+                    "skills": [item.name for item in category.items],
+                    "matched": False,
+                }
+            )
 
     # 4. Adapt location based on JD language
     logger.info("adapt_resume | step 4: adapting location for language")

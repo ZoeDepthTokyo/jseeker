@@ -2,10 +2,23 @@
 
 import pytest
 from jseeker.models import (
-    ParsedJD, MatchResult, AdaptedResume, ATSScore,
-    Application, Company, Resume, JobDiscovery, SearchTag,
-    TemplateType, ResumeStatus, ApplicationStatus, JobStatus,
-    ATSPlatform, DiscoveryStatus, ContactInfo, JDRequirement,
+    ParsedJD,
+    MatchResult,
+    AdaptedResume,
+    ATSScore,
+    Application,
+    Company,
+    Resume,
+    JobDiscovery,
+    SearchTag,
+    TemplateType,
+    ResumeStatus,
+    ApplicationStatus,
+    JobStatus,
+    ATSPlatform,
+    DiscoveryStatus,
+    ContactInfo,
+    JDRequirement,
 )
 
 

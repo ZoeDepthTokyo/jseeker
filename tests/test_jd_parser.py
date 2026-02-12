@@ -2,7 +2,12 @@
 
 import pytest
 import requests
-from jseeker.jd_parser import detect_ats_platform, detect_language, extract_jd_from_url, _extract_salary
+from jseeker.jd_parser import (
+    detect_ats_platform,
+    detect_language,
+    extract_jd_from_url,
+    _extract_salary,
+)
 from jseeker.models import ATSPlatform
 
 
@@ -10,10 +15,15 @@ class TestATSDetection:
     """Test ATS platform detection from URLs."""
 
     def test_greenhouse_detection(self):
-        assert detect_ats_platform("https://boards.greenhouse.io/company/jobs/123") == ATSPlatform.GREENHOUSE
+        assert (
+            detect_ats_platform("https://boards.greenhouse.io/company/jobs/123")
+            == ATSPlatform.GREENHOUSE
+        )
 
     def test_workday_detection(self):
-        assert detect_ats_platform("https://company.wd5.myworkdayjobs.com/jobs") == ATSPlatform.WORKDAY
+        assert (
+            detect_ats_platform("https://company.wd5.myworkdayjobs.com/jobs") == ATSPlatform.WORKDAY
+        )
 
     def test_lever_detection(self):
         assert detect_ats_platform("https://jobs.lever.co/company/123") == ATSPlatform.LEVER
@@ -108,7 +118,9 @@ class TestExtractJDFromURL:
             def raise_for_status():
                 return None
 
-        monkeypatch.setattr("jseeker.jd_parser.requests.get", lambda *args, **kwargs: FakeResponse())
+        monkeypatch.setattr(
+            "jseeker.jd_parser.requests.get", lambda *args, **kwargs: FakeResponse()
+        )
         extracted, metadata = extract_jd_from_url("https://example.com/job")
         assert "Director of Product Design" in extracted
         assert "Site Header" not in extracted

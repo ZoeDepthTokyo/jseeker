@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-
 DEFAULT_RESUME_SOURCES = {
     "base_a": "",
     "base_b": "",
@@ -50,18 +49,12 @@ def load_full_resume_data(path: Path | None = None) -> dict:
         path = _sources_path()
 
     if not path.exists():
-        return {
-            **DEFAULT_RESUME_SOURCES.copy(),
-            "uploaded_templates": []
-        }
+        return {**DEFAULT_RESUME_SOURCES.copy(), "uploaded_templates": []}
 
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError):
-        return {
-            **DEFAULT_RESUME_SOURCES.copy(),
-            "uploaded_templates": []
-        }
+        return {**DEFAULT_RESUME_SOURCES.copy(), "uploaded_templates": []}
 
     # Preserve uploaded_templates list
     result = DEFAULT_RESUME_SOURCES.copy()
@@ -88,4 +81,3 @@ def save_resume_sources(values: dict[str, str], path: Path | None = None) -> dic
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(normalized, indent=2), encoding="utf-8")
     return normalized
-

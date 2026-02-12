@@ -26,7 +26,6 @@ from jseeker.models import Application, JobDiscovery
 from jseeker.pattern_learner import get_pattern_stats, learn_pattern
 from jseeker.tracker import TrackerDB, init_db
 
-
 # ─── Fixtures ───────────────────────────────────────────────────────────────
 
 
@@ -113,11 +112,20 @@ class TestBatchResumeGenerationE2E:
         Issues: #1 (pause/stop/start), #2 (parallel processing), #3 (batch works)
         """
         # Mock pipeline dependencies
-        with patch('jseeker.batch_processor.extract_jd_from_url') as mock_extract, \
-             patch('jseeker.batch_processor.run_pipeline') as mock_pipeline:
+        with patch("jseeker.batch_processor.extract_jd_from_url") as mock_extract, patch(
+            "jseeker.batch_processor.run_pipeline"
+        ) as mock_pipeline:
 
             # Mock JD extraction - now returns tuple
-            mock_extract.return_value = ("Test job description", {"success": True, "company": "Test Company", "selectors_tried": [], "method": "selector"})
+            mock_extract.return_value = (
+                "Test job description",
+                {
+                    "success": True,
+                    "company": "Test Company",
+                    "selectors_tried": [],
+                    "method": "selector",
+                },
+            )
 
             # Mock pipeline result
             mock_result = Mock()
@@ -157,10 +165,19 @@ class TestBatchResumeGenerationE2E:
 
         Issue: #1 (pause/stop/start buttons)
         """
-        with patch('jseeker.batch_processor.extract_jd_from_url') as mock_extract, \
-             patch('jseeker.batch_processor.run_pipeline') as mock_pipeline:
+        with patch("jseeker.batch_processor.extract_jd_from_url") as mock_extract, patch(
+            "jseeker.batch_processor.run_pipeline"
+        ) as mock_pipeline:
 
-            mock_extract.return_value = ("Test JD", {"success": True, "company": "Test Co", "selectors_tried": [], "method": "selector"})
+            mock_extract.return_value = (
+                "Test JD",
+                {
+                    "success": True,
+                    "company": "Test Co",
+                    "selectors_tried": [],
+                    "method": "selector",
+                },
+            )
             mock_result = Mock()
             mock_result.company = "Test Co"
             mock_result.role = "Role"
@@ -198,13 +215,25 @@ class TestBatchResumeGenerationE2E:
 
         Issue: #3 (batch generation works), #7 (error handling)
         """
-        with patch('jseeker.batch_processor.extract_jd_from_url') as mock_extract, \
-             patch('jseeker.batch_processor.run_pipeline') as mock_pipeline:
+        with patch("jseeker.batch_processor.extract_jd_from_url") as mock_extract, patch(
+            "jseeker.batch_processor.run_pipeline"
+        ) as mock_pipeline:
 
             # First URL fails, second succeeds
             mock_extract.side_effect = [
-                ("", {"success": False, "company": None, "selectors_tried": [], "method": "failed"}),
-                ("Valid JD", {"success": True, "company": "Test Co", "selectors_tried": [], "method": "selector"})
+                (
+                    "",
+                    {"success": False, "company": None, "selectors_tried": [], "method": "failed"},
+                ),
+                (
+                    "Valid JD",
+                    {
+                        "success": True,
+                        "company": "Test Co",
+                        "selectors_tried": [],
+                        "method": "selector",
+                    },
+                ),
             ]
 
             mock_result = Mock()
@@ -505,7 +534,9 @@ class TestResumeLibraryE2E:
         """Minimal valid PDF."""
         return b"%PDF-1.4\n1 0 obj\n<<\n/Type /Catalog\n>>\nendobj\nxref\n0 2\ntrailer\n<<\n/Size 2\n/Root 1 0 R\n>>\nstartxref\n50\n%%EOF"
 
-    def test_pdf_upload_and_metadata_creation(self, temp_resume_dir, temp_sources_file, sample_pdf_bytes):
+    def test_pdf_upload_and_metadata_creation(
+        self, temp_resume_dir, temp_sources_file, sample_pdf_bytes
+    ):
         """Test PDF upload creates file and metadata.
 
         Issues: #14 (English template), #15 (Spanish template)
@@ -590,13 +621,15 @@ class TestResumeLibraryE2E:
         pdf_path.write_bytes(sample_pdf_bytes)
 
         metadata = {
-            "uploaded_templates": [{
-                "name": template_name,
-                "path": str(pdf_path),
-                "language": "English",
-                "uploaded_at": datetime.now().isoformat(),
-                "size_kb": len(sample_pdf_bytes) / 1024,
-            }]
+            "uploaded_templates": [
+                {
+                    "name": template_name,
+                    "path": str(pdf_path),
+                    "language": "English",
+                    "uploaded_at": datetime.now().isoformat(),
+                    "size_kb": len(sample_pdf_bytes) / 1024,
+                }
+            ]
         }
         temp_sources_file.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
 
@@ -664,15 +697,21 @@ class TestLearningSystemE2E:
         c = conn.cursor()
 
         # Insert cost records
-        c.execute("""
+        c.execute(
+            """
             INSERT INTO api_costs (model, task, input_tokens, output_tokens, cost_usd)
             VALUES (?, ?, ?, ?, ?)
-        """, ("haiku", "jd_parse", 1000, 200, 0.002))
+        """,
+            ("haiku", "jd_parse", 1000, 200, 0.002),
+        )
 
-        c.execute("""
+        c.execute(
+            """
             INSERT INTO api_costs (model, task, input_tokens, output_tokens, cost_usd)
             VALUES (?, ?, ?, ?, ?)
-        """, ("sonnet", "bullet_adaptation", 2000, 500, 0.015))
+        """,
+            ("sonnet", "bullet_adaptation", 2000, 500, 0.015),
+        )
 
         conn.commit()
 
@@ -716,7 +755,7 @@ class TestLearningSystemE2E:
             original_score=original_score,
             improved_score=improved_score,
             matched_keywords=["product", "design", "ux", "senior", "leadership"],
-            missing_keywords=["strategy"]
+            missing_keywords=["strategy"],
         )
 
         # Verify explanation structure
@@ -741,16 +780,19 @@ class TestFullPipelineIntegration:
 
         Covers: All issues #1-#26 in one integration test
         """
-        with patch('jseeker.llm.JseekerLLM.call_haiku') as mock_haiku, \
-             patch('jseeker.llm.JseekerLLM.call_sonnet') as mock_sonnet:
+        with patch("jseeker.llm.JseekerLLM.call_haiku") as mock_haiku, patch(
+            "jseeker.llm.JseekerLLM.call_sonnet"
+        ) as mock_sonnet:
 
             # Mock LLM responses
             mock_haiku.return_value = "Pruned job description"
-            mock_sonnet.return_value = json.dumps({
-                "title": "Senior Product Designer",
-                "company": "Tech Corp",
-                "requirements": ["5+ years experience", "Strong portfolio"],
-            })
+            mock_sonnet.return_value = json.dumps(
+                {
+                    "title": "Senior Product Designer",
+                    "company": "Tech Corp",
+                    "requirements": ["5+ years experience", "Strong portfolio"],
+                }
+            )
 
             # Step 1: Parse JD (tests #17, #18)
             from jseeker.jd_parser import process_jd
@@ -758,7 +800,7 @@ class TestFullPipelineIntegration:
             try:
                 parsed_jd = process_jd(sample_jd_text)
                 assert parsed_jd is not None
-                assert hasattr(parsed_jd, 'title')
+                assert hasattr(parsed_jd, "title")
             except Exception:
                 # JD parsing may fail without valid API key
                 pytest.skip("JD parsing requires valid API key")
@@ -811,8 +853,9 @@ class TestE2EPerformance:
 
         Issue: #2 (parallel processing), #7 (performance optimization)
         """
-        with patch('jseeker.batch_processor.extract_jd_from_url') as mock_extract, \
-             patch('jseeker.batch_processor.run_pipeline') as mock_pipeline:
+        with patch("jseeker.batch_processor.extract_jd_from_url") as mock_extract, patch(
+            "jseeker.batch_processor.run_pipeline"
+        ) as mock_pipeline:
 
             # Add 200ms delay to simulate real work
             def slow_pipeline(*args, **kwargs):
@@ -824,7 +867,15 @@ class TestE2EPerformance:
                 result.total_cost = 0.03
                 return result
 
-            mock_extract.return_value = ("Test JD", {"success": True, "company": "Test Co", "selectors_tried": [], "method": "selector"})
+            mock_extract.return_value = (
+                "Test JD",
+                {
+                    "success": True,
+                    "company": "Test Co",
+                    "selectors_tried": [],
+                    "method": "selector",
+                },
+            )
             mock_pipeline.side_effect = slow_pipeline
 
             # Process 5 jobs with 5 workers (should take ~0.2s, not 1.0s)

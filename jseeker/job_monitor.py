@@ -10,7 +10,6 @@ import requests
 from jseeker.models import JobStatus
 from jseeker.tracker import tracker_db
 
-
 # Signals that a job is closed/filled
 CLOSURE_SIGNALS = [
     "position has been filled",
@@ -42,9 +41,12 @@ def check_url_status(url: str) -> JobStatus:
         return JobStatus.ACTIVE
 
     try:
-        response = requests.get(url, timeout=15, allow_redirects=True, headers={
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-        })
+        response = requests.get(
+            url,
+            timeout=15,
+            allow_redirects=True,
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"},
+        )
     except requests.RequestException:
         return JobStatus.ACTIVE  # Can't reach — assume still active
 
@@ -85,21 +87,21 @@ def check_all_active_jobs() -> list[dict]:
         old_status = app.get("job_status", "active")
 
         if new_status.value != old_status:
-            tracker_db.update_application_status(
-                app["id"], "job_status", new_status.value
-            )
+            tracker_db.update_application_status(app["id"], "job_status", new_status.value)
             tracker_db.update_application(
                 app["id"],
                 job_status_checked_at=datetime.now().isoformat(),
             )
-            changes.append({
-                "app_id": app["id"],
-                "company": app.get("company_name", ""),
-                "role": app.get("role_title", ""),
-                "old_status": old_status,
-                "new_status": new_status.value,
-                "url": url,
-            })
+            changes.append(
+                {
+                    "app_id": app["id"],
+                    "company": app.get("company_name", ""),
+                    "role": app.get("role_title", ""),
+                    "old_status": old_status,
+                    "new_status": new_status.value,
+                    "url": url,
+                }
+            )
         else:
             # Update check timestamp even if no change
             tracker_db.update_application(

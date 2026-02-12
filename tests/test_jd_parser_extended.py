@@ -80,6 +80,7 @@ class TestExtractJDFromURLEdgeCases:
     def test_network_timeout(self, mock_get):
         """Test extraction handles network timeout gracefully."""
         import requests
+
         mock_get.side_effect = requests.Timeout("Connection timed out")
 
         result, metadata = extract_jd_from_url("https://example.com/job")
@@ -91,6 +92,7 @@ class TestExtractJDFromURLEdgeCases:
     def test_connection_error(self, mock_get):
         """Test extraction handles connection errors gracefully."""
         import requests
+
         mock_get.side_effect = requests.ConnectionError("Failed to connect")
 
         result, metadata = extract_jd_from_url("https://example.com/job")
@@ -103,7 +105,9 @@ class TestExtractJDFromURLEdgeCases:
         """Test extraction handles 404 errors."""
         mock_response = Mock()
         mock_response.status_code = 404
-        mock_response.text = "<html><body>Not Found - This page does not exist. Please check the URL.</body></html>"
+        mock_response.text = (
+            "<html><body>Not Found - This page does not exist. Please check the URL.</body></html>"
+        )
         mock_get.return_value = mock_response
 
         result, metadata = extract_jd_from_url("https://example.com/job")
@@ -116,7 +120,9 @@ class TestExtractJDFromURLEdgeCases:
         """Test extraction handles 500 errors."""
         mock_response = Mock()
         mock_response.status_code = 500
-        mock_response.text = "<html><body>Internal Server Error - Something went wrong on our end.</body></html>"
+        mock_response.text = (
+            "<html><body>Internal Server Error - Something went wrong on our end.</body></html>"
+        )
         mock_get.return_value = mock_response
 
         result, metadata = extract_jd_from_url("https://example.com/job")
@@ -155,7 +161,11 @@ class TestExtractJDFromURLEdgeCases:
         mock_response = Mock()
         mock_response.status_code = 200
         # Make content longer to pass minimum threshold
-        mock_response.text = "<html><body><div>" + ("Job in München, café environment, 中文. " * 20) + "</div></body></html>"
+        mock_response.text = (
+            "<html><body><div>"
+            + ("Job in München, café environment, 中文. " * 20)
+            + "</div></body></html>"
+        )
         mock_get.return_value = mock_response
 
         result, metadata = extract_jd_from_url("https://example.com/job")
@@ -169,7 +179,11 @@ class TestExtractJDFromURLEdgeCases:
         mock_response = Mock()
         mock_response.status_code = 200
         # Make content longer
-        mock_response.text = "<html><body><div>" + ("Real job content here. " * 30) + "</div><script>alert('ad');</script></body></html>"
+        mock_response.text = (
+            "<html><body><div>"
+            + ("Real job content here. " * 30)
+            + "</div><script>alert('ad');</script></body></html>"
+        )
         mock_get.return_value = mock_response
 
         result, metadata = extract_jd_from_url("https://example.com/job")

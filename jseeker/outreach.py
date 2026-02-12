@@ -11,6 +11,7 @@ from jseeker.models import OutreachMessage, ParsedJD
 
 def _load_prompt(name: str) -> str:
     from config import settings
+
     path = settings.prompts_dir / f"{name}.txt"
     return path.read_text(encoding="utf-8")
 
@@ -35,8 +36,7 @@ def generate_outreach(
 
     prompt_template = _load_prompt("outreach_writer")
     prompt = (
-        prompt_template
-        .replace("{channel}", channel)
+        prompt_template.replace("{channel}", channel)
         .replace("{recruiter_name}", recruiter_name or "Hiring Team")
         .replace("{company}", parsed_jd.company)
         .replace("{role_title}", parsed_jd.title)
@@ -74,8 +74,7 @@ def generate_recruiter_search(
     """
     prompt_template = _load_prompt("recruiter_finder")
     prompt = (
-        prompt_template
-        .replace("{company}", company)
+        prompt_template.replace("{company}", company)
         .replace("{role_title}", role_title)
         .replace("{location}", location or "")
     )

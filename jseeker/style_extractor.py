@@ -17,9 +17,12 @@ class ExtractedStyle(BaseModel):
     This model captures font families, sizes, colors, and layout properties
     that can be applied to HTML/CSS templates during PDF generation.
     """
+
     # Fonts
     primary_font: str = "Calibri, sans-serif"
-    fallback_fonts: str = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif"
+    fallback_fonts: str = (
+        "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif"
+    )
 
     # Font sizes (in points)
     name_size: float = 22.0
@@ -121,10 +124,7 @@ def extract_style_from_pdf(pdf_path: Path) -> ExtractedStyle:
         doc.close()
 
         # Analyze collected data
-        style = ExtractedStyle(
-            source_pdf=str(pdf_path),
-            template_name=pdf_path.stem
-        )
+        style = ExtractedStyle(source_pdf=str(pdf_path), template_name=pdf_path.stem)
 
         # Extract primary font (most common)
         if font_samples:
@@ -159,7 +159,9 @@ def extract_style_from_pdf(pdf_path: Path) -> ExtractedStyle:
             page_width = page_rect.width
 
             # If content is concentrated in left 30% of page, likely two-column
-            content_rects = [block.get("bbox", [0, 0, 0, 0]) for block in blocks if block.get("type") == 0]
+            content_rects = [
+                block.get("bbox", [0, 0, 0, 0]) for block in blocks if block.get("type") == 0
+            ]
             if content_rects:
                 left_content = sum(1 for rect in content_rects if rect[0] < page_width * 0.35)
                 if left_content > len(content_rects) * 0.2:  # 20%+ content in left third
@@ -189,6 +191,7 @@ def _get_most_common(items: list) -> str:
     if not items:
         return ""
     from collections import Counter
+
     counter = Counter(items)
     return counter.most_common(1)[0][0]
 
@@ -342,20 +345,25 @@ def get_available_template_styles() -> list[dict]:
     template_styles = []
 
     for tmpl in uploaded_templates:
-        template_styles.append({
-            "name": tmpl.get("name", "Unknown"),
-            "path": tmpl.get("path", ""),
-            "language": tmpl.get("language", "English"),
-            "style": None,  # Lazy-loaded when selected
-        })
+        template_styles.append(
+            {
+                "name": tmpl.get("name", "Unknown"),
+                "path": tmpl.get("path", ""),
+                "language": tmpl.get("language", "English"),
+                "style": None,  # Lazy-loaded when selected
+            }
+        )
 
     # Add default built-in style
-    template_styles.insert(0, {
-        "name": "Built-in Default",
-        "path": "",
-        "language": "English",
-        "style": ExtractedStyle(),  # Default style
-    })
+    template_styles.insert(
+        0,
+        {
+            "name": "Built-in Default",
+            "path": "",
+            "language": "English",
+            "style": ExtractedStyle(),  # Default style
+        },
+    )
 
     return template_styles
 

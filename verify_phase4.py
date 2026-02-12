@@ -5,8 +5,9 @@ from jseeker.block_manager import block_manager
 from jseeker.models import TemplateType
 
 # Fix encoding for Windows terminal
-if sys.platform == 'win32':
-    sys.stdout.reconfigure(encoding='utf-8')
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8")
+
 
 def verify_data_completeness():
     """Verify all data blocks are loaded correctly."""
@@ -93,6 +94,7 @@ def verify_data_completeness():
     print("  4. All data blocks (education, certs, awards, early_career) pass through")
     print("  5. Languages available in contact.languages")
     print("\nResult: Complete data inclusion with optimized LLM usage")
+
 
 if __name__ == "__main__":
     verify_data_completeness()

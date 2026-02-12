@@ -13,7 +13,6 @@ from jseeker.jd_parser import extract_jd_from_url
 from jseeker.pipeline import run_pipeline
 from jseeker.tracker import tracker_db
 
-
 st.title("Dashboard")
 
 # --- Metrics Row ---
@@ -63,7 +62,9 @@ with st.expander("Recent Applications", expanded=True):
 
 # --- Batch URL Intake ---
 with st.expander("Batch Generate From Job URLs", expanded=False):
-    st.caption("Paste up to 20 job URLs (one per line). jSeeker will process them in parallel with learning pauses every 10 resumes.")
+    st.caption(
+        "Paste up to 20 job URLs (one per line). jSeeker will process them in parallel with learning pauses every 10 resumes."
+    )
 
     # Import Starred Jobs button
     col_import, col_spacer = st.columns([2, 3])
@@ -100,11 +101,14 @@ with st.expander("Batch Generate From Job URLs", expanded=False):
 
     # Show warning if exceeding max batch size
     if len(urls) > 20:
-        st.warning(f"⚠️ You have {len(urls)} URLs. Only the first 20 will be processed (batch limit).")
+        st.warning(
+            f"⚠️ You have {len(urls)} URLs. Only the first 20 will be processed (batch limit)."
+        )
 
     # Initialize batch processor in session state
     if "batch_processor" not in st.session_state:
         from jseeker.batch_processor import BatchProcessor
+
         st.session_state.batch_processor = BatchProcessor(max_workers=5)
 
     if "batch_progress" not in st.session_state:
@@ -128,14 +132,20 @@ with st.expander("Batch Generate From Job URLs", expanded=False):
                 st.session_state.batch_progress = progress
 
             # Submit batch
-            batch_id = st.session_state.batch_processor.submit_batch(urls, progress_callback=on_progress)
+            batch_id = st.session_state.batch_processor.submit_batch(
+                urls, progress_callback=on_progress
+            )
             st.session_state.batch_running = True
             st.session_state.batch_id = batch_id
             st.rerun()
 
     with col_btn2:
         if st.button(
-            "⏸️ Pause" if not (st.session_state.batch_progress and st.session_state.batch_progress.paused) else "▶️ Resume",
+            (
+                "⏸️ Pause"
+                if not (st.session_state.batch_progress and st.session_state.batch_progress.paused)
+                else "▶️ Resume"
+            ),
             disabled=not st.session_state.batch_running,
             width="stretch",
             key="batch_pause_btn",
@@ -177,10 +187,7 @@ with st.expander("Batch Generate From Job URLs", expanded=False):
             progress_text = f"{segment_text}Processing {progress.completed + progress.running}/{progress.total} jobs "
             progress_text += f"({progress.completed} completed, {progress.failed} failed, {progress.skipped} skipped)"
 
-            st.progress(
-                progress.progress_pct / 100,
-                text=progress_text
-            )
+            st.progress(progress.progress_pct / 100, text=progress_text)
 
         with col_refresh:
             # Manual refresh button
@@ -191,6 +198,7 @@ with st.expander("Batch Generate From Job URLs", expanded=False):
         if st.session_state.batch_running and not progress.paused and not progress.stopped:
             if progress.completed + progress.failed + progress.skipped < progress.total:
                 import time
+
                 st.empty()  # Placeholder for rerun trigger
                 time.sleep(2)
                 st.rerun()
@@ -203,7 +211,9 @@ with st.expander("Batch Generate From Job URLs", expanded=False):
         elif progress.stopped:
             st.warning("⏹️ Batch stopped.")
         elif progress.completed + progress.failed + progress.skipped == progress.total:
-            st.success(f"✅ Batch complete! {progress.completed} succeeded, {progress.failed} failed, {progress.skipped} skipped.")
+            st.success(
+                f"✅ Batch complete! {progress.completed} succeeded, {progress.failed} failed, {progress.skipped} skipped."
+            )
             st.session_state.batch_running = False
         else:
             status_text = f"Running: {progress.running} active workers"
@@ -214,20 +224,30 @@ with st.expander("Batch Generate From Job URLs", expanded=False):
             st.caption(status_text)
 
         # Worker status expander
-        with st.expander(f"Worker Status ({len([w for w in progress.workers.values() if w.is_active])} active)", expanded=False):
+        with st.expander(
+            f"Worker Status ({len([w for w in progress.workers.values() if w.is_active])} active)",
+            expanded=False,
+        ):
             for worker_id, worker in sorted(progress.workers.items()):
                 if worker.is_active:
                     st.caption(f"**Worker {worker_id}**: {worker.current_url or 'idle'}")
                 else:
-                    st.caption(f"Worker {worker_id}: {worker.jobs_completed} completed, {worker.jobs_failed} failed")
+                    st.caption(
+                        f"Worker {worker_id}: {worker.jobs_completed} completed, {worker.jobs_failed} failed"
+                    )
 
         # Detailed results (after completion)
-        if progress.completed + progress.failed + progress.skipped == progress.total and not progress.stopped:
+        if (
+            progress.completed + progress.failed + progress.skipped == progress.total
+            and not progress.stopped
+        ):
             with st.expander("Detailed Results", expanded=False):
                 jobs = st.session_state.batch_processor.get_all_jobs()
                 for job in jobs:
                     if job.status.value == "completed":
-                        st.success(f"✅ {job.url}: {job.result.get('company')} - {job.result.get('role')}")
+                        st.success(
+                            f"✅ {job.url}: {job.result.get('company')} - {job.result.get('role')}"
+                        )
                     elif job.status.value == "failed":
                         st.error(f"❌ {job.url}: {job.error}")
                     elif job.status.value == "skipped":

@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 def _load_prompt(name: str) -> str:
     """Load a prompt template from data/prompts/."""
     from config import settings
+
     path = settings.prompts_dir / f"{name}.txt"
     return path.read_text(encoding="utf-8")
 
@@ -67,15 +68,11 @@ def llm_relevance_score(parsed_jd: ParsedJD) -> list[MatchResult]:
     prompt_template = _load_prompt("block_scorer")
 
     # Format requirements
-    req_text = "\n".join(
-        f"- [{r.priority}] {r.text}" for r in parsed_jd.requirements
-    )
+    req_text = "\n".join(f"- [{r.priority}] {r.text}" for r in parsed_jd.requirements)
     keywords_text = ", ".join(parsed_jd.ats_keywords)
 
-    prompt = (
-        prompt_template
-        .replace("{ats_keywords}", keywords_text)
-        .replace("{requirements}", req_text)
+    prompt = prompt_template.replace("{ats_keywords}", keywords_text).replace(
+        "{requirements}", req_text
     )
 
     # Use resume blocks as cached system context
@@ -102,7 +99,9 @@ def llm_relevance_score(parsed_jd: ParsedJD) -> list[MatchResult]:
 
     try:
         data = json.loads(json_str)
-        logger.info(f"llm_relevance_score | JSON parse succeeded | rankings_count={len(data.get('rankings', []))}")
+        logger.info(
+            f"llm_relevance_score | JSON parse succeeded | rankings_count={len(data.get('rankings', []))}"
+        )
     except json.JSONDecodeError:
         logger.warning("LLM ranking response was not valid JSON. Falling back to local ranking.")
         data = {"rankings": []}
@@ -115,14 +114,16 @@ def llm_relevance_score(parsed_jd: ParsedJD) -> list[MatchResult]:
         except ValueError:
             template_type = TemplateType.HYBRID
 
-        results.append(MatchResult(
-            template_type=template_type,
-            relevance_score=ranking.get("relevance_score", 0.0),
-            matched_keywords=ranking.get("matched_keywords", []),
-            missing_keywords=ranking.get("missing_keywords", []),
-            gap_analysis=ranking.get("gap_analysis", ""),
-            recommended_experiences=ranking.get("recommended_experiences", []),
-        ))
+        results.append(
+            MatchResult(
+                template_type=template_type,
+                relevance_score=ranking.get("relevance_score", 0.0),
+                matched_keywords=ranking.get("matched_keywords", []),
+                missing_keywords=ranking.get("missing_keywords", []),
+                gap_analysis=ranking.get("gap_analysis", ""),
+                recommended_experiences=ranking.get("recommended_experiences", []),
+            )
+        )
 
     # Sort by relevance score descending
     results.sort(key=lambda r: r.relevance_score, reverse=True)
@@ -134,16 +135,16 @@ def _build_local_fallback_rankings(parsed_jd: ParsedJD) -> list[MatchResult]:
     fallback_results: list[MatchResult] = []
     for template in (TemplateType.AI_UX, TemplateType.AI_PRODUCT, TemplateType.HYBRID):
         score, matched, missing = local_keyword_score(template, parsed_jd)
-        logger.info(f"_build_local_fallback_rankings | template={template.value} | score={score:.2f}")
+        logger.info(
+            f"_build_local_fallback_rankings | template={template.value} | score={score:.2f}"
+        )
         fallback_results.append(
             MatchResult(
                 template_type=template,
                 relevance_score=score,
                 matched_keywords=matched,
                 missing_keywords=missing,
-                gap_analysis=(
-                    "LLM ranking unavailable, using local keyword overlap fallback."
-                ),
+                gap_analysis=("LLM ranking unavailable, using local keyword overlap fallback."),
             )
         )
 
@@ -172,9 +173,7 @@ def match_templates(parsed_jd: ParsedJD) -> list[MatchResult]:
 
     # Enrich with local keyword scores
     for result in results:
-        local_score, matched, missing = local_keyword_score(
-            result.template_type, parsed_jd
-        )
+        local_score, matched, missing = local_keyword_score(result.template_type, parsed_jd)
         # Merge keyword data (LLM keywords + local keywords)
         all_matched = list(set(result.matched_keywords + matched))
         all_missing = list(set(result.missing_keywords) | set(missing))

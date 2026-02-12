@@ -8,20 +8,23 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-
 # ── Custom Exceptions ──────────────────────────────────────────────
+
 
 class AdaptationError(Exception):
     """Raised when resume adaptation fails (JSON parse, validation, etc.)."""
+
     pass
 
 
 class RenderError(Exception):
     """Raised when PDF or DOCX rendering fails after retries."""
+
     pass
 
 
 # ── Enums ──────────────────────────────────────────────────────────────
+
 
 class TemplateType(str, Enum):
     AI_UX = "ai_ux"
@@ -75,8 +78,10 @@ class DiscoveryStatus(str, Enum):
 
 # ── JD Models ──────────────────────────────────────────────────────────
 
+
 class JDRequirement(BaseModel):
     """A single requirement extracted from a JD."""
+
     text: str
     category: str = ""  # "hard_skill", "soft_skill", "experience", "education"
     priority: str = "required"  # "required", "preferred", "nice_to_have"
@@ -85,6 +90,7 @@ class JDRequirement(BaseModel):
 
 class ParsedJD(BaseModel):
     """Structured representation of a job description."""
+
     raw_text: str
     pruned_text: str = ""
     title: str = ""
@@ -102,10 +108,11 @@ class ParsedJD(BaseModel):
     detected_ats: ATSPlatform = ATSPlatform.UNKNOWN
     jd_url: str = ""
     language: str = "en"  # "en" or "es" — auto-detected from JD
-    market: str = "us"    # "us", "mx", "ca", "uk", "es", "dk", "fr"
+    market: str = "us"  # "us", "mx", "ca", "uk", "es", "dk", "fr"
 
 
 # ── Resume Block Models ────────────────────────────────────────────────
+
 
 class ContactInfo(BaseModel):
     full_name: str
@@ -164,6 +171,7 @@ class Certification(BaseModel):
 
 class ResumeCorpus(BaseModel):
     """Complete resume content loaded from YAML blocks."""
+
     contact: ContactInfo
     summaries: dict[str, str] = Field(default_factory=dict)
     experience: list[ExperienceBlock] = Field(default_factory=list)
@@ -176,8 +184,10 @@ class ResumeCorpus(BaseModel):
 
 # ── Matching & Adaptation ─────────────────────────────────────────────
 
+
 class MatchResult(BaseModel):
     """Result of matching resume blocks against a JD."""
+
     template_type: TemplateType
     relevance_score: float = 0.0
     matched_keywords: list[str] = Field(default_factory=list)
@@ -188,6 +198,7 @@ class MatchResult(BaseModel):
 
 class AdaptedResume(BaseModel):
     """Fully adapted resume content ready for rendering."""
+
     summary: str = ""
     experience_blocks: list[dict] = Field(default_factory=list)
     skills_ordered: list[dict] = Field(default_factory=list)
@@ -202,6 +213,7 @@ class AdaptedResume(BaseModel):
 
 class PipelineResult(BaseModel):
     """Complete pipeline output — all intermediate results for traceability."""
+
     parsed_jd: ParsedJD
     match_result: MatchResult
     adapted_resume: AdaptedResume
@@ -211,15 +223,17 @@ class PipelineResult(BaseModel):
     company: str = ""
     role: str = ""
     language: str = "en"  # "en" or "es" — auto-detected from JD
-    market: str = "us"    # "us", "mx", "ca", "uk", "es", "dk", "fr"
+    market: str = "us"  # "us", "mx", "ca", "uk", "es", "dk", "fr"
     total_cost: float = 0.0
     generation_timestamp: Optional[datetime] = None
 
 
 # ── ATS Scoring ────────────────────────────────────────────────────────
 
+
 class ATSScore(BaseModel):
     """ATS compliance score for a resume against a JD."""
+
     overall_score: int = 0  # 0-100
     keyword_match_rate: float = 0.0
     format_compliance: float = 0.0
@@ -235,8 +249,10 @@ class ATSScore(BaseModel):
 
 # ── Outreach ───────────────────────────────────────────────────────────
 
+
 class OutreachMessage(BaseModel):
     """Generated recruiter outreach message."""
+
     recruiter_name: str = ""
     recruiter_email: str = ""
     recruiter_linkedin: str = ""
@@ -246,6 +262,7 @@ class OutreachMessage(BaseModel):
 
 
 # ── Tracker ────────────────────────────────────────────────────────────
+
 
 class Company(BaseModel):
     id: Optional[int] = None

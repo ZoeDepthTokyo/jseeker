@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class LearnedPattern:
     """A learned adaptation pattern."""
+
     id: int
     pattern_type: str
     source_text: str
@@ -102,6 +103,7 @@ def learn_pattern(
     """
     if db_path is None:
         from config import settings
+
         db_path = settings.db_path
 
     context_json = json.dumps(_extract_jd_context(jd_context or {}))
@@ -110,19 +112,24 @@ def learn_pattern(
     c = conn.cursor()
 
     # Upsert: insert or increment frequency
-    c.execute("""
+    c.execute(
+        """
         INSERT INTO learned_patterns (pattern_type, source_text, target_text, jd_context, frequency)
         VALUES (?, ?, ?, ?, 1)
         ON CONFLICT(pattern_type, source_text, jd_context) DO UPDATE SET
             frequency = frequency + 1,
             last_used_at = CURRENT_TIMESTAMP
-    """, (pattern_type, source_text, target_text, context_json))
+    """,
+        (pattern_type, source_text, target_text, context_json),
+    )
 
     pattern_id = c.lastrowid
     conn.commit()
     conn.close()
 
-    logger.info(f"learn_pattern | type={pattern_type} | pattern_id={pattern_id} | source_len={len(source_text)} | target_len={len(target_text)}")
+    logger.info(
+        f"learn_pattern | type={pattern_type} | pattern_id={pattern_id} | source_len={len(source_text)} | target_len={len(target_text)}"
+    )
 
 
 def find_matching_pattern(
@@ -148,6 +155,7 @@ def find_matching_pattern(
     """
     if db_path is None:
         from config import settings
+
         db_path = settings.db_path
 
     search_context = _extract_jd_context(jd_context or {})
@@ -157,18 +165,23 @@ def find_matching_pattern(
     c = conn.cursor()
 
     # Get all patterns of this type with sufficient frequency
-    c.execute("""
+    c.execute(
+        """
         SELECT * FROM learned_patterns
         WHERE pattern_type = ? AND frequency >= ?
         ORDER BY frequency DESC, last_used_at DESC
         LIMIT 50
-    """, (pattern_type, min_frequency))
+    """,
+        (pattern_type, min_frequency),
+    )
 
     patterns = c.fetchall()
     conn.close()
 
     if not patterns:
-        logger.debug(f"find_matching_pattern | type={pattern_type} | no patterns with min_frequency={min_frequency}")
+        logger.debug(
+            f"find_matching_pattern | type={pattern_type} | no patterns with min_frequency={min_frequency}"
+        )
         return None
 
     # Find best matching pattern
@@ -196,15 +209,21 @@ def find_matching_pattern(
         # Update last_used_at
         conn = sqlite3.connect(str(db_path))
         c = conn.cursor()
-        c.execute("UPDATE learned_patterns SET last_used_at = CURRENT_TIMESTAMP WHERE id = ?",
-                  (best_match["id"],))
+        c.execute(
+            "UPDATE learned_patterns SET last_used_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (best_match["id"],),
+        )
         conn.commit()
         conn.close()
 
-        logger.info(f"find_matching_pattern | type={pattern_type} | MATCH | pattern_id={best_match['id']} | score={best_score:.2f}")
+        logger.info(
+            f"find_matching_pattern | type={pattern_type} | MATCH | pattern_id={best_match['id']} | score={best_score:.2f}"
+        )
         return best_match["target_text"]
 
-    logger.debug(f"find_matching_pattern | type={pattern_type} | no match above threshold={similarity_threshold}")
+    logger.debug(
+        f"find_matching_pattern | type={pattern_type} | no match above threshold={similarity_threshold}"
+    )
     return None
 
 
@@ -216,6 +235,7 @@ def get_pattern_stats(db_path: Optional[Path] = None) -> dict:
     """
     if db_path is None:
         from config import settings
+
         db_path = settings.db_path
 
     conn = sqlite3.connect(str(db_path))
@@ -245,15 +265,17 @@ def get_pattern_stats(db_path: Optional[Path] = None) -> dict:
     top_patterns = []
     for row in c.fetchall():
         context = json.loads(row["jd_context"] or "{}")
-        top_patterns.append({
-            "id": row["id"],
-            "type": row["pattern_type"],
-            "source": row["source_text"][:100],
-            "target": row["target_text"][:100],
-            "frequency": row["frequency"],
-            "confidence": row["confidence"],
-            "context": context.get("role", "N/A"),
-        })
+        top_patterns.append(
+            {
+                "id": row["id"],
+                "type": row["pattern_type"],
+                "source": row["source_text"][:100],
+                "target": row["target_text"][:100],
+                "frequency": row["frequency"],
+                "confidence": row["confidence"],
+                "context": context.get("role", "N/A"),
+            }
+        )
 
     # Calculate cache hit rate
     total_uses = sum(item["total_uses"] for item in by_type)
@@ -294,6 +316,7 @@ def analyze_batch_patterns(completed_jobs: list, db_path: Optional[Path] = None)
     """
     if db_path is None:
         from config import settings
+
         db_path = settings.db_path
 
     if not completed_jobs:
@@ -330,7 +353,7 @@ def analyze_batch_patterns(completed_jobs: list, db_path: Optional[Path] = None)
         "unique_companies": unique_companies,
         "avg_ats_score": round(avg_ats, 1),
         "cache_hit_rate": stats["cache_hit_rate"],
-        "message": f"Analyzed {len(completed_jobs)} resumes. Pattern library: {stats['total_patterns']} patterns, {stats['cache_hit_rate']}% cache hit rate."
+        "message": f"Analyzed {len(completed_jobs)} resumes. Pattern library: {stats['total_patterns']} patterns, {stats['cache_hit_rate']}% cache hit rate.",
     }
 
     logger.info(f"analyze_batch_patterns | complete | {insights['message']}")

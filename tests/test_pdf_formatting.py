@@ -30,8 +30,9 @@ class TestFontConsistency:
         assert body_match, "body font-family not found"
 
         font_family = body_match.group(1)
-        assert "-apple-system" in font_family or "BlinkMacSystemFont" in font_family, \
-            "Should use system font stack"
+        assert (
+            "-apple-system" in font_family or "BlinkMacSystemFont" in font_family
+        ), "Should use system font stack"
         assert "Segoe UI" in font_family, "Should include Segoe UI"
         assert "Arial" in font_family, "Should include Arial fallback"
 
@@ -65,7 +66,9 @@ class TestTypographyHierarchy:
         css_path = Path("X:/Projects/jSeeker/data/templates/two_column.css")
         css_content = css_path.read_text(encoding="utf-8")
 
-        h3_match = re.search(r"\.right-column\s+h3\s*\{[^}]*font-size:\s*(\d+)pt", css_content, re.DOTALL)
+        h3_match = re.search(
+            r"\.right-column\s+h3\s*\{[^}]*font-size:\s*(\d+)pt", css_content, re.DOTALL
+        )
         assert h3_match, "right-column h3 font-size not found"
         assert h3_match.group(1) == "11", "Section h3 should be 11pt"
 
@@ -74,7 +77,9 @@ class TestTypographyHierarchy:
         css_path = Path("X:/Projects/jSeeker/data/templates/two_column.css")
         css_content = css_path.read_text(encoding="utf-8")
 
-        h3_match = re.search(r"\.right-column\s+h3\s*\{[^}]*border-bottom:\s*2px\s+solid", css_content, re.DOTALL)
+        h3_match = re.search(
+            r"\.right-column\s+h3\s*\{[^}]*border-bottom:\s*2px\s+solid", css_content, re.DOTALL
+        )
         assert h3_match, "Section h3 should have 2px solid border"
 
     def test_css_company_italic(self):
@@ -82,7 +87,9 @@ class TestTypographyHierarchy:
         css_path = Path("X:/Projects/jSeeker/data/templates/two_column.css")
         css_content = css_path.read_text(encoding="utf-8")
 
-        company_match = re.search(r"\.exp-company\s*\{[^}]*font-style:\s*italic", css_content, re.DOTALL)
+        company_match = re.search(
+            r"\.exp-company\s*\{[^}]*font-style:\s*italic", css_content, re.DOTALL
+        )
         assert company_match, "Company names should be italic"
 
     def test_css_strong_weight_and_color(self):
@@ -115,7 +122,9 @@ class TestSpacingConsistency:
         css_path = Path("X:/Projects/jSeeker/data/templates/two_column.css")
         css_content = css_path.read_text(encoding="utf-8")
 
-        h3_match = re.search(r"\.right-column\s+h3\s*\{[^}]*margin-bottom:\s*(\d+)pt", css_content, re.DOTALL)
+        h3_match = re.search(
+            r"\.right-column\s+h3\s*\{[^}]*margin-bottom:\s*(\d+)pt", css_content, re.DOTALL
+        )
         assert h3_match, "right-column h3 margin-bottom not found"
         assert h3_match.group(1) == "16", "Section spacing should be 16pt"
 
@@ -124,7 +133,9 @@ class TestSpacingConsistency:
         css_path = Path("X:/Projects/jSeeker/data/templates/two_column.css")
         css_content = css_path.read_text(encoding="utf-8")
 
-        bullet_match = re.search(r"\.exp-bullets\s+li\s*\{[^}]*margin-bottom:\s*(\d+)pt", css_content, re.DOTALL)
+        bullet_match = re.search(
+            r"\.exp-bullets\s+li\s*\{[^}]*margin-bottom:\s*(\d+)pt", css_content, re.DOTALL
+        )
         assert bullet_match, "exp-bullets li margin-bottom not found"
         assert bullet_match.group(1) == "3", "Bullet spacing should be 3pt"
 
@@ -133,7 +144,9 @@ class TestSpacingConsistency:
         css_path = Path("X:/Projects/jSeeker/data/templates/two_column.css")
         css_content = css_path.read_text(encoding="utf-8")
 
-        exp_match = re.search(r"\.exp-entry\s*\{[^}]*margin-bottom:\s*(\d+)pt", css_content, re.DOTALL)
+        exp_match = re.search(
+            r"\.exp-entry\s*\{[^}]*margin-bottom:\s*(\d+)pt", css_content, re.DOTALL
+        )
         assert exp_match, "exp-entry margin-bottom not found"
         assert exp_match.group(1) == "16", "Experience entry spacing should be 16pt"
 
@@ -168,8 +181,9 @@ class TestInformationOrder:
         html_content = html_path.read_text(encoding="utf-8")
 
         # Find right column
-        right_col_match = re.search(r'<div class="right-column">(.*?)</div>\s*</div>\s*</body>',
-                                     html_content, re.DOTALL)
+        right_col_match = re.search(
+            r'<div class="right-column">(.*?)</div>\s*</div>\s*</body>', html_content, re.DOTALL
+        )
         assert right_col_match, "Right column not found"
         right_col = right_col_match.group(1)
 
@@ -178,8 +192,9 @@ class TestInformationOrder:
         summary_pos = right_col.find('class="summary-section"')
         experience_pos = right_col.find('class="experience-section"')
 
-        assert header_pos < summary_pos < experience_pos, \
-            "Right column order should be: Header → Summary → Experience"
+        assert (
+            header_pos < summary_pos < experience_pos
+        ), "Right column order should be: Header → Summary → Experience"
 
     def test_html_location_has_class(self):
         """Location elements should have 'location' class for styling."""
@@ -230,7 +245,9 @@ class TestLanguageDetection:
     def test_detect_language_mixed(self):
         """Should classify based on word frequency."""
         # More English words
-        mixed_text = "This is a job description with some palabras in Spanish but mostly English words."
+        mixed_text = (
+            "This is a job description with some palabras in Spanish but mostly English words."
+        )
         result = detect_language(mixed_text)
         assert result == "en", "Should detect English when English words dominate"
 
@@ -277,7 +294,7 @@ class TestIntegration:
         html_content = html_path.read_text(encoding="utf-8")
 
         # Find all classes in CSS (including compound selectors like .header h1)
-        css_classes = set(re.findall(r'\.([a-z-]+)', css_content))
+        css_classes = set(re.findall(r"\.([a-z-]+)", css_content))
 
         # Find all classes in HTML
         html_classes = set(re.findall(r'class="([a-z-]+)"', html_content))
@@ -285,8 +302,9 @@ class TestIntegration:
         # Check that HTML classes that need styling are styled
         # Container divs like experience-section don't need their own styles
         major_styled_classes = {"header", "summary-section", "exp-entry", "exp-role", "exp-company"}
-        assert major_styled_classes.issubset(css_classes), \
-            f"Major styled classes missing CSS: {major_styled_classes - css_classes}"
+        assert major_styled_classes.issubset(
+            css_classes
+        ), f"Major styled classes missing CSS: {major_styled_classes - css_classes}"
 
     def test_templates_exist(self):
         """Template files should exist."""

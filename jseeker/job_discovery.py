@@ -116,7 +116,13 @@ def search_jobs(
                     # Use market-specific location default
                     market_location = MARKET_CONFIG.get(market, {}).get("location", "")
                     results = _search_source(tag, market_location, source, market)
-                    logger.info("Found %d results for tag=%s market=%s source=%s", len(results), tag, market, source)
+                    logger.info(
+                        "Found %d results for tag=%s market=%s source=%s",
+                        len(results),
+                        tag,
+                        market,
+                        source,
+                    )
                     for result in results:
                         result.search_tags = tag
                         discoveries.append(result)
@@ -176,7 +182,9 @@ def _search_source(
     # Use market-specific Indeed URL
     if source == "indeed":
         # Extract Indeed base URL for proper international link construction
-        indeed_base = market_config["indeed_url"].split("/jobs")[0]  # e.g. "https://www.indeed.com.mx"
+        indeed_base = market_config["indeed_url"].split("/jobs")[
+            0
+        ]  # e.g. "https://www.indeed.com.mx"
         url = market_config["indeed_url"].format(
             query=quote_plus(search_query),
             location=quote_plus(location or ""),
@@ -203,7 +211,9 @@ def _search_source(
     try:
         response = requests.get(url, headers=HEADERS, timeout=15)
         response.raise_for_status()
-        logger.info("Response status: %d, content length: %d", response.status_code, len(response.text))
+        logger.info(
+            "Response status: %d, content length: %d", response.status_code, len(response.text)
+        )
     except requests.HTTPError as e:
         # Gracefully handle 403 Forbidden (anti-bot protection)
         if response.status_code == 403:
@@ -235,7 +245,9 @@ def _search_source(
     return results
 
 
-def _parse_indeed(soup: BeautifulSoup, source: str, indeed_base: str = "https://www.indeed.com") -> list[JobDiscovery]:
+def _parse_indeed(
+    soup: BeautifulSoup, source: str, indeed_base: str = "https://www.indeed.com"
+) -> list[JobDiscovery]:
     """Parse Indeed search results.
 
     Args:
@@ -293,7 +305,9 @@ def _parse_indeed(soup: BeautifulSoup, source: str, indeed_base: str = "https://
         title = title_elem.get_text(strip=True) if title_elem else ""
         company = company_elem.get_text(strip=True) if company_elem else ""
         location = location_elem.get_text(strip=True) if location_elem else ""
-        posting_date = _parse_relative_date(date_elem.get_text(strip=True)) if date_elem else date.today()
+        posting_date = (
+            _parse_relative_date(date_elem.get_text(strip=True)) if date_elem else date.today()
+        )
         url = ""
         if link_elem and link_elem.get("href"):
             href = link_elem["href"]
@@ -303,14 +317,16 @@ def _parse_indeed(soup: BeautifulSoup, source: str, indeed_base: str = "https://
                 url = href
 
         if title:
-            results.append(JobDiscovery(
-                title=title,
-                company=company,
-                location=location,
-                url=url,
-                source=source,
-                posting_date=posting_date,
-            ))
+            results.append(
+                JobDiscovery(
+                    title=title,
+                    company=company,
+                    location=location,
+                    url=url,
+                    source=source,
+                    posting_date=posting_date,
+                )
+            )
 
     # Fallback parser for markup changes.
     if not results:
@@ -398,17 +414,21 @@ def _parse_linkedin(soup: BeautifulSoup, source: str) -> list[JobDiscovery]:
         company = company_elem.get_text(strip=True) if company_elem else ""
         location = location_elem.get_text(strip=True) if location_elem else ""
         url = link_elem["href"] if link_elem and link_elem.get("href") else ""
-        posting_date = _parse_relative_date(date_elem.get_text(strip=True)) if date_elem else date.today()
+        posting_date = (
+            _parse_relative_date(date_elem.get_text(strip=True)) if date_elem else date.today()
+        )
 
         if title:
-            results.append(JobDiscovery(
-                title=title,
-                company=company,
-                location=location,
-                url=url,
-                source=source,
-                posting_date=posting_date,
-            ))
+            results.append(
+                JobDiscovery(
+                    title=title,
+                    company=company,
+                    location=location,
+                    url=url,
+                    source=source,
+                    posting_date=posting_date,
+                )
+            )
 
     return results
 
@@ -528,6 +548,7 @@ def format_freshness(posting_date: date | str | None) -> str:
     if isinstance(posting_date, str):
         try:
             from datetime import datetime
+
             posting_date = datetime.fromisoformat(posting_date.split()[0]).date()
         except (ValueError, AttributeError):
             return "Posted recently"
@@ -553,7 +574,9 @@ def format_freshness(posting_date: date | str | None) -> str:
         return f"Posted {months} months ago"
 
 
-def rank_discoveries_by_tag_weight(discoveries: list[JobDiscovery | dict], max_per_country: int = None) -> list[JobDiscovery | dict]:
+def rank_discoveries_by_tag_weight(
+    discoveries: list[JobDiscovery | dict], max_per_country: int = None
+) -> list[JobDiscovery | dict]:
     """Rank discoveries by sum of tag weights from their search_tags, then by freshness.
 
     Applies per-country limits if specified, keeping only the top N results per country
@@ -587,10 +610,14 @@ def rank_discoveries_by_tag_weight(discoveries: list[JobDiscovery | dict], max_p
     sorted_discoveries = sorted(
         discoveries,
         key=lambda d: (
-            sum(d.get("search_tag_weights", {}).values() if isinstance(d, dict) else d.search_tag_weights.values()),
-            (d.get("posting_date") if isinstance(d, dict) else d.posting_date) or date.min
+            sum(
+                d.get("search_tag_weights", {}).values()
+                if isinstance(d, dict)
+                else d.search_tag_weights.values()
+            ),
+            (d.get("posting_date") if isinstance(d, dict) else d.posting_date) or date.min,
         ),
-        reverse=True
+        reverse=True,
     )
 
     # Apply per-country limit if specified
@@ -620,7 +647,7 @@ def search_jobs_async(
     pause_check: callable = None,
     progress_callback: callable = None,
     max_results: int = 250,
-    max_results_per_country: int = 100
+    max_results_per_country: int = 100,
 ) -> list[JobDiscovery]:
     """Search jobs with pause/resume support and result limits.
 
@@ -660,7 +687,9 @@ def search_jobs_async(
 
                 # Check per-market limit
                 if market_counts[market] >= max_results_per_country:
-                    logger.debug("Market %s limit reached: %d results", market, market_counts[market])
+                    logger.debug(
+                        "Market %s limit reached: %d results", market, market_counts[market]
+                    )
                     current += 1
                     continue
 
@@ -685,7 +714,11 @@ def search_jobs_async(
 
                 logger.debug(
                     "Search progress: %d/%d combinations, %d total results (%s: %d)",
-                    current, total_combinations, len(all_discoveries), market, market_counts[market]
+                    current,
+                    total_combinations,
+                    len(all_discoveries),
+                    market,
+                    market_counts[market],
                 )
 
                 # Check limits again after adding results
@@ -693,8 +726,12 @@ def search_jobs_async(
                     logger.info("Search limit reached: %d results", len(all_discoveries))
                     return all_discoveries
 
-    logger.info("Search completed: %d total results from %d combinations (per-country: %s)",
-                len(all_discoveries), total_combinations, market_counts)
+    logger.info(
+        "Search completed: %d total results from %d combinations (per-country: %s)",
+        len(all_discoveries),
+        total_combinations,
+        market_counts,
+    )
     return all_discoveries
 
 
@@ -744,6 +781,7 @@ def import_discovery_to_application(discovery_id: int) -> Optional[int]:
     if disc.get("url"):
         try:
             from jseeker.jd_parser import extract_jd_from_url
+
             jd_text, metadata = extract_jd_from_url(disc["url"])
 
             if jd_text:
@@ -752,7 +790,7 @@ def import_discovery_to_application(discovery_id: int) -> Optional[int]:
                     raw_text=jd_text,
                     jd_url=disc["url"],
                     role_title=disc["title"],
-                    company_name=disc.get("company", "")
+                    company_name=disc.get("company", ""),
                 )
         except Exception as e:
             logger.warning(f"Could not fetch/parse JD for import: {e}")

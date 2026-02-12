@@ -44,7 +44,8 @@ def step_venv():
         # Verify it's functional
         result = subprocess.run(
             [str(venv_python), "--version"],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         if result.returncode == 0:
             print(f"  OK: .venv exists ({result.stdout.strip()})")
@@ -55,7 +56,8 @@ def step_venv():
     print(f"  Creating .venv at {VENV_DIR}...")
     result = subprocess.run(
         [sys.executable, "-m", "venv", str(VENV_DIR)],
-        capture_output=True, text=True,
+        capture_output=True,
+        text=True,
     )
     if result.returncode != 0:
         print(f"  FAIL: Could not create venv: {result.stderr}")
@@ -79,7 +81,8 @@ def step_dependencies():
     print(f"  Installing from {REQUIREMENTS.name}...")
     result = subprocess.run(
         [str(venv_pip), "install", "-r", str(REQUIREMENTS), "--quiet"],
-        capture_output=True, text=True,
+        capture_output=True,
+        text=True,
         cwd=str(PROJECT_ROOT),
     )
     if result.returncode != 0:
@@ -95,7 +98,8 @@ def step_dependencies():
         print(f"  Installing MYCEL (local editable)...")
         subprocess.run(
             [str(venv_pip), "install", "-e", str(MYCEL_PATH), "--quiet"],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
 
     # Verify key imports
@@ -104,7 +108,8 @@ def step_dependencies():
     for module in check_imports:
         result = subprocess.run(
             [str(venv_python), "-c", f"import {module}"],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         if result.returncode != 0:
             missing.append(module)
@@ -128,7 +133,8 @@ def step_warden():
 
     result = subprocess.run(
         [str(venv_python), "-m", "warden.cli", "validate", "--project", str(PROJECT_ROOT)],
-        capture_output=True, text=True,
+        capture_output=True,
+        text=True,
         env={**os.environ, "PYTHONPATH": str(WARDEN_PATH)},
     )
 
@@ -161,11 +167,17 @@ def step_launch():
     try:
         proc = subprocess.run(
             [
-                str(venv_python), "-m", "streamlit", "run",
+                str(venv_python),
+                "-m",
+                "streamlit",
+                "run",
                 str(APP_ENTRY),
-                "--server.port", str(PORT),
-                "--server.headless", "true",
-                "--browser.serverAddress", "localhost",
+                "--server.port",
+                str(PORT),
+                "--server.headless",
+                "true",
+                "--browser.serverAddress",
+                "localhost",
             ],
             cwd=str(PROJECT_ROOT),
         )
@@ -177,9 +189,12 @@ def step_launch():
 
 def main():
     import argparse
+
     parser = argparse.ArgumentParser(description="jSeeker Launcher")
     parser.add_argument("--skip-warden", action="store_true", help="Skip WARDEN validation")
-    parser.add_argument("--check-only", action="store_true", help="Only check venv + deps, don't launch")
+    parser.add_argument(
+        "--check-only", action="store_true", help="Only check venv + deps, don't launch"
+    )
     args = parser.parse_args()
 
     print("=" * 50)

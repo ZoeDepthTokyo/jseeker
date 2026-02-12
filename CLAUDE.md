@@ -46,6 +46,7 @@ streamlit run ui/app.py --server.port 8502  # jSeeker only
 jseeker/ -- main package (models, llm, jd_parser, matcher, adapter, ats_scorer, renderer, outreach, tracker, job_discovery, job_monitor, feedback)
 data/ -- YAML resume blocks, HTML/CSS templates, prompt templates, ATS profiles, SQLite DB
 ui/ -- Streamlit app (dashboard, new_resume, editor, tracker, job_discovery, block_manager, analytics)
+scripts/ -- maintenance tools (backfill_application_data.py, validation test suites)
 tests/ -- pytest suite
 docs/ -- PRD, architecture, user guide, ATS research, changelog
 output/ -- generated resumes (gitignored)
@@ -66,6 +67,9 @@ output/ -- generated resumes (gitignored)
 ## Testing
 # Full test suite (333/336 passing)
 pytest tests/ --cov=jseeker
+
+# Faster feedback during development (~110s without coverage)
+pytest tests/ -q --tb=short
 
 # Pre-commit validation for major releases
 python scripts/test_v0_3_2_complete.py

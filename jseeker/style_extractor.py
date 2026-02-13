@@ -19,7 +19,7 @@ class ExtractedStyle(BaseModel):
     """
     # Fonts
     primary_font: str = "Calibri, sans-serif"
-    fallback_fonts: str = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif"
+    fallback_fonts: str = "Arial, Helvetica, sans-serif"
 
     # Font sizes (in points)
     name_size: float = 22.0

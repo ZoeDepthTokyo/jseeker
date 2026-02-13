@@ -1,0 +1,52 @@
+{
+    "company": "Activision Blizzard",
+    "ats_platform": "custom",
+    "url_pattern": "careers.activisionblizzard.com",
+    "captured_at": "2026-02-13",
+    "form_sections": {
+        "personal_info": {
+            "fields": [
+                {"name": "country", "required": true, "type": "select"},
+                {"name": "first_name", "required": true, "type": "text"},
+                {"name": "last_name", "required": true, "type": "text"},
+                {"name": "preferred_name", "required": false, "type": "toggle", "default": "No"},
+                {"name": "address_line_1", "required": false, "type": "text"},
+                {"name": "address_line_2", "required": false, "type": "text"},
+                {"name": "city", "required": false, "type": "text"},
+                {"name": "state", "required": true, "type": "select"},
+                {"name": "postal_code", "required": false, "type": "text"},
+                {"name": "email", "required": true, "type": "email"},
+                {"name": "phone_device_type", "required": true, "type": "select", "options": ["Home", "Mobile"]},
+                {"name": "country_phone_code", "required": true, "type": "select"},
+                {"name": "phone_number", "required": true, "type": "text"}
+            ]
+        },
+        "screening": {
+            "fields": [
+                {"name": "how_did_you_hear", "required": true, "type": "select"},
+                {"name": "current_employee", "required": true, "type": "select", "options": ["Yes", "No"]}
+            ]
+        },
+        "work_experience": {
+            "repeating": true,
+            "fields": [
+                {"name": "job_title", "required": true, "type": "text"},
+                {"name": "company_name", "required": true, "type": "text"},
+                {"name": "from_date", "required": true, "type": "date", "format": "MM/YYYY"},
+                {"name": "to_date", "required": false, "type": "date", "format": "MM/YYYY"},
+                {"name": "currently_work_here", "required": false, "type": "toggle"},
+                {"name": "location", "required": false, "type": "text"},
+                {"name": "role_description", "required": false, "type": "textarea"}
+            ]
+        },
+        "education": {
+            "repeating": true,
+            "fields": [
+                {"name": "school", "required": false, "type": "text"},
+                {"name": "degree", "required": false, "type": "text"},
+                {"name": "field_of_study", "required": false, "type": "text"},
+                {"name": "graduation_date", "required": false, "type": "date"}
+            ]
+        }
+    }
+}

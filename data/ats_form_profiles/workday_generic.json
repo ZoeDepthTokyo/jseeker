@@ -1,0 +1,53 @@
+{
+    "company": null,
+    "ats_platform": "workday",
+    "url_pattern": "myworkdayjobs.com",
+    "captured_at": "2026-02-13",
+    "notes": "Workday splits Company and Title into SEPARATE lines in resume parser. Use single-column DOCX for best parsing.",
+    "form_sections": {
+        "personal_info": {
+            "fields": [
+                {"name": "country", "required": true, "type": "select"},
+                {"name": "first_name", "required": true, "type": "text"},
+                {"name": "last_name", "required": true, "type": "text"},
+                {"name": "email", "required": true, "type": "email"},
+                {"name": "phone", "required": true, "type": "text"},
+                {"name": "address", "required": false, "type": "text"},
+                {"name": "city", "required": false, "type": "text"},
+                {"name": "state", "required": false, "type": "select"},
+                {"name": "postal_code", "required": false, "type": "text"}
+            ]
+        },
+        "work_experience": {
+            "repeating": true,
+            "fields": [
+                {"name": "job_title", "required": true, "type": "text"},
+                {"name": "company", "required": true, "type": "text"},
+                {"name": "location", "required": false, "type": "text"},
+                {"name": "from_date", "required": true, "type": "date", "format": "MM/YYYY"},
+                {"name": "to_date", "required": false, "type": "date", "format": "MM/YYYY"},
+                {"name": "currently_work_here", "required": false, "type": "checkbox"},
+                {"name": "description", "required": false, "type": "textarea"}
+            ]
+        },
+        "education": {
+            "repeating": true,
+            "fields": [
+                {"name": "school", "required": false, "type": "text"},
+                {"name": "degree", "required": false, "type": "select"},
+                {"name": "field_of_study", "required": false, "type": "text"},
+                {"name": "gpa", "required": false, "type": "text"},
+                {"name": "from_date", "required": false, "type": "date"},
+                {"name": "to_date", "required": false, "type": "date"}
+            ]
+        },
+        "voluntary_disclosure": {
+            "fields": [
+                {"name": "gender", "required": false, "type": "select"},
+                {"name": "ethnicity", "required": false, "type": "select"},
+                {"name": "veteran_status", "required": false, "type": "select"},
+                {"name": "disability_status", "required": false, "type": "select"}
+            ]
+        }
+    }
+}

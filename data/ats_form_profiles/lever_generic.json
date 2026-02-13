@@ -1,0 +1,36 @@
+{
+    "company": null,
+    "ats_platform": "lever",
+    "url_pattern": "jobs.lever.co",
+    "captured_at": "2026-02-13",
+    "notes": "Lever has minimal form fields and relies heavily on resume parsing. Simple upload-centric workflow.",
+    "form_sections": {
+        "personal_info": {
+            "fields": [
+                {"name": "full_name", "required": true, "type": "text"},
+                {"name": "email", "required": true, "type": "email"},
+                {"name": "phone", "required": false, "type": "text"},
+                {"name": "current_company", "required": false, "type": "text"},
+                {"name": "current_title", "required": false, "type": "text"}
+            ]
+        },
+        "resume": {
+            "fields": [
+                {"name": "resume", "required": true, "type": "file", "accepts": ["pdf", "docx"]},
+                {"name": "cover_letter", "required": false, "type": "file"}
+            ]
+        },
+        "links": {
+            "fields": [
+                {"name": "linkedin_url", "required": false, "type": "url"},
+                {"name": "website", "required": false, "type": "url"},
+                {"name": "github_url", "required": false, "type": "url"}
+            ]
+        },
+        "additional": {
+            "fields": [
+                {"name": "additional_info", "required": false, "type": "textarea"}
+            ]
+        }
+    }
+}

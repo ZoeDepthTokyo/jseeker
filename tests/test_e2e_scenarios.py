@@ -285,18 +285,19 @@ class TestPDFFormattingE2E:
         css_content = css_path.read_text(encoding="utf-8")
         html_content = html_path.read_text(encoding="utf-8")
 
-        # Verify single font family (no Calibri)
+        # Verify single font family (no Calibri, uses universal sans-serif)
         assert "Calibri" not in css_content
-        assert "-apple-system" in css_content or "BlinkMacSystemFont" in css_content
+        assert "Arial" in css_content
+        assert "sans-serif" in css_content
 
-        # Verify typography hierarchy
-        assert "font-size: 22pt" in css_content  # h1
-        assert "font-size: 13pt" in css_content  # h2
-        assert "font-size: 11pt" in css_content  # h3
+        # Verify typography hierarchy (compact layout)
+        assert "font-size: 20pt" in css_content  # h1
+        assert "font-size: 12pt" in css_content  # h2
+        assert "font-size: 10pt" in css_content  # h3
 
-        # Verify spacing
-        assert "line-height: 1.4" in css_content
-        assert "margin-bottom: 16pt" in css_content
+        # Verify compact spacing
+        assert "line-height: 1.3" in css_content
+        assert "margin-bottom: 6pt" in css_content  # exp-entry
 
         # Verify HTML structure has key sections
         assert 'class="header"' in html_content

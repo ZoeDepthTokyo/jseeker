@@ -98,6 +98,7 @@ def retry_on_transient_errors(
 MODEL_PRICING = {
     "claude-haiku-4-5-20251001": {"input": 0.80, "output": 4.00, "cache_read": 0.08},
     "claude-sonnet-4-5-20250929": {"input": 3.00, "output": 15.00, "cache_read": 0.30},
+    "claude-opus-4-6": {"input": 15.00, "output": 75.00, "cache_read": 1.50},
 }
 
 
@@ -114,6 +115,7 @@ class JseekerLLM:
         self._session_costs: list[APICost] = []
         self._local_cache: dict[str, str] = {}
         self._cache_dir = settings.local_cache_dir
+        self.model_override: Optional[str] = None
 
     @property
     def client(self) -> anthropic.Anthropic:
@@ -153,9 +155,14 @@ class JseekerLLM:
         Returns:
             Assistant response text.
         """
-        model_id = (
-            settings.sonnet_model if model == "sonnet" else settings.haiku_model
-        )
+        if self.model_override == "opus":
+            model_id = "claude-opus-4-6"
+        elif self.model_override == "sonnet":
+            model_id = settings.sonnet_model
+        else:
+            model_id = (
+                settings.sonnet_model if model == "sonnet" else settings.haiku_model
+            )
 
         # Local cache check
         if use_local_cache and settings.enable_local_cache:

@@ -1,6 +1,6 @@
 @page {
   size: Letter;
-  margin: 0.4in 0.5in;
+  margin: 0.3in 0.4in;
 }
 
 * {
@@ -10,36 +10,37 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-  font-size: 9pt;
-  line-height: 1.4;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 8.5pt;
+  line-height: 1.3;
   color: #2c2c2c;
 }
 
 .resume-grid {
   display: grid;
   grid-template-columns: 2in 1fr;
-  gap: 0.2in;
+  gap: 0.15in;
   min-height: 100%;
 }
 
 /* LEFT COLUMN */
 .left-column {
   background-color: #f0f4f8;
-  padding: 0.3in;
+  padding: 0.25in;
   border-radius: 2px;
+  page-break-inside: avoid;
 }
 
 .left-column h3 {
-  font-size: 11pt;
+  font-size: 10pt;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5pt;
   color: #2B5797;
   border-bottom: 2px solid #2B5797;
   padding-bottom: 3pt;
-  margin-bottom: 16pt;
-  margin-top: 16pt;
+  margin-bottom: 10pt;
+  margin-top: 10pt;
 }
 
 .left-column h3:first-child,
@@ -48,7 +49,7 @@ body {
 }
 
 .left-column p {
-  font-size: 8.5pt;
+  font-size: 8pt;
   margin-bottom: 2pt;
   word-wrap: break-word;
 }
@@ -59,28 +60,28 @@ body {
 }
 
 .left-column li {
-  font-size: 8.5pt;
-  margin-bottom: 3pt;
+  font-size: 8pt;
+  margin-bottom: 2pt;
   padding-left: 8pt;
   position: relative;
 }
 
 .left-column li::before {
-  content: "•";
+  content: "\2022";
   position: absolute;
   left: 0;
   color: #666;
 }
 
 .skill-group {
-  margin-bottom: 10pt;
+  margin-bottom: 8pt;
 }
 
 .skill-group h4 {
-  font-size: 9.5pt;
+  font-size: 9pt;
   font-weight: 700;
   color: #1a1a1a;
-  margin-bottom: 4pt;
+  margin-bottom: 3pt;
 }
 
 .skill-group ul {
@@ -88,11 +89,11 @@ body {
   padding-left: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 8pt;
+  gap: 6pt;
 }
 
 .skill-group li {
-  font-size: 9pt;
+  font-size: 8.5pt;
   padding-left: 0;
   margin-bottom: 0;
 }
@@ -102,7 +103,7 @@ body {
 }
 
 .skills-section .skill-group li::after {
-  content: " •";
+  content: " \2022";
   color: #666;
   margin-left: 4pt;
 }
@@ -112,23 +113,23 @@ body {
 }
 
 .edu-entry {
-  margin-bottom: 10pt;
+  margin-bottom: 8pt;
 }
 
 .edu-school {
   font-weight: 700;
-  font-size: 9.5pt;
+  font-size: 9pt;
   color: #1a1a1a;
 }
 
 .edu-degree {
-  font-size: 9pt;
+  font-size: 8.5pt;
   color: #555;
   font-style: italic;
 }
 
 .edu-date {
-  font-size: 9pt;
+  font-size: 8.5pt;
   color: #666;
 }
 
@@ -138,7 +139,7 @@ body {
 }
 
 .header h1 {
-  font-size: 22pt;
+  font-size: 20pt;
   font-weight: 700;
   color: #2B5797;
   margin-bottom: 2pt;
@@ -146,23 +147,23 @@ body {
 }
 
 .header h2 {
-  font-size: 13pt;
+  font-size: 12pt;
   font-weight: 400;
   font-style: italic;
   color: #555;
-  margin-bottom: 10pt;
+  margin-bottom: 8pt;
 }
 
 .right-column h3 {
-  font-size: 11pt;
+  font-size: 10pt;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5pt;
   color: #2B5797;
   border-bottom: 2px solid #2B5797;
   padding-bottom: 3pt;
-  margin-bottom: 16pt;
-  margin-top: 16pt;
+  margin-bottom: 10pt;
+  margin-top: 10pt;
 }
 
 .summary-section h3 {
@@ -170,14 +171,15 @@ body {
 }
 
 .summary-section p {
-  font-size: 9pt;
-  line-height: 1.4;
+  font-size: 8.5pt;
+  line-height: 1.3;
   color: #333;
 }
 
 /* Experience */
 .exp-entry {
-  margin-bottom: 16pt;
+  margin-bottom: 6pt;
+  page-break-inside: avoid;
 }
 
 .exp-header {
@@ -188,38 +190,50 @@ body {
 
 .exp-role {
   font-weight: 700;
-  font-size: 10pt;
+  font-size: 9.5pt;
   color: #1a1a1a;
 }
 
 .exp-dates {
-  font-size: 8.5pt;
+  font-size: 8pt;
   color: #666;
   white-space: nowrap;
 }
 
 .exp-company {
-  font-size: 9pt;
+  font-size: 8.5pt;
   font-style: italic;
   color: #555;
-  margin-bottom: 3pt;
+  margin-bottom: 2pt;
 }
 
 .exp-bullets {
   list-style: disc;
   padding-left: 14pt;
-  margin-top: 2pt;
+  margin-top: 1pt;
 }
 
 .exp-bullets li {
-  font-size: 9pt;
-  margin-bottom: 3pt;
-  line-height: 1.4;
+  font-size: 8.5pt;
+  margin-bottom: 2pt;
+  line-height: 1.3;
 }
 
 /* Early Career */
-.early-career-section p {
+.early-career-section {
+  margin-top: 6pt;
+  page-break-inside: avoid;
+}
+
+.early-career-section h4 {
   font-size: 9pt;
+  font-weight: 700;
+  color: #2B5797;
+  margin-bottom: 4pt;
+}
+
+.early-career-section p {
+  font-size: 8.5pt;
   margin-bottom: 2pt;
 }
 
@@ -232,5 +246,5 @@ strong {
 .location {
   font-style: italic;
   color: #666;
-  font-size: 9pt;
+  font-size: 8.5pt;
 }

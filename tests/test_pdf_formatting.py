@@ -20,8 +20,8 @@ class TestFontConsistency:
         css_content = css_path.read_text(encoding="utf-8")
         assert "Calibri" not in css_content, "CSS should not reference Calibri font"
 
-    def test_css_uses_system_fonts(self):
-        """CSS should use system font stack."""
+    def test_css_uses_sans_serif_fonts(self):
+        """CSS should use universal sans-serif font stack."""
         css_path = Path("X:/Projects/jSeeker/data/templates/two_column.css")
         css_content = css_path.read_text(encoding="utf-8")
 
@@ -30,26 +30,24 @@ class TestFontConsistency:
         assert body_match, "body font-family not found"
 
         font_family = body_match.group(1)
-        assert "-apple-system" in font_family or "BlinkMacSystemFont" in font_family, \
-            "Should use system font stack"
-        assert "Segoe UI" in font_family, "Should include Segoe UI"
-        assert "Arial" in font_family, "Should include Arial fallback"
+        assert "Arial" in font_family, "Should include Arial"
+        assert "sans-serif" in font_family, "Should include sans-serif fallback"
 
 
 class TestTypographyHierarchy:
     """Test font sizes, weights, and styles for visual hierarchy."""
 
     def test_css_header_h1_size(self):
-        """Header h1 should be 22pt."""
+        """Header h1 should be 20pt (compact layout)."""
         css_path = Path("X:/Projects/jSeeker/data/templates/two_column.css")
         css_content = css_path.read_text(encoding="utf-8")
 
         h1_match = re.search(r"\.header\s+h1\s*\{[^}]*font-size:\s*(\d+)pt", css_content, re.DOTALL)
         assert h1_match, "h1 font-size not found"
-        assert h1_match.group(1) == "22", "h1 should be 22pt"
+        assert h1_match.group(1) == "20", "h1 should be 20pt"
 
     def test_css_header_h2_size_and_italic(self):
-        """Header h2 should be 13pt italic."""
+        """Header h2 should be 12pt italic."""
         css_path = Path("X:/Projects/jSeeker/data/templates/two_column.css")
         css_content = css_path.read_text(encoding="utf-8")
 
@@ -57,17 +55,17 @@ class TestTypographyHierarchy:
         assert h2_section, "h2 style not found"
 
         h2_styles = h2_section.group(1)
-        assert "font-size: 13pt" in h2_styles, "h2 should be 13pt"
+        assert "font-size: 12pt" in h2_styles, "h2 should be 12pt"
         assert "font-style: italic" in h2_styles, "h2 should be italic"
 
     def test_css_section_h3_size(self):
-        """Section h3 should be 11pt."""
+        """Section h3 should be 10pt (compact layout)."""
         css_path = Path("X:/Projects/jSeeker/data/templates/two_column.css")
         css_content = css_path.read_text(encoding="utf-8")
 
         h3_match = re.search(r"\.right-column\s+h3\s*\{[^}]*font-size:\s*(\d+)pt", css_content, re.DOTALL)
         assert h3_match, "right-column h3 font-size not found"
-        assert h3_match.group(1) == "11", "Section h3 should be 11pt"
+        assert h3_match.group(1) == "10", "Section h3 should be 10pt"
 
     def test_css_section_h3_border(self):
         """Section h3 should have 2px solid border."""
@@ -102,40 +100,40 @@ class TestSpacingConsistency:
     """Test line-height, margins, and spacing."""
 
     def test_css_line_height(self):
-        """Body line-height should be 1.4."""
+        """Body line-height should be 1.3 (compact layout)."""
         css_path = Path("X:/Projects/jSeeker/data/templates/two_column.css")
         css_content = css_path.read_text(encoding="utf-8")
 
         body_match = re.search(r"body\s*\{[^}]*line-height:\s*([\d.]+)", css_content, re.DOTALL)
         assert body_match, "body line-height not found"
-        assert float(body_match.group(1)) == 1.4, "Body line-height should be 1.4"
+        assert float(body_match.group(1)) == 1.3, "Body line-height should be 1.3"
 
     def test_css_section_spacing(self):
-        """Section h3 margin-bottom should be 16pt."""
+        """Section h3 margin-bottom should be 10pt (compact layout)."""
         css_path = Path("X:/Projects/jSeeker/data/templates/two_column.css")
         css_content = css_path.read_text(encoding="utf-8")
 
         h3_match = re.search(r"\.right-column\s+h3\s*\{[^}]*margin-bottom:\s*(\d+)pt", css_content, re.DOTALL)
         assert h3_match, "right-column h3 margin-bottom not found"
-        assert h3_match.group(1) == "16", "Section spacing should be 16pt"
+        assert h3_match.group(1) == "10", "Section spacing should be 10pt"
 
     def test_css_bullet_spacing(self):
-        """Bullet li margin-bottom should be 3pt."""
+        """Bullet li margin-bottom should be 2pt (compact layout)."""
         css_path = Path("X:/Projects/jSeeker/data/templates/two_column.css")
         css_content = css_path.read_text(encoding="utf-8")
 
         bullet_match = re.search(r"\.exp-bullets\s+li\s*\{[^}]*margin-bottom:\s*(\d+)pt", css_content, re.DOTALL)
         assert bullet_match, "exp-bullets li margin-bottom not found"
-        assert bullet_match.group(1) == "3", "Bullet spacing should be 3pt"
+        assert bullet_match.group(1) == "2", "Bullet spacing should be 2pt"
 
     def test_css_experience_entry_spacing(self):
-        """Experience entries should have 16pt margin-bottom."""
+        """Experience entries should have 6pt margin-bottom (compact layout)."""
         css_path = Path("X:/Projects/jSeeker/data/templates/two_column.css")
         css_content = css_path.read_text(encoding="utf-8")
 
         exp_match = re.search(r"\.exp-entry\s*\{[^}]*margin-bottom:\s*(\d+)pt", css_content, re.DOTALL)
         assert exp_match, "exp-entry margin-bottom not found"
-        assert exp_match.group(1) == "16", "Experience entry spacing should be 16pt"
+        assert exp_match.group(1) == "6", "Experience entry spacing should be 6pt"
 
 
 class TestInformationOrder:

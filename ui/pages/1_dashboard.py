@@ -157,28 +157,30 @@ with st.expander("Batch Generate From Job URLs", expanded=False):
             st.session_state.batch_running = False
             st.rerun()
 
-    # Polling mechanism: Update progress from batch processor (background thread can't trigger reruns)
+    # Polling mechanism: Update progress FIRST before any UI rendering
+    # (background thread callbacks can't trigger Streamlit reruns)
     if st.session_state.batch_running and "batch_processor" in st.session_state:
+        import time
         try:
             current_progress = st.session_state.batch_processor.get_progress()
             if current_progress:
                 st.session_state.batch_progress = current_progress
 
                 # Check if batch completed
-                if current_progress.completed + current_progress.failed + current_progress.skipped == current_progress.total:
-                    if st.session_state.batch_running:
-                        st.session_state.batch_running = False
-                        # Trigger rerun to show completion UI
-                        import time
-                        time.sleep(0.5)  # Brief delay to ensure state is persisted
-                        st.rerun()
-                else:
-                    # Keep polling while batch runs
-                    import time
-                    time.sleep(2)
+                done_count = current_progress.completed + current_progress.failed + current_progress.skipped
+                if done_count == current_progress.total and current_progress.total > 0:
+                    st.session_state.batch_running = False
+                    time.sleep(0.5)
                     st.rerun()
         except Exception as e:
             st.error(f"Error polling batch progress: {e}")
+
+    # Show initial "Starting..." state when batch just started but no progress yet
+    if st.session_state.batch_running and not st.session_state.batch_progress:
+        import time
+        st.progress(0.0, text="Starting batch... preparing workers")
+        time.sleep(2)
+        st.rerun()
 
     # Progress display
     if st.session_state.batch_progress:
@@ -211,14 +213,6 @@ with st.expander("Batch Generate From Job URLs", expanded=False):
             if st.button("🔄 Refresh", key="batch_refresh_btn", help="Manually refresh progress"):
                 st.rerun()
 
-        # Auto-refresh every 2 seconds while batch is running
-        if st.session_state.batch_running and not progress.paused and not progress.stopped:
-            if progress.completed + progress.failed + progress.skipped < progress.total:
-                import time
-                st.empty()  # Placeholder for rerun trigger
-                time.sleep(2)
-                st.rerun()
-
         # Status text
         if progress.learning_phase:
             st.info("🧠 Learning patterns from completed resumes... will auto-resume shortly.")
@@ -232,11 +226,6 @@ with st.expander("Batch Generate From Job URLs", expanded=False):
             if progress.failed > 0:
                 summary_msg += f" ({progress.failed} pending manual retry)"
             st.success(summary_msg)
-
-            # Mark batch as complete and trigger rerun to show manual retry UI
-            if st.session_state.batch_running:
-                st.session_state.batch_running = False
-                st.rerun()
         else:
             status_text = f"Running: {progress.running} active workers"
             if progress.estimated_remaining_seconds:
@@ -341,6 +330,13 @@ with st.expander("Batch Generate From Job URLs", expanded=False):
 
                         if len(manual_jd.strip()) > 0 and len(manual_jd.strip()) < 100:
                             st.warning("⚠️ JD text too short (minimum 100 characters)")
+
+        # Auto-refresh: schedule next poll cycle while batch is still running
+        # Placed AFTER all UI elements so everything renders before the sleep
+        if st.session_state.batch_running and not progress.paused and not progress.stopped:
+            import time
+            time.sleep(2)
+            st.rerun()
 
 st.markdown("---")
 

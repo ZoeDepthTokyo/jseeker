@@ -43,6 +43,42 @@ try:
 except Exception:
     pass
 
+# Model selector
+st.sidebar.markdown("---")
+_model_options = ["Haiku (Fast/Cheap)", "Sonnet (Quality)", "Opus (Premium)"]
+
+# Track previous selection for change detection
+_prev_model = st.session_state.get("_prev_model_choice", "Haiku (Fast/Cheap)")
+_model_choice = st.sidebar.selectbox("Model", _model_options, index=0)
+_model_map = {"Haiku (Fast/Cheap)": None, "Sonnet (Quality)": "sonnet", "Opus (Premium)": "opus"}
+
+try:
+    llm.model_override = _model_map[_model_choice]
+except NameError:
+    pass
+
+# Show confirmation when model changes
+if _model_choice != _prev_model:
+    st.session_state["_prev_model_choice"] = _model_choice
+    if _model_map[_model_choice] == "opus":
+        st.sidebar.warning(f"Model: **Opus** — Premium pricing ($15/$75 per M tokens)")
+    elif _model_map[_model_choice] == "sonnet":
+        st.sidebar.info(f"Model changed to **Sonnet** — Quality mode")
+    else:
+        st.sidebar.success(f"Model changed to **Haiku** — Fast/Cheap mode")
+else:
+    st.session_state["_prev_model_choice"] = _model_choice
+
+# Model traceability
+try:
+    costs = llm.get_session_costs()
+    if costs:
+        last = costs[-1]
+        model_short = last.model.split("-")[1]
+        st.sidebar.caption(f"Last: {model_short} · ${last.cost_usd:.4f} · {last.task}")
+except Exception:
+    pass
+
 st.markdown("""
 # JSEEKER
 ### The Shape-Shifting Resume Engine
@@ -56,5 +92,5 @@ Navigate using the sidebar pages:
 5. **Job Discovery** — Tag-based job search across boards
 
 ---
-*GAIA Ecosystem Product v0.2.1*
+*GAIA Ecosystem Product v0.3.6*
 """)

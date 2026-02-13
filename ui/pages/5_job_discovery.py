@@ -48,10 +48,10 @@ with st.sidebar:
                     if search.get('location'):
                         st.session_state["loaded_location"] = search['location']
 
-                    # Set flag to auto-run search after page reloads
-                    st.session_state["auto_run_search"] = True
+                    # Load from DB cache instead of re-scraping
+                    st.session_state["auto_run_search"] = "from_db"
 
-                    st.success(f"Loaded: {search['name']} - Running search...")
+                    st.success(f"Loaded: {search['name']}")
                     st.rerun()
 
                 # Delete button
@@ -279,6 +279,10 @@ if "cached_search_params" not in st.session_state:
     st.session_state["cached_search_params"] = None
 if "cached_search_timestamp" not in st.session_state:
     st.session_state["cached_search_timestamp"] = None
+if "ranked_discoveries_cache" not in st.session_state:
+    st.session_state["ranked_discoveries_cache"] = None
+if "ranked_discoveries_filter_key" not in st.session_state:
+    st.session_state["ranked_discoveries_filter_key"] = None
 
 # Generate cache key from current search parameters
 def get_cache_key(markets, location, sources):
@@ -313,6 +317,8 @@ if st.session_state["cached_search_timestamp"]:
         st.session_state["cached_search_results"] = None
         st.session_state["cached_search_params"] = None
         st.session_state["cached_search_timestamp"] = None
+        st.session_state["ranked_discoveries_cache"] = None
+        st.session_state["ranked_discoveries_filter_key"] = None
         st.rerun()
 
 # Search controls
@@ -321,7 +327,41 @@ col_search, col_pause, col_stop = st.columns([1, 1, 1])
 # Check for auto-run flag (set when loading saved search)
 auto_run = st.session_state.pop("auto_run_search", False)
 
-if col_search.button("🔍 Run Search", type="primary") or auto_run:
+# Handle "from_db" mode: load cached discoveries from DB instead of re-scraping
+if auto_run == "from_db":
+    from jseeker.job_discovery import rank_discoveries_by_tag_weight
+    from datetime import datetime
+
+    db_discoveries = tracker_db.list_discoveries()
+    if db_discoveries:
+        ranked = rank_discoveries_by_tag_weight(db_discoveries, max_per_country=100)
+        st.session_state["ranked_discoveries_cache"] = ranked
+        st.session_state["ranked_discoveries_filter_key"] = None
+        active_tags = tracker_db.list_search_tags(active_only=True)
+        st.session_state["cached_search_results"] = {
+            "discoveries": db_discoveries,
+            "ranked_discoveries": ranked,
+            "saved_count": 0,
+            "tag_strings": [t["tag"] for t in active_tags],
+            "search_details": {
+                "tags": len(active_tags),
+                "sources": len(sources),
+                "markets": len(selected_markets),
+                "total_combinations": 0,
+                "total_found": len(db_discoveries),
+                "new_saved": 0
+            }
+        }
+        st.session_state["cached_search_params"] = current_cache_key
+        st.session_state["cached_search_timestamp"] = datetime.now().isoformat()
+        st.success(f"Loaded {len(ranked)} cached jobs from database.")
+    else:
+        st.info("No cached results in database. Click 'Run Search' to scrape new jobs.")
+    st.session_state.pop("loaded_location", None)
+    st.session_state.pop("loaded_sources", None)
+    auto_run = False
+
+if col_search.button("🔍 Run Search", type="primary") or (auto_run is True):
     active_tags = tracker_db.list_search_tags(active_only=True)
     tag_strings = [t["tag"] for t in active_tags]
 
@@ -398,6 +438,9 @@ if col_search.button("🔍 Run Search", type="primary") or auto_run:
         }
         st.session_state["cached_search_params"] = current_cache_key
         st.session_state["cached_search_timestamp"] = datetime.now().isoformat()
+        # Store ranked results in dedicated cache (avoids re-ranking on filter/action changes)
+        st.session_state["ranked_discoveries_cache"] = ranked_discoveries
+        st.session_state["ranked_discoveries_filter_key"] = None
 
         # Clear loaded values after search executes (prevent them from persisting)
         st.session_state.pop("loaded_location", None)
@@ -510,29 +553,59 @@ market_value = None if market_filter == "All" else market_filter
 source_value = None if source_filter == "All" else source_filter
 location_value = location_filter.strip() if location_filter.strip() else None
 
-@st.cache_data(ttl=10)
-def _get_discoveries(status, search, market, location, source):
-    """Cached DB query for discoveries with 10-second TTL."""
-    return tracker_db.list_discoveries(
-        status=status,
-        search=search,
-        market=market,
-        location=location,
-        source=source
-    )
+# Use ranked cache if available; otherwise load from DB and rank once
+if st.session_state["ranked_discoveries_cache"] is not None:
+    _all_ranked = st.session_state["ranked_discoveries_cache"]
+else:
+    _all_ranked_raw = tracker_db.list_discoveries()
+    if _all_ranked_raw:
+        from jseeker.job_discovery import rank_discoveries_by_tag_weight
+        _all_ranked = rank_discoveries_by_tag_weight(_all_ranked_raw, max_per_country=100)
+        st.session_state["ranked_discoveries_cache"] = _all_ranked
+    else:
+        _all_ranked = []
 
-discoveries = _get_discoveries(
+# Apply filters in-memory on the ranked cache (no DB re-query needed)
+def _filter_discoveries(ranked_list, status, search, market, location_val, source):
+    """Filter pre-ranked discoveries in memory."""
+    result = ranked_list
+    if status:
+        result = [d for d in result if str(d.get("status", "new")).strip().lower() == status]
+    if market:
+        result = [d for d in result if (d.get("market") or "").lower() == market.lower()]
+    if source:
+        result = [d for d in result if (d.get("source") or "").lower() == source.lower()]
+    if location_val:
+        loc_lower = location_val.lower()
+        result = [d for d in result if loc_lower in (d.get("location") or "").lower()]
+    if search:
+        q = search.lower()
+        result = [d for d in result if (
+            q in (d.get("title") or "").lower()
+            or q in (d.get("company") or "").lower()
+            or q in (d.get("location") or "").lower()
+            or q in (d.get("source") or "").lower()
+            or any(q in tag.lower() for tag in (d.get("search_tag_weights") or {}).keys())
+        )]
+    return result
+
+def _update_cached_discovery_status(disc_id, new_status):
+    """Update a discovery's status in the ranked cache in-place."""
+    cache = st.session_state.get("ranked_discoveries_cache")
+    if cache:
+        for d in cache:
+            if d.get("id") == disc_id:
+                d["status"] = new_status
+                break
+
+discoveries = _filter_discoveries(
+    _all_ranked,
     status=status_value,
     search=search_query,
     market=market_value,
-    location=location_value,
+    location_val=location_value,
     source=source_value
 )
-
-if discoveries:
-    # Rank by tag weight + freshness, limit to top 100 per country
-    from jseeker.job_discovery import rank_discoveries_by_tag_weight
-    discoveries = rank_discoveries_by_tag_weight(discoveries, max_per_country=100)
 
 if discoveries:
     # Group discoveries by hierarchical location: Country > State/Province > City
@@ -597,6 +670,81 @@ if discoveries:
 
         return ("Unknown", "", loc)
 
+    # --- Location normalization aliases ---
+    STATE_ALIASES = {
+        "New York": "NY", "New York City": "NY", "California": "CA",
+        "Illinois": "IL", "Texas": "TX", "Florida": "FL",
+        "Massachusetts": "MA", "Washington": "WA", "Georgia": "GA",
+        "Colorado": "CO", "Oregon": "OR", "Pennsylvania": "PA",
+        "Virginia": "VA", "North Carolina": "NC", "Ohio": "OH",
+        "Michigan": "MI", "Arizona": "AZ", "Minnesota": "MN",
+        "New Jersey": "NJ", "Connecticut": "CT", "Maryland": "MD",
+        "Tennessee": "TN", "Indiana": "IN", "Missouri": "MO",
+        "Wisconsin": "WI", "Nevada": "NV", "Utah": "UT",
+        "District of Columbia": "DC", "D.C.": "DC",
+        "New York City Metropolitan Area": "NY",
+        "Greater New York City Area": "NY",
+        # Canadian provinces
+        "British Columbia": "BC", "Greater Vancouver": "BC",
+        "Ontario": "ON", "Quebec": "QC", "Alberta": "AB",
+    }
+
+    CITY_ALIASES = {
+        "New York City": "New York", "NYC": "New York",
+        "New York City Metropolitan Area": "New York",
+        "Greater New York City Area": "New York",
+        "México": "Mexico City", "CDMX": "Mexico City",
+        "Ciudad de México": "Mexico City", "Mexico City Metropolitan Area": "Mexico City",
+        "Greater Mexico City": "Mexico City",
+        "Mexico Metropolitan Area": "Mexico City",
+        "Mexico metropolitan area": "Mexico City",
+        "San Francisco Bay Area": "San Francisco", "SF": "San Francisco",
+        "Greater Los Angeles": "Los Angeles", "LA": "Los Angeles",
+        "Greater Toronto Area": "Toronto", "GTA": "Toronto",
+        "Greater Vancouver Area": "Vancouver",
+        "Greater Vancouver": "Vancouver",
+        "Greater London": "London",
+        "Greater Copenhagen": "Copenhagen",
+        "Greater Barcelona": "Barcelona",
+    }
+
+    def normalize_location(country, state, city):
+        """Normalize state abbreviations and city name variants to canonical forms."""
+        # Normalize state
+        if state in STATE_ALIASES:
+            state = STATE_ALIASES[state]
+
+        # Normalize city
+        if city in CITY_ALIASES:
+            city = CITY_ALIASES[city]
+
+        # Fuzzy normalization for "Greater X" and "X Metropolitan Area" patterns
+        if "Metropolitan" in city or "Greater" in city:
+            clean = city.replace("Greater ", "").replace(" Metropolitan Area", "").replace(" Metropolitan area", "").replace(" Area", "").strip()
+            if clean in CITY_ALIASES:
+                city = CITY_ALIASES[clean]
+            elif clean:
+                city = clean
+
+        # Special case: city is a state name (e.g. "New York City" parsed as city with no state)
+        if not state and city in STATE_ALIASES:
+            state = STATE_ALIASES[city]
+            city = CITY_ALIASES.get(city, city)
+
+        return (country, state, city)
+
+    # Deduplicate by URL (keep first occurrence — highest ranked)
+    seen_urls = set()
+    deduped_discoveries = []
+    for d in discoveries:
+        url = d.get("url", "")
+        if url and url in seen_urls:
+            continue
+        if url:
+            seen_urls.add(url)
+        deduped_discoveries.append(d)
+    discoveries = deduped_discoveries
+
     # Build 3-level nested structure
     by_location_hierarchy = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
 
@@ -604,6 +752,7 @@ if discoveries:
         market = d.get("market") or "unknown"
         location = d.get("location") or "Unknown Location"
         country, state, city = parse_location_hierarchy(location, market)
+        country, state, city = normalize_location(country, state, city)
         by_location_hierarchy[country][state][city].append(d)
 
     # Country emoji mapping
@@ -694,30 +843,54 @@ if discoveries:
                         st.caption(f"  • {tag}: {weight}%")
 
             # Action buttons row
-            action_cols = st.columns(4)
+            action_cols = st.columns(5)
             status = str(disc.get("status", "new")).strip().lower()
 
             if status == "new":
                 if action_cols[0].button("Star", key=f"star_{disc['id']}"):
                     tracker_db.update_discovery_status(disc["id"], "starred")
+                    # Update cached list in-place to avoid re-ranking
+                    _update_cached_discovery_status(disc["id"], "starred")
+                    st.toast("⭐ Starred!")
                     st.rerun()
                 if action_cols[1].button("Dismiss", key=f"dismiss_{disc['id']}"):
                     tracker_db.update_discovery_status(disc["id"], "dismissed")
+                    _update_cached_discovery_status(disc["id"], "dismissed")
+                    st.toast("👋 Dismissed")
                     st.rerun()
 
             if status in ("new", "starred"):
-                if action_cols[2].button("Import to Tracker", key=f"import_{disc['id']}"):
+                if action_cols[2].button("Quick Import", key=f"import_{disc['id']}"):
                     from jseeker.job_discovery import import_discovery_to_application
 
                     app_id = import_discovery_to_application(disc["id"])
                     if app_id:
-                        st.success(f"Imported as application #{app_id}")
+                        _update_cached_discovery_status(disc["id"], "imported")
+                        st.toast("Imported to Tracker!")
+                        st.success(f"Imported as application #{app_id} (no resume generated)")
                     else:
                         st.error("Failed to import")
                     st.rerun()
 
+            if status in ("new", "starred"):
+                if action_cols[3].button("Generate Resume", key=f"gen_{disc['id']}"):
+                    with st.spinner(f"Generating resume for {disc.get('company', 'Unknown')}..."):
+                        from jseeker.job_discovery import generate_resume_from_discovery
+
+                        result = generate_resume_from_discovery(disc["id"])
+                        if result:
+                            _update_cached_discovery_status(disc["id"], "imported")
+                            st.toast(f"Resume generated! ATS: {result['ats_score']}%")
+                            st.success(
+                                f"Resume created for {result['company']} - {result['role']} "
+                                f"(ATS: {result['ats_score']}%, Relevance: {result['relevance_score']}%)"
+                            )
+                        else:
+                            st.error("Failed to generate resume. JD extraction may have failed — try manual entry in New Resume.")
+                    st.rerun()
+
             if disc.get("url"):
-                action_cols[3].markdown(f"[View Job]({disc['url']})")
+                action_cols[4].markdown(f"[View Job]({disc['url']})")
 
             st.markdown("---")
 

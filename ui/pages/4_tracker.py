@@ -120,11 +120,11 @@ if apps:
         "company_name",
         "location",
         "role_title",
+        "application_status",
         "jd_url",
         "salary_min",
         "salary_max",
         "salary_currency",
-        "application_status",
         "relevance_score",
         "ats_score",
         "resume_status",
@@ -208,10 +208,10 @@ if apps:
         "relevance_score": st.column_config.NumberColumn(
             "Relevance",
             format="%.0f%%",
-            disabled=True,
+            disabled=False,
             help="0-25: Low fit | 26-50: Medium fit | 51-75: Good fit | 76-100: Excellent fit. Used for prioritization and success rate analysis."
         ),
-        "ats_score": st.column_config.NumberColumn("ATS Score", disabled=True),
+        "ats_score": st.column_config.NumberColumn("ATS Score", disabled=False),
         "application_status": st.column_config.SelectboxColumn(
             "App Status",
             options=[s.value for s in ApplicationStatus],
@@ -279,6 +279,7 @@ if apps:
                     "salary_min",
                     "salary_max",
                     "salary_currency",
+                    "relevance_score",
                 ]:
                     if col not in edited_df.columns or col not in original:
                         continue
@@ -287,7 +288,19 @@ if apps:
                     if pd.isna(new_val) and pd.isna(old_val):
                         continue
                     if new_val != old_val:
-                        changes[col] = None if pd.isna(new_val) else new_val
+                        save_val = None if pd.isna(new_val) else new_val
+                        # relevance_score is displayed as percentage (x100), convert back to 0-1
+                        if col == "relevance_score" and save_val is not None:
+                            save_val = save_val / 100.0
+                        changes[col] = save_val
+
+                # Handle ats_score separately (stored on resumes table, not applications)
+                if "ats_score" in edited_df.columns and "ats_score" in original:
+                    new_ats = row.get("ats_score")
+                    old_ats = original.get("ats_score")
+                    if not (pd.isna(new_ats) and pd.isna(old_ats)) and new_ats != old_ats:
+                        tracker_db.update_latest_resume_ats(app_id, None if pd.isna(new_ats) else int(new_ats))
+                        changed_count += 1
 
                 if changes:
                     tracker_db.update_application(app_id, **changes)
@@ -330,6 +343,8 @@ if apps:
                             st.error(f"❌ Failed to delete application #{delete_id}")
             else:
                 st.error(f"Application ID {delete_id} not found in current filtered view.")
+
+        st.caption("Note: IDs are permanent and never reuse after deletion (standard database behavior).")
 else:
     st.info("No applications match your filters.")
 

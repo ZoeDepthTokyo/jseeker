@@ -276,6 +276,151 @@ def _extract_company_fallback(text: str) -> str | None:
     return None
 
 
+def _resolve_linkedin_url(url: str, timeout: int = 15) -> Optional[str]:
+    """Follow a LinkedIn job URL to find the original company posting URL.
+
+    LinkedIn job pages often link to the original ATS posting (Workday,
+    Greenhouse, Lever, etc.) via the Apply button. This function fetches
+    the LinkedIn page and extracts that external URL.
+
+    Args:
+        url: LinkedIn job URL (e.g., https://www.linkedin.com/jobs/view/...).
+        timeout: Request timeout in seconds.
+
+    Returns:
+        External ATS URL if found, None otherwise.
+    """
+    if not url:
+        return None
+
+    logger.debug(f"_resolve_linkedin_url | fetching url={url[:100]}...")
+
+    try:
+        response = requests.get(
+            url.strip(),
+            timeout=timeout,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            },
+        )
+        response.raise_for_status()
+    except requests.RequestException:
+        logger.debug("_resolve_linkedin_url | failed to fetch LinkedIn page")
+        return None
+
+    soup = BeautifulSoup(response.text, "html.parser")
+
+    # Known ATS domain patterns to look for in links
+    ats_domains = [
+        "myworkdayjobs.com", "workday.com",
+        "boards.greenhouse.io", "greenhouse.io",
+        "jobs.lever.co", "lever.co",
+        "icims.com", "ashbyhq.com", "taleo.net",
+        "careers.", "jobs.",
+    ]
+
+    # Strategy 1: Look for apply links with class hints
+    apply_selectors = [
+        'a[class*="apply"]',
+        'a[class*="Apply"]',
+        'a[class*="original"]',
+        'a[data-tracking-control-name*="apply"]',
+        'a.apply-button',
+    ]
+    for selector in apply_selectors:
+        for link in soup.select(selector):
+            href = link.get("href", "")
+            if href and any(domain in href.lower() for domain in ats_domains):
+                logger.debug(f"_resolve_linkedin_url | found apply link: {href[:100]}")
+                return href
+
+    # Strategy 2: Scan all links for ATS domain matches
+    for link in soup.find_all("a", href=True):
+        href = link["href"]
+        href_lower = href.lower()
+        # Skip LinkedIn internal links
+        if "linkedin.com" in href_lower:
+            continue
+        if any(domain in href_lower for domain in ats_domains):
+            logger.debug(f"_resolve_linkedin_url | found ATS link: {href[:100]}")
+            return href
+
+    # Strategy 3: Check for redirect URLs embedded in query params
+    for link in soup.find_all("a", href=True):
+        href = link["href"]
+        # LinkedIn sometimes wraps external URLs in redirect params
+        url_match = re.search(r'[?&]url=([^&]+)', href)
+        if url_match:
+            from urllib.parse import unquote
+            decoded = unquote(url_match.group(1))
+            if any(domain in decoded.lower() for domain in ats_domains):
+                logger.debug(f"_resolve_linkedin_url | found redirect URL: {decoded[:100]}")
+                return decoded
+
+    logger.debug("_resolve_linkedin_url | no external ATS URL found")
+    return None
+
+
+def _search_alternate_posting(title: str, company: str) -> Optional[str]:
+    """Search for an alternate job posting URL via web search.
+
+    Best-effort fallback when JD extraction returns too little data.
+    Uses a simple Google search to find the same job on other boards.
+
+    Args:
+        title: Job title from the original posting.
+        company: Company name.
+
+    Returns:
+        URL of an alternate posting, or None if not found.
+    """
+    if not title or not company:
+        return None
+
+    from urllib.parse import quote_plus
+
+    query = quote_plus(f"{title} {company} job posting")
+    search_url = f"https://www.google.com/search?q={query}"
+
+    logger.debug(f"_search_alternate_posting | query={title} {company}")
+
+    try:
+        response = requests.get(
+            search_url,
+            timeout=10,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "Accept-Language": "en-US,en;q=0.9",
+            },
+        )
+        response.raise_for_status()
+    except requests.RequestException:
+        logger.debug("_search_alternate_posting | search request failed")
+        return None
+
+    # Known job board domains to look for in search results
+    job_board_domains = [
+        "myworkdayjobs.com", "boards.greenhouse.io", "jobs.lever.co",
+        "indeed.com/viewjob", "glassdoor.com/job-listing",
+        "ashbyhq.com", "icims.com",
+    ]
+
+    soup = BeautifulSoup(response.text, "html.parser")
+    for link in soup.find_all("a", href=True):
+        href = link["href"]
+        # Google wraps results in /url?q=...
+        url_match = re.search(r'/url\?q=([^&]+)', href)
+        if url_match:
+            from urllib.parse import unquote
+            candidate = unquote(url_match.group(1))
+            if any(domain in candidate.lower() for domain in job_board_domains):
+                logger.debug(f"_search_alternate_posting | found: {candidate[:100]}")
+                return candidate
+
+    logger.debug("_search_alternate_posting | no alternate posting found")
+    return None
+
+
 def extract_jd_from_url(url: str, timeout: int = 20) -> tuple[str, dict]:
     """Extract readable JD text from a public job URL.
 
@@ -297,6 +442,14 @@ def extract_jd_from_url(url: str, timeout: int = 20) -> tuple[str, dict]:
         return "", metadata
 
     logger.info(f"extract_jd_from_url | url={url[:100]}...")
+
+    # LinkedIn URLs: try to resolve to original company posting first
+    if "linkedin.com/jobs/view/" in url.lower():
+        resolved_url = _resolve_linkedin_url(url)
+        if resolved_url:
+            logger.info(f"extract_jd_from_url | LinkedIn resolved to: {resolved_url[:100]}")
+            return extract_jd_from_url(resolved_url, timeout=timeout)
+        logger.debug("extract_jd_from_url | LinkedIn resolve failed, falling through to scrape")
 
     # Workday sites require JS rendering
     if "workday" in url.lower() or "myworkdayjobs" in url.lower():
@@ -360,6 +513,15 @@ def extract_jd_from_url(url: str, timeout: int = 20) -> tuple[str, dict]:
     # If fallback is tiny it is usually a blocked page/login shell, treat as failure.
     if len(fallback) < 180:
         logger.warning("JD extraction produced too little text for URL: %s", url)
+        # Try alternate posting search if we have a company name
+        if metadata["company"]:
+            alt_url = _search_alternate_posting(
+                title="",  # No title yet at extraction stage
+                company=metadata["company"],
+            )
+            if alt_url and alt_url.lower() != url.lower():
+                logger.info(f"extract_jd_from_url | trying alternate posting: {alt_url[:100]}")
+                return extract_jd_from_url(alt_url, timeout=timeout)
         metadata["method"] = "too_short"
         return "", metadata
 

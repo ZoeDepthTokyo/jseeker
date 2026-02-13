@@ -903,6 +903,12 @@ def import_discovery_to_application(discovery_id: int) -> Optional[int]:
     if not disc:
         return None
 
+    # Check for existing application with same URL (deduplication)
+    existing = tracker_db.find_application_by_url(disc.get("url", ""))
+    if existing:
+        tracker_db.update_discovery_status(discovery_id, "imported")
+        return existing["id"]
+
     company_id = tracker_db.get_or_create_company(disc.get("company", "Unknown"))
 
     # If we have a URL, fetch and parse the full JD
@@ -942,3 +948,68 @@ def import_discovery_to_application(discovery_id: int) -> Optional[int]:
     tracker_db.update_discovery_status(discovery_id, "imported")
 
     return app_id
+
+
+def generate_resume_from_discovery(discovery_id: int) -> Optional[dict]:
+    """Generate a full resume from a job discovery.
+
+    Fetches JD from URL, runs full pipeline (parse -> match -> adapt -> score -> render),
+    creates Application + Resume in tracker, updates discovery status.
+
+    Args:
+        discovery_id: ID of the discovery record to generate from.
+
+    Returns:
+        Dict with application_id, resume_id, company, role, ats_score, relevance_score,
+        pdf_path, cost_usd. None on failure.
+    """
+    from jseeker.jd_parser import extract_jd_from_url
+    from jseeker.pipeline import run_pipeline
+    from config import settings
+
+    discoveries = tracker_db.list_discoveries()
+    disc = None
+    for d in discoveries:
+        if d["id"] == discovery_id:
+            disc = d
+            break
+
+    if not disc or not disc.get("url"):
+        logger.warning("generate_resume_from_discovery: discovery %s not found or has no URL", discovery_id)
+        return None
+
+    # Extract JD text from URL
+    try:
+        jd_text, metadata = extract_jd_from_url(disc["url"])
+    except Exception as e:
+        logger.error("JD extraction failed for discovery %s: %s", discovery_id, e)
+        return None
+
+    if not jd_text or len(jd_text.strip()) < 100:
+        logger.warning("JD text too short for discovery %s (%d chars)", discovery_id, len(jd_text or ""))
+        return None
+
+    # Run full pipeline
+    try:
+        result = run_pipeline(jd_text=jd_text, jd_url=disc["url"], output_dir=settings.output_dir)
+    except Exception as e:
+        logger.error("Pipeline failed for discovery %s: %s", discovery_id, e)
+        return None
+
+    # Create Application + Resume in tracker
+    created = tracker_db.create_from_pipeline(result)
+    tracker_db.update_application(created["application_id"], resume_status="exported")
+
+    # Update discovery status to imported
+    tracker_db.update_discovery_status(discovery_id, "imported")
+
+    return {
+        "application_id": created["application_id"],
+        "resume_id": created["resume_id"],
+        "company": result.company,
+        "role": result.role,
+        "ats_score": result.ats_score.overall_score,
+        "relevance_score": result.match_result.relevance_score,
+        "pdf_path": result.pdf_path,
+        "cost_usd": result.total_cost,
+    }

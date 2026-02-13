@@ -74,9 +74,14 @@ def _render_html(
     env = _get_templates_env()
     template = env.get_template(template_name)
 
-    # Format dates for display
+    # Format dates for display and truncate to max 5 full entries
+    MAX_FULL_ENTRIES = 5
+    all_exp = adapted.experience_blocks
+    full_entries = all_exp[:MAX_FULL_ENTRIES]
+    overflow_entries = all_exp[MAX_FULL_ENTRIES:]
+
     experiences = []
-    for exp in adapted.experience_blocks:
+    for exp in full_entries:
         end = exp.get("end")
         if end is None:
             end_display = "Present" if language == "en" else "Presente"
@@ -86,6 +91,14 @@ def _render_html(
             **exp,
             "start_display": _format_date(exp.get("start", "")),
             "end_display": end_display,
+        })
+
+    # Overflow entries become early career (title/company/dates only, no bullets)
+    early_career_overflow = []
+    for exp in overflow_entries:
+        early_career_overflow.append({
+            "role": exp.get("role", ""),
+            "company": exp.get("company", ""),
         })
 
     education = []
@@ -106,6 +119,9 @@ def _render_html(
     if custom_style:
         custom_css = generate_css_from_style(custom_style)
 
+    # Merge overflow experience entries with existing early_career
+    combined_early_career = early_career_overflow + (adapted.early_career or [])
+
     return template.render(
         name=adapted.contact.full_name,
         target_title=adapted.target_title,
@@ -121,7 +137,7 @@ def _render_html(
         education=education,
         certifications=adapted.certifications,
         awards=adapted.awards,
-        early_career=adapted.early_career,
+        early_career=combined_early_career,
         section_labels=section_labels,
         custom_css=custom_css,
     )
@@ -224,7 +240,7 @@ with sync_playwright() as p:
         path=r"{pdf_str}",
         format="Letter",
         print_background=True,
-        margin={{"top": "0.5in", "bottom": "0.5in", "left": "0.5in", "right": "0.5in"}},
+        margin={{"top": "0", "bottom": "0", "left": "0", "right": "0"}},
     )
     browser.close()
 """

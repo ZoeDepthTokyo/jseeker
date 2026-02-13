@@ -213,7 +213,7 @@ with st.expander("Upload PDF Templates", expanded=False):
                             st.rerun()
 
 # --- Base Resume References ---
-with st.expander("Base Resume References", expanded=True):
+with st.expander("Base Resume References", expanded=False):
     st.caption("Track which source files are used as Base A/B/C and LinkedIn PDF.")
 
     current_sources = load_resume_sources()
@@ -276,11 +276,11 @@ else:
     # Show single output folder (PDF and DOCX are always in same folder)
     if "pdf_path" in df.columns:
         df["output_folder"] = df["pdf_path"].apply(
-            lambda x: str(Path(x).parent) if x and Path(x).exists() else ""
+            lambda x: str(Path(x).parent) if x else ""
         )
     elif "docx_path" in df.columns:
         df["output_folder"] = df["docx_path"].apply(
-            lambda x: str(Path(x).parent) if x and Path(x).exists() else ""
+            lambda x: str(Path(x).parent) if x else ""
         )
 
     display_cols = [

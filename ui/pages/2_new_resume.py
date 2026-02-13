@@ -61,6 +61,26 @@ st.markdown("---")
 # --- Step 1: JD Input ---
 st.subheader("Job Description")
 
+jd_url = st.text_input(
+    "Job URL (optional - helps detect ATS platform):",
+    placeholder="https://boards.greenhouse.io/company/jobs/12345",
+    key="jd_url_input",
+)
+
+# Fetch JD button: shown when URL is provided and text area is empty
+if jd_url.strip() and not st.session_state.get("jd_text_input", "").strip():
+    if st.button("Fetch JD from URL", key="fetch_jd_btn"):
+        with st.spinner("Extracting job description..."):
+            try:
+                fetched_jd, meta = extract_jd_from_url(jd_url.strip())
+                if fetched_jd and len(fetched_jd.strip()) > 100:
+                    st.session_state["jd_text_input"] = fetched_jd
+                    st.rerun()
+                else:
+                    st.warning("Could not extract enough text from URL. Paste the JD manually.")
+            except Exception as e:
+                st.error(f"Extraction failed: {e}")
+
 jd_text = st.text_area(
     "Paste the full job description here:",
     height=300,
@@ -68,13 +88,7 @@ jd_text = st.text_area(
     key="jd_text_input",
 )
 
-jd_url = st.text_input(
-    "Job URL (optional - helps detect ATS platform):",
-    placeholder="https://boards.greenhouse.io/company/jobs/12345",
-    key="jd_url_input",
-)
-
-st.caption("Paste JD text, or provide only a job URL and jSeeker will try to extract the JD.")
+st.caption("Paste JD text, or provide a job URL and click Fetch to auto-fill.")
 
 st.markdown("---")
 
@@ -240,6 +254,7 @@ if generate_button:
                 salary_min=result.parsed_jd.salary_min,
                 salary_max=result.parsed_jd.salary_max,
                 salary_currency=result.parsed_jd.salary_currency,
+                relevance_score=result.match_result.relevance_score,
                 resume_status=ResumeStatus.EXPORTED,
                 application_status=ApplicationStatus.NOT_APPLIED,
             )
@@ -275,7 +290,7 @@ if "pipeline_result" in st.session_state:
 
     st.markdown("---")
 
-    with st.expander("ATS Score Card", expanded=True):
+    with st.expander("ATS Score Card", expanded=False):
         col1, col2, col3 = st.columns(3)
         col1.metric("Overall Score", f"{result.ats_score.overall_score}/100")
         col2.metric("Keyword Match", f"{result.ats_score.keyword_match_rate:.0%}")
@@ -327,7 +342,7 @@ if "pipeline_result" in st.session_state:
             except Exception as exc:
                 st.error(f"Failed to generate explanation: {exc}")
 
-    with st.expander("Export", expanded=True):
+    with st.expander("Export", expanded=False):
         default_name = Path(result.pdf_path).stem if result.pdf_path else "resume"
         custom_name = st.text_input("Filename:", value=default_name, key="custom_filename")
 
@@ -355,7 +370,7 @@ if "pipeline_result" in st.session_state:
                         width="stretch",
                     )
 
-    with st.expander("Job Description", expanded=True):
+    with st.expander("Job Description", expanded=False):
         parsed_jd = result.parsed_jd
 
         st.markdown("**Full Job Description:**")

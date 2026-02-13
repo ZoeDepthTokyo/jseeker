@@ -548,6 +548,27 @@ class TrackerDB:
         conn.commit()
         conn.close()
 
+    def update_latest_resume_ats(self, app_id: int, ats_score: int) -> None:
+        """Update the ATS score on the most recent resume for an application.
+
+        Args:
+            app_id: Application ID.
+            ats_score: New ATS score value.
+        """
+        conn = self._conn()
+        c = conn.cursor()
+        c.execute(
+            """UPDATE resumes SET ats_score = ?
+            WHERE id = (
+                SELECT id FROM resumes
+                WHERE application_id = ?
+                ORDER BY created_at DESC LIMIT 1
+            )""",
+            (ats_score, app_id),
+        )
+        conn.commit()
+        conn.close()
+
     def delete_application(self, app_id: int) -> bool:
         """Delete an application and all associated resumes and files.
 
@@ -1052,6 +1073,27 @@ class TrackerDB:
         conn.commit()
         conn.close()
         return True
+
+    def find_application_by_url(self, url: str) -> Optional[dict]:
+        """Find existing application by JD URL.
+
+        Args:
+            url: JD URL to search for
+
+        Returns:
+            Dict with application data (including company_name) or None if not found
+        """
+        if not url:
+            return None
+        conn = self._conn()
+        c = conn.cursor()
+        c.execute("""SELECT a.*, c.name as company_name
+            FROM applications a
+            LEFT JOIN companies c ON a.company_id = c.id
+            WHERE a.jd_url = ?""", (url,))
+        row = c.fetchone()
+        conn.close()
+        return dict(row) if row else None
 
     def is_url_known(self, url: str) -> bool:
         """Check if a URL exists in job_discoveries or applications.

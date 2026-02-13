@@ -1,0 +1,35 @@
+{
+    "company": null,
+    "ats_platform": "greenhouse",
+    "url_pattern": "boards.greenhouse.io",
+    "captured_at": "2026-02-13",
+    "notes": "Greenhouse parses PDF resumes well. Single-line 'Company - Title' format works. Minimal form fields, relies on resume upload.",
+    "form_sections": {
+        "personal_info": {
+            "fields": [
+                {"name": "first_name", "required": true, "type": "text"},
+                {"name": "last_name", "required": true, "type": "text"},
+                {"name": "email", "required": true, "type": "email"},
+                {"name": "phone", "required": false, "type": "text"},
+                {"name": "location", "required": false, "type": "text"}
+            ]
+        },
+        "resume": {
+            "fields": [
+                {"name": "resume", "required": true, "type": "file", "accepts": ["pdf", "docx"]},
+                {"name": "cover_letter", "required": false, "type": "textarea"}
+            ]
+        },
+        "links": {
+            "fields": [
+                {"name": "linkedin_url", "required": false, "type": "url"},
+                {"name": "website", "required": false, "type": "url"},
+                {"name": "github_url", "required": false, "type": "url"}
+            ]
+        },
+        "custom_questions": {
+            "notes": "Company-specific questions vary. Common patterns include work authorization, visa sponsorship, salary expectations.",
+            "fields": []
+        }
+    }
+}

@@ -189,14 +189,66 @@ def score_resume(
     )
 
 
+def load_form_profile(company_or_platform: str) -> dict | None:
+    """Load ATS form profile for a company or platform.
+
+    Checks company-specific profiles first, then falls back to generic platform profiles.
+
+    Args:
+        company_or_platform: Company name, URL fragment, or ATS platform name.
+
+    Returns:
+        Parsed form profile dict, or None if no match found.
+    """
+    from config import settings
+
+    profiles_dir = settings.data_dir / "ats_form_profiles"
+    if not profiles_dir.exists():
+        return None
+
+    query = company_or_platform.lower()
+
+    # Try company-specific first
+    for profile_file in profiles_dir.glob("*.json"):
+        try:
+            data = json.loads(profile_file.read_text(encoding="utf-8"))
+            company = data.get("company") or ""
+            if company and company.lower() == query:
+                return data
+            url_pattern = data.get("url_pattern") or ""
+            if url_pattern and query in url_pattern.lower():
+                return data
+        except (json.JSONDecodeError, KeyError):
+            continue
+
+    # Try platform generic
+    platform_file = profiles_dir / f"{query}_generic.json"
+    if platform_file.exists():
+        try:
+            return json.loads(platform_file.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            return None
+
+    return None
+
+
 def recommend_format(ats_platform: ATSPlatform) -> dict:
     """Recommend PDF vs DOCX based on ATS platform."""
     if ats_platform in (ATSPlatform.WORKDAY, ATSPlatform.ICIMS, ATSPlatform.TALEO):
-        return {"primary": "docx", "reason": "This ATS parses DOCX single-column best"}
+        result = {"primary": "docx", "reason": "This ATS parses DOCX single-column best"}
     elif ats_platform in (ATSPlatform.GREENHOUSE, ATSPlatform.LEVER, ATSPlatform.ASHBY):
-        return {"primary": "pdf", "reason": "Modern ATS handles PDF two-column well"}
+        result = {"primary": "pdf", "reason": "Modern ATS handles PDF two-column well"}
     else:
-        return {"primary": "both", "reason": "Unknown ATS — submit DOCX for safety"}
+        result = {"primary": "both", "reason": "Unknown ATS — submit DOCX for safety"}
+
+    # Attach form profile if available
+    form_profile = load_form_profile(ats_platform.value)
+    if form_profile:
+        result["form_profile"] = form_profile
+        if form_profile.get("ats_platform") == "workday":
+            result["split_title_company"] = True
+
+    return result
 
 
 def explain_ats_score(

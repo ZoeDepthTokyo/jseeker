@@ -24,6 +24,8 @@ contact:
       level: "elementary"
 
   # Location adaptation by market (used by adapter.py)
+  # Note: adapter.py now uses job location for address adaptation, not just market
+  # See get_address_for_location() in adapter.py for full city mapping logic
   locations_by_market:
     us: "San Diego, CA"
     mx: "Ciudad de Mexico"

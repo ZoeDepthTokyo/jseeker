@@ -102,8 +102,8 @@ try:
     selected_style_name = st.selectbox(
         "Choose PDF template style:",
         options=style_names,
-        index=0,  # Default to "Built-in Default"
-        help="Select a PDF template to extract visual formatting (fonts, colors, layout). Built-in Default uses hardcoded styles.",
+        index=0,  # Default to "Built-in Default" (overridden during generation for Spanish jobs)
+        help="Select a PDF template to extract visual formatting (fonts, colors, layout). Built-in Default uses hardcoded styles. Spanish templates are auto-selected for Spanish language jobs.",
         key="style_template_selector",
     )
 
@@ -168,6 +168,16 @@ if generate_button:
                 f"{len(parsed_jd.requirements)} requirements | "
                 f"Language: {parsed_jd.language} | Market: {parsed_jd.market}"
             )
+
+            # Auto-select Spanish template if language is Spanish or location is Mexico
+            if parsed_jd.language == "es" or "mexico" in parsed_jd.location.lower() or "méxico" in parsed_jd.location.lower():
+                # Find ESP template in available styles
+                available_styles_temp = get_available_template_styles()
+                for style in available_styles_temp:
+                    if "ESP" in style["name"].upper():
+                        selected_template = style
+                        st.info(f"🌍 Auto-selected Spanish template: {style['name']}")
+                        break
 
             # Step 2: Match templates
             progress.progress(25, text="Step 2/5: Matching resume templates...")

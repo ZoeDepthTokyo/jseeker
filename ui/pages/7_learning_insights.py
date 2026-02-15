@@ -57,12 +57,17 @@ try:
 
             pattern_df = pd.DataFrame(stats["top_patterns"])
             pattern_df = pattern_df[["id", "type", "frequency", "confidence", "context", "source", "target"]]
-            pattern_df.columns = ["ID", "Type", "Uses", "Confidence", "JD Context", "Source Text", "Target Text"]
+            pattern_df.columns = ["ID", "Type", "Uses", "Confidence", "Learned from Role", "Source Text", "Target Text"]
 
             st.dataframe(
                 pattern_df,
                 width="stretch",
                 hide_index=True,
+            )
+
+            st.caption(
+                "💡 **Note**: 'Learned from Role' shows the job description that triggered this pattern. "
+                "Your resume content (UX/Product experience) was adapted for these roles."
             )
 
 except Exception as exc:
@@ -148,22 +153,91 @@ jSeeker stores learned patterns in a SQLite database. Each pattern represents a 
 that worked well in the past (e.g., how to adapt a specific bullet point for a specific role).
 """)
 
-schema_example = {
-    "id": 42,
-    "pattern_type": "bullet_adaptation",
-    "source_text": "Led cross-functional teams to deliver products",
-    "target_text": "Directed 12-person cross-functional team to ship 3 AI-powered products in 9 months",
-    "jd_context": {
-        "role": "senior product manager",
-        "keywords": ["product management", "cross-functional", "ai", "agile"],
-        "industry": "technology",
-    },
-    "frequency": 5,
-    "confidence": 0.95,
-}
+# Load real pattern data from database
+try:
+    conn_schema = sqlite3.connect(str(settings.db_path))
+    conn_schema.row_factory = sqlite3.Row
+    c_schema = conn_schema.cursor()
 
-st.markdown("### Example Pattern (JSON)")
-st.json(schema_example, expanded=True)
+    c_schema.execute("""
+        SELECT id, pattern_type, source_text, target_text, jd_context, frequency, confidence
+        FROM learned_patterns
+        ORDER BY frequency DESC
+        LIMIT 1
+    """)
+
+    real_pattern = c_schema.fetchone()
+    conn_schema.close()
+
+    if real_pattern:
+        context_data = json.loads(real_pattern["jd_context"] or "{}")
+        schema_example = {
+            "id": real_pattern["id"],
+            "pattern_type": real_pattern["pattern_type"],
+            "source_text": real_pattern["source_text"][:150] + ("..." if len(real_pattern["source_text"]) > 150 else ""),
+            "target_text": real_pattern["target_text"][:150] + ("..." if len(real_pattern["target_text"]) > 150 else ""),
+            "jd_context": context_data,
+            "frequency": real_pattern["frequency"],
+            "confidence": real_pattern["confidence"],
+        }
+
+        st.markdown("### Real Pattern Example (JSON)")
+        st.caption("This is an actual pattern learned from your resume generation history:")
+        st.json(schema_example, expanded=True)
+
+    else:
+        # Fallback to example if no patterns exist
+        schema_example = {
+            "id": 42,
+            "pattern_type": "bullet_adaptation",
+            "source_text": "Led cross-functional teams to deliver products",
+            "target_text": "Directed 12-person cross-functional team to ship 3 AI-powered products in 9 months",
+            "jd_context": {
+                "role": "senior product manager",
+                "keywords": ["product management", "cross-functional", "ai", "agile"],
+                "industry": "technology",
+            },
+            "frequency": 5,
+            "confidence": 0.95,
+        }
+
+        st.markdown("### Example Pattern (JSON)")
+        st.caption("No patterns learned yet. This is a sample structure:")
+        st.json(schema_example, expanded=True)
+
+except Exception as e:
+    st.warning(f"Could not load real pattern data: {e}")
+
+# Show actual skill tags from resume blocks
+st.markdown("### Your Resume Skills (Available for Adaptation)")
+try:
+    import yaml
+    skills_path = Path(__file__).parent.parent.parent / "data" / "resume_blocks" / "skills.yaml"
+
+    if skills_path.exists():
+        with open(skills_path, 'r', encoding='utf-8') as f:
+            skills_data = yaml.safe_load(f)
+
+        # Extract skill categories and items
+        skill_categories = []
+        for category_key, category_data in skills_data.get("skills", {}).items():
+            category_name = category_data.get("display_name", category_key)
+            skill_items = [item["name"] for item in category_data.get("items", [])]
+            skill_categories.append({
+                "Category": category_name,
+                "Skills": ", ".join(skill_items[:3]) + ("..." if len(skill_items) > 3 else ""),
+                "Total": len(skill_items)
+            })
+
+        if skill_categories:
+            st.markdown("jSeeker adapts these skills based on JD keywords:")
+            skills_df = pd.DataFrame(skill_categories)
+            st.dataframe(skills_df, width="stretch", hide_index=True)
+    else:
+        st.info("Skills file not found. Run a resume generation to populate skill tags.")
+
+except Exception as e:
+    st.warning(f"Could not load skills data: {e}")
 
 st.markdown("""
 **Field Explanations**:
@@ -230,8 +304,9 @@ try:
                     col1, col2 = st.columns([3, 1])
 
                     with col1:
-                        st.markdown(f"**Pattern #{pattern['id']}** — {role}")
+                        st.markdown(f"**Pattern #{pattern['id']}** — Learned from: *{role}*")
                         st.markdown(f"**Keywords**: {keywords if keywords else 'None'}")
+                        st.caption("↑ Job role that triggered this pattern learning")
 
                         # Show before/after
                         st.markdown("**Before:**")
@@ -407,6 +482,174 @@ try:
 
 except Exception as exc:
     st.error(f"Failed to load performance trends: {exc}")
+
+
+# ── Section 6: Regional Salary Analytics ──────────────────────────────────
+
+st.markdown("---")
+st.header("🌍 Regional Salary Analytics")
+
+st.markdown("""
+Compare salary ranges across different geographic regions to understand market rates.
+""")
+
+def normalize_location_to_region(location: str) -> str:
+    """Map location string to standardized region."""
+    if not location:
+        return "Unknown"
+
+    loc_lower = location.lower()
+
+    # United States
+    if any(term in loc_lower for term in ["united states", "us", "usa", "california", "new york", "texas", "massachusetts", "illinois", "minnesota", "virginia", "washington", "oregon", "florida", "georgia", "colorado", "atlanta", "boston", "chicago", "dallas", "denver", "detroit", "houston", "los angeles", "mclean", "new york", "hoboken", "philadelphia", "san francisco", "seattle", "san diego", "santa monica", "acton", "frisco", "eagan"]):
+        return "United States"
+
+    # Canada
+    if any(term in loc_lower for term in ["canada", "toronto", "ontario", "vancouver", "montreal", "calgary"]):
+        return "Canada"
+
+    # Mexico
+    if any(term in loc_lower for term in ["mexico", "méxico", "mx", "ciudad de mexico", "monterrey", "guadalajara"]):
+        return "Mexico"
+
+    # UK
+    if any(term in loc_lower for term in ["uk", "united kingdom", "london", "manchester", "edinburgh", "bristol"]):
+        return "United Kingdom"
+
+    # EU
+    if any(term in loc_lower for term in ["germany", "france", "spain", "italy", "netherlands", "sweden", "denmark", "norway", "berlin", "paris", "madrid", "amsterdam", "copenhagen", "stockholm"]):
+        return "Europe"
+
+    # LATAM (excluding Mexico)
+    if any(term in loc_lower for term in ["brazil", "argentina", "chile", "colombia", "peru", "buenos aires", "santiago", "bogota", "lima", "são paulo"]):
+        return "Latin America"
+
+    # Asia
+    if any(term in loc_lower for term in ["china", "japan", "india", "singapore", "korea", "tokyo", "beijing", "shanghai", "bangalore", "seoul"]):
+        return "Asia"
+
+    # Remote (if explicitly stated)
+    if "remote" in loc_lower:
+        return "Remote (Global)"
+
+    return "Other"
+
+try:
+    conn_salary = sqlite3.connect(str(settings.db_path))
+    conn_salary.row_factory = sqlite3.Row
+    c_salary = conn_salary.cursor()
+
+    # Get all applications with salary data
+    c_salary.execute("""
+        SELECT location, salary_min, salary_max, salary_currency
+        FROM applications
+        WHERE salary_min IS NOT NULL AND salary_max IS NOT NULL
+    """)
+
+    salary_data = []
+    for row in c_salary.fetchall():
+        location = row["location"] or "Unknown"
+        region = normalize_location_to_region(location)
+        avg_salary = (row["salary_min"] + row["salary_max"]) / 2.0
+
+        # Convert to USD if needed (simple approximation)
+        currency = row["salary_currency"] or "USD"
+        if currency != "USD":
+            # Exchange rate approximations (as of 2026)
+            rates = {"EUR": 1.1, "GBP": 1.25, "CAD": 0.75, "MXN": 0.05, "INR": 0.012}
+            avg_salary *= rates.get(currency, 1.0)
+
+        salary_data.append({
+            "region": region,
+            "salary": avg_salary,
+            "location": location,
+        })
+
+    conn_salary.close()
+
+    if len(salary_data) >= 2:
+        # Aggregate by region
+        salary_df = pd.DataFrame(salary_data)
+        regional_stats = salary_df.groupby("region").agg({
+            "salary": ["mean", "count", "min", "max"]
+        }).reset_index()
+
+        regional_stats.columns = ["Region", "Avg Salary", "Job Count", "Min Salary", "Max Salary"]
+        regional_stats = regional_stats[regional_stats["Job Count"] >= 1].sort_values("Avg Salary", ascending=False)
+
+        if len(regional_stats) > 0:
+            col1, col2 = st.columns(2)
+
+            with col1:
+                # Bar chart
+                fig_bar = px.bar(
+                    regional_stats,
+                    x="Region",
+                    y="Avg Salary",
+                    title="Average Salary by Region",
+                    labels={"Avg Salary": "Average Salary (USD)", "Region": "Region"},
+                    color="Avg Salary",
+                    color_continuous_scale="Viridis",
+                )
+                fig_bar.update_traces(text=regional_stats["Job Count"].apply(lambda x: f"{x} jobs"), textposition="outside")
+                st.plotly_chart(fig_bar, use_container_width=True)
+
+            with col2:
+                # Radar/Spider chart (only if 3+ regions)
+                if len(regional_stats) >= 3:
+                    fig_radar = go.Figure()
+
+                    fig_radar.add_trace(go.Scatterpolar(
+                        r=regional_stats["Avg Salary"],
+                        theta=regional_stats["Region"],
+                        fill='toself',
+                        name='Average Salary',
+                        line=dict(color='blue')
+                    ))
+
+                    fig_radar.update_layout(
+                        polar=dict(
+                            radialaxis=dict(
+                                visible=True,
+                                range=[0, regional_stats["Avg Salary"].max() * 1.1]
+                            )
+                        ),
+                        showlegend=False,
+                        title="Regional Salary Distribution (Radar)"
+                    )
+
+                    st.plotly_chart(fig_radar, use_container_width=True)
+                else:
+                    st.info("Add more jobs from different regions to see radar chart (need 3+ regions).")
+
+            # Data table
+            st.markdown("### Regional Salary Summary")
+            display_df = regional_stats.copy()
+            display_df["Avg Salary"] = display_df["Avg Salary"].apply(lambda x: f"${x:,.0f}")
+            display_df["Min Salary"] = display_df["Min Salary"].apply(lambda x: f"${x:,.0f}")
+            display_df["Max Salary"] = display_df["Max Salary"].apply(lambda x: f"${x:,.0f}")
+
+            st.dataframe(
+                display_df,
+                width="stretch",
+                hide_index=True,
+            )
+
+            # Insights
+            highest_region = regional_stats.iloc[0]["Region"]
+            highest_salary = regional_stats.iloc[0]["Avg Salary"]
+            st.success(f"💰 Highest average salary: **{highest_region}** at **${highest_salary:,.0f}** ({int(regional_stats.iloc[0]['Job Count'])} jobs)")
+
+        else:
+            st.info("Not enough regional data yet. Add more jobs from different locations to see regional comparison.")
+
+    elif len(salary_data) == 1:
+        st.info("Only 1 job with salary data. Add more jobs to see regional comparison.")
+    else:
+        st.info("No salary data available yet. Job discovery will populate salary ranges when available.")
+
+except Exception as exc:
+    st.error(f"Failed to load regional salary analytics: {exc}")
 
 
 # ── Footer ──────────────────────────────────────────────────────────────────

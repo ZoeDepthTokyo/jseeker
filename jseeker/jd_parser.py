@@ -122,15 +122,17 @@ def _clean_extracted_text(text: str) -> str:
     return text.strip()
 
 
-def _extract_workday_jd(url: str) -> str:
-    """Extract JD from Workday pages using Playwright for JS rendering.
+def _extract_with_playwright(url: str, selectors: list[str], platform: str = "generic", wait_ms: int = 3000) -> str:
+    """Extract JD text from a JS-rendered page using Playwright.
 
-    Workday job sites are JavaScript-rendered single-page apps that don't
-    work with simple requests.get(). This function uses Playwright to render
-    the page and extract the job description content.
+    Launches a headless browser, navigates to the URL, tries each selector
+    in order, and returns the first match with sufficient text content.
 
     Args:
-        url: Workday job URL (e.g., myworkdayjobs.com).
+        url: Job posting URL.
+        selectors: CSS selectors to try in priority order.
+        platform: Name for logging (e.g., "workday", "ashby").
+        wait_ms: Extra wait after page load for JS rendering (ms).
 
     Returns:
         Extracted JD text, or empty string if extraction fails.
@@ -138,38 +140,87 @@ def _extract_workday_jd(url: str) -> str:
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:
-        logger.warning("_extract_workday_jd | Playwright not installed, cannot extract Workday JDs")
+        logger.warning(f"_extract_with_playwright[{platform}] | Playwright not installed")
         return ""
 
     try:
-        logger.info(f"_extract_workday_jd | launching browser for url={url[:100]}...")
+        logger.info(f"_extract_with_playwright[{platform}] | launching browser for url={url[:100]}...")
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
             page = browser.new_page()
-            page.goto(url, timeout=15000)
+            page.goto(url, timeout=20000, wait_until="domcontentloaded")
 
-            # Wait for Workday job description to render
-            # Workday uses data-automation-id="jobPostingDescription" for the main JD content
-            try:
-                page.wait_for_selector('[data-automation-id="jobPostingDescription"]', timeout=10000)
-                desc_el = page.query_selector('[data-automation-id="jobPostingDescription"]')
-                text = desc_el.inner_text() if desc_el else ""
-            except Exception as selector_error:
-                # Fallback: try alternative selectors
-                logger.warning(f"_extract_workday_jd | primary selector failed, trying fallbacks: {selector_error}")
-                desc_el = page.query_selector('.css-cygeeu') or page.query_selector('[class*="jobDescription"]')
-                text = desc_el.inner_text() if desc_el else ""
+            # Try each selector with a wait
+            text = ""
+            for selector in selectors:
+                try:
+                    page.wait_for_selector(selector, timeout=8000)
+                    el = page.query_selector(selector)
+                    if el:
+                        candidate = el.inner_text()
+                        if len(candidate) >= 180:
+                            text = candidate
+                            logger.info(f"_extract_with_playwright[{platform}] | selector '{selector}' matched {len(text)} chars")
+                            break
+                except Exception:
+                    continue
+
+            # If no selector worked, wait for JS and try body content
+            if len(text) < 180:
+                logger.debug(f"_extract_with_playwright[{platform}] | selectors failed, waiting {wait_ms}ms for JS render")
+                page.wait_for_timeout(wait_ms)
+                # Try main/article/section before full body
+                for fallback_sel in ["main", "article", "[role='main']", "body"]:
+                    el = page.query_selector(fallback_sel)
+                    if el:
+                        candidate = el.inner_text()
+                        if len(candidate) >= 180:
+                            text = candidate
+                            logger.info(f"_extract_with_playwright[{platform}] | fallback '{fallback_sel}' matched {len(text)} chars")
+                            break
 
             browser.close()
-            logger.info(f"_extract_workday_jd | extracted {len(text)} chars from Workday")
             return text.strip()
     except Exception as e:
-        logger.warning(f"_extract_workday_jd | failed: {e}")
+        logger.warning(f"_extract_with_playwright[{platform}] | failed: {e}")
         return ""
 
 
+# Platform-specific selectors (ordered by priority)
+_WORKDAY_SELECTORS = [
+    '[data-automation-id="jobPostingDescription"]',
+    '[data-automation-id="jobPostingRequirements"]',
+    '.css-cygeeu',
+    '[class*="jobDescription"]',
+    '[class*="JobDescription"]',
+    '[class*="job-description"]',
+    'div[data-automation-id="jobPostingPage"]',
+]
+
+_ASHBY_SELECTORS = [
+    '[class*="ashby-job-posting-brief-description"]',
+    '[data-testid="job-posting-description"]',
+    '[class*="job-posting-description"]',
+    '[class*="posting-page"]',
+    '[class*="job-details"]',
+    '[class*="JobDescription"]',
+    'div.ashby-job-posting-description',
+    'main',
+]
+
+
+def _extract_workday_jd(url: str) -> str:
+    """Extract JD from Workday pages using Playwright for JS rendering."""
+    return _extract_with_playwright(url, _WORKDAY_SELECTORS, platform="workday", wait_ms=4000)
+
+
+def _extract_ashby_jd(url: str) -> str:
+    """Extract JD from Ashby pages using Playwright for JS rendering."""
+    return _extract_with_playwright(url, _ASHBY_SELECTORS, platform="ashby", wait_ms=3000)
+
+
 def _extract_company_from_url(url: str) -> str | None:
-    """Extract company name from URL patterns (Lever, Greenhouse, Workday).
+    """Extract company name from URL patterns (Lever, Greenhouse, Workday, plain domains).
 
     Args:
         url: Job posting URL
@@ -196,15 +247,30 @@ def _extract_company_from_url(url: str) -> str | None:
         return workday_match.group(1).replace("-", " ").title()
 
     # Generic careers sites: careers.company.com or company-careers.com
-    careers_match = re.search(r"(?:careers?\.)?([a-zA-Z0-9]+)(?:careers?)?\.com", url)
+    # Include hyphens in company name pattern
+    careers_match = re.search(r"(?:careers?\.)?([a-zA-Z0-9-]+?)(?:-?careers?)?\.com", url)
     if careers_match:
         company = careers_match.group(1)
         # Skip generic words that aren't company names
-        if company.lower() not in ["www", "jobs", "apply", "talent", "recruiting"]:
-            # Handle compound names like "activisionblizzard" -> "Activision Blizzard"
-            # Split on common patterns: capitals, numbers, underscores
+        if company.lower() not in ["www", "jobs", "apply", "talent", "recruiting", "careers", "career"]:
+            # Handle hyphenated compound names: "activision-blizzard" -> "Activision Blizzard"
+            if '-' in company:
+                parts = company.split('-')
+                return " ".join(p.capitalize() for p in parts if p and len(p) > 1)
+            # Handle camelCase compound names: "activisionblizzard" -> "Activision Blizzard"
             parts = re.findall(r'[A-Z][a-z]*|[0-9]+|[a-z]+', company)
             return " ".join(p.capitalize() for p in parts if p)
+
+    # Plain domain fallback: https://company.com or https://www.company.com
+    # Handles cases like santander.com, microsoft.com, etc.
+    domain_match = re.search(r'https?://(?:www\.)?([a-zA-Z0-9-]+)\.(?:com|co|io|net|org|edu|gov)', url)
+    if domain_match:
+        company = domain_match.group(1)
+        # Skip generic words
+        if company.lower() not in ["www", "jobs", "apply", "talent", "recruiting", "careers", "career"]:
+            # Split hyphenated names: "activision-blizzard" -> "Activision Blizzard"
+            parts = company.split('-')
+            return " ".join(p.capitalize() for p in parts if p and len(p) > 1)
 
     return None
 
@@ -460,6 +526,15 @@ def extract_jd_from_url(url: str, timeout: int = 20) -> tuple[str, dict]:
             return workday_text, metadata
         # Fall through to regular extraction if Workday extraction fails
 
+    # Ashby sites require JS rendering
+    if "ashbyhq.com" in url.lower():
+        ashby_text = _extract_ashby_jd(url)
+        if ashby_text:
+            metadata["success"] = True
+            metadata["method"] = "ashby"
+            return ashby_text, metadata
+        # Fall through to regular extraction if Ashby extraction fails
+
     try:
         response = requests.get(
             url.strip(),
@@ -510,9 +585,22 @@ def extract_jd_from_url(url: str, timeout: int = 20) -> tuple[str, dict]:
         return best, metadata
 
     fallback = _clean_extracted_text(soup.get_text(" ", strip=True))
-    # If fallback is tiny it is usually a blocked page/login shell, treat as failure.
+    # If fallback is tiny it is usually a JS-rendered page or blocked/login shell.
     if len(fallback) < 180:
         logger.warning("JD extraction produced too little text for URL: %s", url)
+
+        # Last resort: try Playwright generic extraction for any JS-rendered page
+        generic_text = _extract_with_playwright(
+            url,
+            ["main", "article", "[role='main']", "[class*='description']", "[class*='content']"],
+            platform="generic-fallback",
+            wait_ms=4000,
+        )
+        if generic_text and len(generic_text) >= 180:
+            metadata["success"] = True
+            metadata["method"] = "playwright_fallback"
+            return generic_text, metadata
+
         # Try alternate posting search if we have a company name
         if metadata["company"]:
             alt_url = _search_alternate_posting(
@@ -903,8 +991,11 @@ def process_jd(raw_text: str, jd_url: str = "", use_semantic_cache: bool = True)
 
     # Step 7: Company name fallback chain (LLM → Regex → URL → Manual)
     company_name = parsed_data.get("company", "")
-    if not company_name or company_name.strip() == "":
-        logger.info("process_jd | LLM company extraction failed, trying fallback chain")
+
+    # Treat placeholder values as empty (trigger fallback chain)
+    placeholders = ["not specified", "unknown", "n/a", "not available", "tbd", "to be determined", "company name"]
+    if not company_name or company_name.strip() == "" or company_name.strip().lower() in placeholders:
+        logger.info(f"process_jd | LLM company extraction failed or returned placeholder '{company_name}', trying fallback chain")
 
         # Try regex fallback on text
         company_name = _extract_company_fallback(raw_text) or _extract_company_fallback(pruned)

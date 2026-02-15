@@ -25,24 +25,102 @@ LOCATIONS_BY_MARKET = {
     "fr": "Remote / Open to relocation",
 }
 
-# Address mapping by language
-ADDRESSES_BY_LANGUAGE = {
-    "en": "San Diego, CA, USA",
-    "es": "Ciudad de México, CDMX, México",
-    "fr": "San Diego, CA, USA",  # Default to US for French
+# Address mapping by market/location
+ADDRESSES_BY_MARKET = {
+    # United States
+    "us": "San Diego, CA, USA",
+    # Mexico
+    "mx": "Ciudad de México, CDMX, México",
+    # Canada
+    "ca": "Toronto, ON, Canada",
+    # United Kingdom
+    "uk": "London, UK",
+    # Spain
+    "es": "Madrid, España",
+    # Denmark
+    "dk": "Copenhagen, Denmark",
+    # France
+    "fr": "Paris, France",
+}
+
+# Major city patterns for location detection
+CITY_TO_ADDRESS = {
+    # Mexico
+    "mexico city": "Ciudad de México, CDMX, México",
+    "ciudad de méxico": "Ciudad de México, CDMX, México",
+    "cdmx": "Ciudad de México, CDMX, México",
+    "guadalajara": "Guadalajara, Jalisco, México",
+    "monterrey": "Monterrey, Nuevo León, México",
+    "tijuana": "Tijuana, Baja California, México",
+    # Canada
+    "toronto": "Toronto, ON, Canada",
+    "vancouver": "Vancouver, BC, Canada",
+    "montreal": "Montreal, QC, Canada",
+    "ottawa": "Ottawa, ON, Canada",
+    # UK
+    "london": "London, UK",
+    "manchester": "Manchester, UK",
+    "edinburgh": "Edinburgh, UK",
+    # Spain
+    "madrid": "Madrid, España",
+    "barcelona": "Barcelona, España",
+    "valencia": "Valencia, España",
+    # Denmark
+    "copenhagen": "Copenhagen, Denmark",
+    # France
+    "paris": "Paris, France",
 }
 
 
 def get_address_for_language(language: str) -> str:
-    """Get the appropriate address based on JD language.
+    """Deprecated: Use get_address_for_location() instead.
+
+    Maintained for backward compatibility with existing tests.
+    Maps language code to appropriate market address.
 
     Args:
         language: ISO 639-1 language code (e.g., "en", "es", "fr").
 
     Returns:
-        Localized address string.
+        Localized address string based on language-to-market mapping.
     """
-    return ADDRESSES_BY_LANGUAGE.get(language.lower(), "San Diego, CA, USA")
+    # Language to market mapping for backward compatibility
+    language_to_market = {
+        "es": "mx",  # Spanish → Mexico
+        "fr": "us",  # French → US (default, per test_pdf_formatting.py line 252)
+        "en": "us",  # English → US (default)
+    }
+    market = language_to_market.get(language.lower(), "us")
+
+    # Directly use market address mapping (bypass location-based logic for backward compat)
+    return ADDRESSES_BY_MARKET.get(market, "San Diego, CA, USA")
+
+
+def get_address_for_location(location: str, market: str) -> str:
+    """Get the appropriate address based on job location and market.
+
+    Args:
+        location: Job location string from ParsedJD (e.g., "Mexico City, Mexico", "Remote").
+        market: ISO 3166-1 alpha-2 country code (e.g., "us", "mx", "ca").
+
+    Returns:
+        Localized address string appropriate for the job location.
+    """
+    # If location is empty or "Remote", use default US address
+    if not location or location.lower() in ["remote", "anywhere", "flexible"]:
+        return ADDRESSES_BY_MARKET.get("us", "San Diego, CA, USA")
+
+    # Check if location matches a specific city pattern
+    location_lower = location.lower().strip()
+    for city_pattern, address in CITY_TO_ADDRESS.items():
+        if city_pattern in location_lower:
+            logger.info(f"get_address_for_location | matched city pattern: {city_pattern} -> {address}")
+            return address
+
+    # Fallback to market-based address
+    market_address = ADDRESSES_BY_MARKET.get(market.lower(), ADDRESSES_BY_MARKET["us"])
+    logger.info(f"get_address_for_location | using market fallback: {market} -> {market_address}")
+    return market_address
 
 
 def _load_prompt(name: str) -> str:
@@ -471,13 +549,17 @@ def adapt_resume(
                 "matched": False,
             })
 
-    # 4. Adapt location based on JD language
-    logger.info("adapt_resume | step 4: adapting location for language")
+    # 4. Adapt contact address based on JD location
+    logger.info("adapt_resume | step 4: adapting contact address for job location")
     adapted_contact = corpus.contact.model_copy()
-    language = parsed_jd.language or "en"
-    localized_address = get_address_for_language(language)
+    job_location = parsed_jd.location or ""
+    market = parsed_jd.market or "us"
+    localized_address = get_address_for_location(job_location, market)
     adapted_contact.locations = [localized_address]
-    logger.info(f"adapt_resume | location adapted for language={language} -> {localized_address}")
+    logger.info(
+        f"adapt_resume | address adapted for job_location='{job_location}' "
+        f"market={market} -> {localized_address}"
+    )
 
     logger.info(
         f"adapt_resume | completed | total_experience_blocks={len(adapted_experiences)} | "

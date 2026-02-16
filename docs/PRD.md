@@ -840,3 +840,38 @@ Upon plan approval:
 **Team:** 3 agents (domain-fixer, validation-fixer, fetch-button-fixer), 8 files, 4 tests added, ~180 lines modified
 **Test results:** 439/440 passing (99.77%), only failure is pre-existing French language detection
 **Documentation:** Comprehensive HOTFIX_v0.3.8.1.md + CLAUDE.md updated with 6 critical gotchas
+
+### v0.3.9 (Feb 16, 2026) — Company Naming + LinkedIn Fallback
+**Scope:** Address HIGH P0/P1 issues from Feb 16 10:21 AM user feedback
+
+**HIGH P0: Company Name Extraction Fixes**
+- Problem: Company names corrupted ("PayPal_has_been_revolutionizin", "revenue" instead of "Paramount")
+- Root cause: JD parsing extracted sentence fragments, false positives, URL slugs without sanitization
+- Solution: New `sanitize_company_name()` function with sentence truncation, false positive rejection, slug cleanup, placeholder detection
+- Integration: All 3 extraction paths (LLM, regex, URL) + DB-level defense-in-depth in `tracker.py::get_or_create_company()`
+- Cleanup: New `sanitize_existing_companies()` method + UI button in Resume Library for bulk fixing existing data
+- Cascade effects: Output folders, resume filenames, tracker, Resume Library all now use sanitized names
+
+**HIGH P1: LinkedIn JD Bottleneck**
+- Problem: Some LinkedIn jobs don't show full JD without manual interaction
+- Solution: `_is_incomplete_jd()` detection + `_search_company_career_site()` + `_linkedin_fallback_search()` Google fallback
+- New `alternate_source_url` field on ParsedJD tracks where JD was fetched from
+- UI notification when fallback used
+- Flow: LinkedIn URL → incomplete detection → career site search → Google fallback → full JD
+
+**CI/CD Lint Compliance**
+- Fixed 4 consecutive CI failures: formatted 27 files (Black), removed 8 unused variables (ruff), fixed bare except
+- All lint checks passing
+
+**Test Results:** 479/480 passing (99.8%), 1 pre-existing failure (French detection), 39 new tests added, zero regressions
+
+**Team:** 4 parallel agents (parser-engineer, linkedin-engineer, test-specialist, team-lead) with task ownership and dependency management
+
+**Files Modified:** 31 files total — `jd_parser.py` (sanitization + fallback), `models.py` (alternate_source_url), `tracker.py` (DB sanitization + cleanup), `ui/pages/2_new_resume.py` (notification), `ui/pages/3_resume_library.py` (maintenance UI), `tests/test_jd_parser.py` (+31 tests)
+
+**Migration:** Optional UI button to sanitize existing corrupted company names in database (Resume Library → Database Maintenance)
+
+**Cost Impact:** <$0.01 per resume in worst case (LinkedIn fallback adds 0-2 WebFetch + ~1 Google search)
+
+**Deferred:** Manual URL editing (P4), manual location override (P5), regional salary analytics (P6 - Opus required)
+

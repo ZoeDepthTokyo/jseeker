@@ -423,14 +423,29 @@ class TrackerDB:
         return row_id
 
     def get_or_create_company(self, name: str) -> int:
+        """Get existing company ID or create new company record.
+
+        Sanitizes the company name before lookup/insert to prevent
+        corrupted names (sentence fragments, URL slugs) from entering the DB.
+
+        Args:
+            name: Company name (will be sanitized).
+
+        Returns:
+            Company ID from the database.
+        """
+        from jseeker.jd_parser import sanitize_company_name
+
+        clean_name = sanitize_company_name(name) or name.strip() or "Unknown"
+
         conn = self._conn()
         c = conn.cursor()
-        c.execute("SELECT id FROM companies WHERE name = ?", (name,))
+        c.execute("SELECT id FROM companies WHERE name = ?", (clean_name,))
         row = c.fetchone()
         if row:
             conn.close()
             return row["id"]
-        c.execute("INSERT INTO companies (name) VALUES (?)", (name,))
+        c.execute("INSERT INTO companies (name) VALUES (?)", (clean_name,))
         conn.commit()
         row_id = c.lastrowid
         conn.close()
@@ -448,6 +463,58 @@ class TrackerDB:
         c.execute("UPDATE companies SET name = ? WHERE id = ?", (name, company_id))
         conn.commit()
         conn.close()
+
+    def sanitize_existing_companies(self) -> list[tuple[int, str, str]]:
+        """Bulk-fix corrupted company names in the database.
+
+        Iterates all companies, applies sanitize_company_name(), and updates
+        any entries where the sanitized name differs. Merges duplicates when
+        sanitization produces a name that already exists.
+
+        Returns:
+            List of (company_id, old_name, new_name) for each changed entry.
+        """
+        from jseeker.jd_parser import sanitize_company_name
+
+        _logger = logging.getLogger(__name__)
+
+        conn = self._conn()
+        c = conn.cursor()
+        c.execute("SELECT id, name FROM companies ORDER BY id")
+        companies = c.fetchall()
+
+        changes = []
+        for row in companies:
+            cid, old_name = row["id"], row["name"]
+            new_name = sanitize_company_name(old_name)
+            if not new_name:
+                continue  # Skip if sanitization returns empty
+            if new_name != old_name:
+                # Check if the sanitized name already exists
+                c.execute("SELECT id FROM companies WHERE name = ? AND id != ?", (new_name, cid))
+                existing = c.fetchone()
+                if existing:
+                    # Merge: update applications to point to existing company, delete duplicate
+                    c.execute(
+                        "UPDATE applications SET company_id = ? WHERE company_id = ?",
+                        (existing["id"], cid),
+                    )
+                    c.execute("DELETE FROM companies WHERE id = ?", (cid,))
+                    _logger.info(
+                        f"sanitize_existing_companies | merged company {cid} "
+                        f"'{old_name}' -> existing {existing['id']} '{new_name}'"
+                    )
+                else:
+                    c.execute("UPDATE companies SET name = ? WHERE id = ?", (new_name, cid))
+                    _logger.info(
+                        f"sanitize_existing_companies | renamed {cid}: '{old_name}' -> '{new_name}'"
+                    )
+                changes.append((cid, old_name, new_name))
+
+        conn.commit()
+        conn.close()
+        _logger.info(f"sanitize_existing_companies | {len(changes)} companies updated")
+        return changes
 
     # ── Applications ──────────────────────────────────────────────
 

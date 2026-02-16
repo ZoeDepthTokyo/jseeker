@@ -295,6 +295,20 @@ with st.expander("Base Resume References", expanded=False):
                 status = "found" if exists else "MISSING"
                 st.caption(f"  [{icon}] {key}: {status} - {value}")
 
+# --- Database Maintenance ---
+with st.expander("Database Maintenance", expanded=False):
+    st.caption("Fix corrupted company names in the database (e.g., sentence fragments from JD parsing).")
+    if st.button("Sanitize Company Names", key="sanitize_companies_btn"):
+        with st.spinner("Fixing company names..."):
+            changes = tracker_db.sanitize_existing_companies()
+            if changes:
+                for cid, old_name, new_name in changes:
+                    st.caption(f"  Fixed: '{old_name}' -> '{new_name}'")
+                st.success(f"Fixed {len(changes)} company name(s).")
+                st.rerun()
+            else:
+                st.info("All company names are already clean.")
+
 # --- Resume Table ---
 resumes = tracker_db.list_all_resumes()
 

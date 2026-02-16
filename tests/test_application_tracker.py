@@ -354,3 +354,133 @@ class TestEdgeCases:
         retrieved2 = temp_db.get_application(app2_id)
         assert retrieved2["salary_min"] is None
         assert retrieved2["salary_max"] == 150000
+
+
+class TestCompanyNameSanitization:
+    """Test company name sanitization at DB entry point."""
+
+    def test_get_or_create_company_sanitizes_sentence(self, temp_db):
+        """Sentence fragments should be truncated to just the company name."""
+        cid = temp_db.get_or_create_company("PayPal has been revolutionizing")
+        conn = temp_db._conn()
+        c = conn.cursor()
+        c.execute("SELECT name FROM companies WHERE id = ?", (cid,))
+        row = c.fetchone()
+        conn.close()
+        assert row["name"] == "PayPal"
+
+    def test_get_or_create_company_deduplicates(self, temp_db):
+        """Same sanitized name should return same company ID."""
+        id1 = temp_db.get_or_create_company("Acme Corp")
+        id2 = temp_db.get_or_create_company("Acme Corp")
+        assert id1 == id2
+
+    def test_sanitize_existing_companies_fixes_corrupted(self, temp_db):
+        """Bulk sanitization should fix corrupted names in database."""
+        # Insert corrupted company directly (bypass sanitization)
+        conn = temp_db._conn()
+        c = conn.cursor()
+        c.execute("INSERT INTO companies (name) VALUES (?)", ("PayPal is the global leader",))
+        corrupted_id = c.lastrowid
+        conn.commit()
+        conn.close()
+
+        # Create an application pointing to corrupted company
+        app = Application(company_id=corrupted_id, role_title="Engineer")
+        temp_db.add_application(app)
+
+        # Run sanitization
+        changes = temp_db.sanitize_existing_companies()
+        assert len(changes) > 0
+        assert any("PayPal is the global leader" in old for _, old, _ in changes)
+
+        # Verify the name is now clean
+        conn = temp_db._conn()
+        c = conn.cursor()
+        c.execute("SELECT name FROM companies WHERE id = ?", (corrupted_id,))
+        row = c.fetchone()
+        conn.close()
+        # Either the name is clean or the entry was merged with an existing "PayPal"
+        if row:
+            assert "global leader" not in row["name"]
+
+    def test_sanitize_existing_companies_merges_duplicates(self, temp_db):
+        """When sanitization produces a duplicate name, entries should be merged."""
+        # Create clean company
+        clean_id = temp_db.get_or_create_company("Acme")
+
+        # Insert corrupted duplicate directly
+        conn = temp_db._conn()
+        c = conn.cursor()
+        c.execute("INSERT INTO companies (name) VALUES (?)", ("Acme is hiring now",))
+        corrupted_id = c.lastrowid
+        conn.commit()
+        conn.close()
+
+        # Create application pointing to corrupted company
+        app = Application(company_id=corrupted_id, role_title="Developer")
+        app_id = temp_db.add_application(app)
+
+        # Run sanitization
+        changes = temp_db.sanitize_existing_companies()
+
+        # Application should now point to the clean company
+        updated_app = temp_db.get_application(app_id)
+        assert updated_app["company_id"] == clean_id
+        assert updated_app["company_name"] == "Acme"
+
+
+class TestTrackerLibraryCoherence:
+    """Test coherence between tracker, library, and output folders."""
+
+    def test_application_and_resume_share_company(self, temp_db):
+        """Application and its resume should show the same company name."""
+        from jseeker.models import Resume
+
+        company_id = temp_db.get_or_create_company("Paramount")
+        app = Application(
+            company_id=company_id,
+            role_title="Senior Designer",
+            jd_url="https://example.com/job/123",
+        )
+        app_id = temp_db.add_application(app)
+
+        resume = Resume(
+            application_id=app_id,
+            template_used="hybrid",
+            pdf_path="/output/Paramount/resume_v1.pdf",
+            ats_score=85.0,
+        )
+        temp_db.add_resume(resume)
+
+        # Verify tracker view
+        apps = temp_db.list_applications()
+        app_row = next(a for a in apps if a["id"] == app_id)
+        assert app_row["company_name"] == "Paramount"
+
+        # Verify library view
+        resumes = temp_db.list_all_resumes()
+        resume_row = next(r for r in resumes if r["application_id"] == app_id)
+        assert resume_row["company_name"] == "Paramount"
+
+    def test_output_folder_matches_company_name(self, temp_db):
+        """Output folder path should contain the sanitized company name."""
+        from jseeker.models import Resume
+
+        company_id = temp_db.get_or_create_company("Acme Corp")
+        app = Application(company_id=company_id, role_title="Engineer")
+        app_id = temp_db.add_application(app)
+
+        # Simulate output path using renderer's naming convention
+        resume = Resume(
+            application_id=app_id,
+            template_used="hybrid",
+            pdf_path="/output/Acme_Corp/John_Doe_Engineer_Acme_Corp_v1.pdf",
+            docx_path="/output/Acme_Corp/John_Doe_Engineer_Acme_Corp_v1.docx",
+        )
+        temp_db.add_resume(resume)
+
+        resumes = temp_db.list_all_resumes()
+        resume_row = next(r for r in resumes if r["application_id"] == app_id)
+        assert "Acme" in resume_row["pdf_path"]
+        assert resume_row["company_name"] == "Acme Corp"

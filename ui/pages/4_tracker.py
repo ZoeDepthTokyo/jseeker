@@ -180,12 +180,12 @@ if apps:
         "role_title": st.column_config.TextColumn(
             "Role", help="Job title (editable)", disabled=False, width="large"
         ),
-        "jd_url": st.column_config.LinkColumn(
-            "🔗",
-            help="Click to open job posting in new tab",
+        "jd_url": st.column_config.TextColumn(
+            "URL",
+            help="Job posting URL (editable - paste new URL to replace)",
             max_chars=500,
-            disabled=True,
-            width="small",
+            disabled=False,
+            width="medium",
         ),
         "salary_min": st.column_config.NumberColumn(
             "Min Salary", help="Minimum salary (optional)", format="%d"
@@ -273,6 +273,7 @@ if apps:
                     "job_status",
                     "notes",
                     "location",
+                    "jd_url",
                     "salary_min",
                     "salary_max",
                     "salary_currency",
@@ -286,6 +287,11 @@ if apps:
                         continue
                     if new_val != old_val:
                         save_val = None if pd.isna(new_val) else new_val
+                        # Validate URL format
+                        if col == "jd_url" and save_val:
+                            save_val = str(save_val).strip()
+                            if save_val and not save_val.startswith(("http://", "https://")):
+                                save_val = "https://" + save_val
                         # relevance_score is displayed as percentage (x100), convert back to 0-1
                         if col == "relevance_score" and save_val is not None:
                             save_val = save_val / 100.0

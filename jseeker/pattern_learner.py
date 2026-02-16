@@ -278,7 +278,10 @@ def get_pattern_stats(db_path: Optional[Path] = None) -> dict:
     """)
     top_patterns = []
     for row in c.fetchall():
-        context = json.loads(row["jd_context"] or "{}")
+        try:
+            context = json.loads(row["jd_context"] or "{}")
+        except (json.JSONDecodeError, TypeError):
+            context = {}
         role = context.get("role", "N/A")
         keywords = context.get("keywords", [])
         domain = _classify_domain(role, keywords)

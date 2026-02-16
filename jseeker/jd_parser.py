@@ -301,6 +301,17 @@ _ASHBY_SELECTORS = [
 ]
 
 
+_VITERBIT_SELECTORS = [
+    '[class*="description"]',
+    '[class*="job-description"]',
+    '[class*="offer"]',
+    '[class*="posting"]',
+    'main',
+    'article',
+    '[role="main"]',
+]
+
+
 def _extract_workday_jd(url: str) -> str:
     """Extract JD from Workday pages using Playwright for JS rendering."""
     return _extract_with_playwright(url, _WORKDAY_SELECTORS, platform="workday", wait_ms=4000)
@@ -309,6 +320,11 @@ def _extract_workday_jd(url: str) -> str:
 def _extract_ashby_jd(url: str) -> str:
     """Extract JD from Ashby pages using Playwright for JS rendering."""
     return _extract_with_playwright(url, _ASHBY_SELECTORS, platform="ashby", wait_ms=3000)
+
+
+def _extract_viterbit_jd(url: str) -> str:
+    """Extract JD from Viterbit pages using Playwright for JS rendering."""
+    return _extract_with_playwright(url, _VITERBIT_SELECTORS, platform="viterbit", wait_ms=4000)
 
 
 def _extract_company_from_url(url: str) -> str | None:
@@ -332,6 +348,11 @@ def _extract_company_from_url(url: str) -> str | None:
     greenhouse_match = re.search(r"boards\.greenhouse\.io/([^/]+)", url)
     if greenhouse_match:
         return greenhouse_match.group(1).replace("-", " ").title()
+
+    # Viterbit: company.viterbit.site/job-slug/
+    viterbit_match = re.search(r"([a-zA-Z0-9_-]+)\.viterbit\.(?:site|com)", url)
+    if viterbit_match:
+        return viterbit_match.group(1).replace("-", " ").title()
 
     # Workday: company.wd5.myworkdayjobs.com/ or company.myworkdayjobs.com/
     workday_match = re.search(r"([a-zA-Z0-9_-]+)(?:\.wd\d+)?\.myworkdayjobs\.com", url)
@@ -637,6 +658,15 @@ def extract_jd_from_url(url: str, timeout: int = 20) -> tuple[str, dict]:
             metadata["method"] = "ashby"
             return ashby_text, metadata
         # Fall through to regular extraction if Ashby extraction fails
+
+    # Viterbit sites require JS rendering
+    if "viterbit.site" in url.lower() or "viterbit.com" in url.lower():
+        viterbit_text = _extract_viterbit_jd(url)
+        if viterbit_text:
+            metadata["success"] = True
+            metadata["method"] = "viterbit"
+            return viterbit_text, metadata
+        # Fall through to regular extraction if Viterbit extraction fails
 
     try:
         response = requests.get(

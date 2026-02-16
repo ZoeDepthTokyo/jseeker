@@ -65,7 +65,7 @@ output/ -- generated resumes (gitignored)
 - **MNEMIS**: Pattern storage via integrations/mnemis_bridge.py (Phase 3+)
 
 ## Testing
-# Full test suite (333/336 passing)
+# Full test suite (440 tests, 439 passing as of v0.3.8)
 pytest tests/ --cov=jseeker
 
 # Faster feedback during development (~110s without coverage)
@@ -74,10 +74,11 @@ pytest tests/ -q --tb=short
 # Pre-commit validation for major releases
 python scripts/test_v0_3_2_complete.py
 
-# Known failures (not blockers): 3 E2E tests in test_e2e_scenarios.py
-# - Batch processing mock fixture
+# Known failures (not blockers): 1 E2E test in test_e2e_scenarios.py
 # - Language detection edge case (French)
-# - Tag weight ranking
+
+# Backwards compatibility testing
+- When adding schema changes (new model fields, DB columns), create tests that load old data without new fields to catch AttributeError/KeyError regressions before production. Example: test old PipelineResult objects without pdf_validation field.
 
 ## Key Files
 - jseeker/adapter.py -- Core value: Claude-powered resume content adaptation
@@ -97,7 +98,11 @@ python scripts/test_v0_3_2_complete.py
 - **statsmodels dependency**: Required for Performance Trends trendline (ui/pages/7_learning_insights.py). Gracefully degrades to scatter plot if unavailable.
 - **Streamlit batch completion**: After setting `st.session_state.batch_running = False`, MUST call `st.rerun()` to trigger UI update showing completion/retry sections - auto-refresh loops stop when batch completes
 - **Streamlit background threads & polling**: Background thread callbacks can't trigger reruns - use explicit polling loop BEFORE conditionals: `get_progress()` + `st.rerun()` every 2s. Don't put rerun logic inside `if session_state.x:` blocks that depend on thread updates.
+- **Streamlit widget key conflicts**: Can't directly update `st.session_state["widget_key"]` from button callbacks. Use intermediate key pattern: store in `st.session_state["temp_key"]`, copy to widget key before widget renders, call `st.rerun()`. See Fetch JD button (2_new_resume.py lines 73-90).
 - **URL company extraction**: `_extract_company_from_url()` in jd_parser.py handles Lever/Greenhouse/Workday + generic `careers.company.com` pattern - add new ATS platforms here when extraction fails
+- **New model fields need backwards compatibility**: When adding fields to Pydantic models, always make them `Optional[Type] = None` AND use defensive access in consuming code (`getattr(obj, "attr", None)` or `hasattr()`). UI must check field existence before access. Example: pdf_validation on PipelineResult (v0.3.8).
+- **DataFrame column additions need defensive checks**: When adding columns to DB tables, check existence before operations: `if "col" not in df.columns: df["col"] = default`. Old records won't have new columns. Example: domain column in patterns table (v0.3.8).
+- **JSON parsing for old DB data**: Wrap JSON parsing in try/except for malformed data from schema migrations: `try: data = json.loads(row["field"]) except json.JSONDecodeError: data = {}`.
 - **Recurring errors**: If same bug appears 2+ times, root cause wasn't fixed - investigate state management, lifecycle, or async issues before patching symptoms
 
 ## DO NOT

@@ -56,6 +56,9 @@ try:
             st.markdown("These patterns are reused most frequently across resumes:")
 
             pattern_df = pd.DataFrame(stats["top_patterns"])
+            # Add domain column if missing (backwards compat with pre-v0.3.8 data)
+            if "domain" not in pattern_df.columns:
+                pattern_df["domain"] = "General"
             pattern_df = pattern_df[["id", "type", "domain", "frequency", "confidence", "context", "source", "target"]]
             pattern_df.columns = ["ID", "Type", "Domain", "Uses", "Confidence", "Target JD Role", "Original Text", "Adapted Text"]
 

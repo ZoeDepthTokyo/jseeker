@@ -231,6 +231,11 @@ class TestCompanyExtraction:
         result = _extract_company_from_url("https://acme.wd5.myworkdayjobs.com/en-US/jobs")
         assert result == "Acme"
 
+    def test_extract_company_from_viterbit_url(self):
+        """Viterbit URL should extract company name from subdomain."""
+        result = _extract_company_from_url("https://aviva.viterbit.site/head-of-product-oeCHOj1uiH5H/")
+        assert result == "Aviva"
+
     def test_extract_company_fallback_at_pattern(self):
         """'At Santander, we...' pattern should extract Santander."""
         text = """

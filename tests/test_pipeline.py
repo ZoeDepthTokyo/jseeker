@@ -2,7 +2,10 @@
 
 import json
 from jseeker.pipeline import _write_metadata
-from jseeker.models import ParsedJD, MatchResult, ATSScore, TemplateType
+from jseeker.models import (
+    ParsedJD, MatchResult, ATSScore, TemplateType,
+    PipelineResult, AdaptedResume, PDFValidationResult,
+)
 
 
 class TestWriteMetadata:
@@ -106,3 +109,54 @@ class TestWriteMetadata:
         # Verify truncation (max 20 matched, 10 missing)
         assert len(content["matched_keywords"]) == 20
         assert len(content["missing_keywords"]) == 10
+
+
+class TestPipelineResultPDFValidation:
+    """Test PipelineResult pdf_validation field."""
+
+    def test_pipeline_result_has_pdf_validation_field(self):
+        """PipelineResult should have optional pdf_validation defaulting to None."""
+        result = PipelineResult(
+            parsed_jd=ParsedJD(raw_text="test", title="Test", company="Test"),
+            match_result=MatchResult(template_type=TemplateType.HYBRID),
+            adapted_resume=AdaptedResume(),
+            ats_score=ATSScore(overall_score=80),
+        )
+        assert hasattr(result, "pdf_validation")
+        assert result.pdf_validation is None
+
+    def test_pipeline_result_with_pdf_validation(self):
+        """PipelineResult should accept a PDFValidationResult."""
+        validation = PDFValidationResult(
+            is_valid=True,
+            warnings=["Font not embedded"],
+            metadata={"page_count": 2},
+        )
+        result = PipelineResult(
+            parsed_jd=ParsedJD(raw_text="test", title="Test", company="Test"),
+            match_result=MatchResult(template_type=TemplateType.HYBRID),
+            adapted_resume=AdaptedResume(),
+            ats_score=ATSScore(overall_score=80),
+            pdf_validation=validation,
+        )
+        assert result.pdf_validation is not None
+        assert result.pdf_validation.is_valid is True
+        assert result.pdf_validation.warnings == ["Font not embedded"]
+        assert result.pdf_validation.metadata["page_count"] == 2
+
+    def test_pipeline_result_pdf_validation_with_issues(self):
+        """PipelineResult should handle pdf_validation with issues."""
+        validation = PDFValidationResult(
+            is_valid=False,
+            issues=["No text layer", "Image-based PDF"],
+            error="PDF may not be ATS-parseable",
+        )
+        result = PipelineResult(
+            parsed_jd=ParsedJD(raw_text="test", title="Test", company="Test"),
+            match_result=MatchResult(template_type=TemplateType.HYBRID),
+            adapted_resume=AdaptedResume(),
+            ats_score=ATSScore(overall_score=80),
+            pdf_validation=validation,
+        )
+        assert result.pdf_validation.is_valid is False
+        assert len(result.pdf_validation.issues) == 2

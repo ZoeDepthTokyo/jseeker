@@ -70,6 +70,10 @@ jd_url = st.text_input(
     key="jd_url_input",
 )
 
+# Apply fetched JD text before widget renders (must happen before text_area)
+if "fetched_jd_text" in st.session_state:
+    st.session_state["jd_text_input"] = st.session_state.pop("fetched_jd_text")
+
 # Fetch JD button: shown when URL is provided and text area is empty
 if jd_url.strip() and not st.session_state.get("jd_text_input", "").strip():
     if st.button("Fetch JD from URL", key="fetch_jd_btn"):
@@ -77,7 +81,8 @@ if jd_url.strip() and not st.session_state.get("jd_text_input", "").strip():
             try:
                 fetched_jd, meta = extract_jd_from_url(jd_url.strip())
                 if fetched_jd and len(fetched_jd.strip()) > 100:
-                    st.session_state["jd_text_input"] = fetched_jd
+                    # Store in intermediate key to avoid widget key conflict
+                    st.session_state["fetched_jd_text"] = fetched_jd
                     st.rerun()
                 else:
                     st.warning("Could not extract enough text from URL. Paste the JD manually.")
@@ -388,7 +393,7 @@ if "pipeline_result" in st.session_state:
                     )
 
     # PDF ATS Validation
-    if result.pdf_validation:
+    if getattr(result, "pdf_validation", None):
         v = result.pdf_validation
         if v.is_valid:
             st.success("PDF passes ATS validation checks")

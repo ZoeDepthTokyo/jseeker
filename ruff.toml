@@ -1,0 +1,5 @@
+[lint.per-file-ignores]
+"scripts/*" = ["E402"]
+"test_pattern_learning.py" = ["E402"]
+"ui/app.py" = ["E402"]
+"ui/pages/*" = ["E402"]

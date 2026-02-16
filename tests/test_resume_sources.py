@@ -1,7 +1,5 @@
 """Tests for base resume source reference storage."""
 
-from pathlib import Path
-
 from jseeker.resume_sources import load_resume_sources, save_resume_sources
 
 
@@ -29,4 +27,3 @@ def test_resume_sources_round_trip(tmp_path):
 
     assert target.exists()
     assert saved == loaded
-

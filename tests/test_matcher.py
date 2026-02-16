@@ -29,4 +29,3 @@ def test_match_templates_fallback_handles_no_keywords(monkeypatch):
 
     assert len(results) == 3
     assert all(r.relevance_score == 0.0 for r in results)
-

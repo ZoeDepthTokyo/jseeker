@@ -67,5 +67,6 @@ def tmp_db(tmp_path):
     """Create a temporary database for testing."""
     db_path = tmp_path / "test_jseeker.db"
     from jseeker.tracker import init_db
+
     init_db(db_path)
     return db_path

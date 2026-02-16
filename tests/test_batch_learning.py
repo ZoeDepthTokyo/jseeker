@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import time
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import patch, MagicMock
 import pytest
 
 from jseeker.batch_processor import BatchProcessor, JobStatus
 from jseeker.pattern_learner import analyze_batch_patterns
-
 
 # ── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -33,16 +32,20 @@ def mock_tracker_db():
 @pytest.fixture
 def mock_pipeline():
     """Mock pipeline functions for testing."""
-    with patch("jseeker.batch_processor.extract_jd_from_url") as mock_extract, \
-         patch("jseeker.batch_processor.run_pipeline") as mock_run:
+    with patch("jseeker.batch_processor.extract_jd_from_url") as mock_extract, patch(
+        "jseeker.batch_processor.run_pipeline"
+    ) as mock_run:
 
         # Mock JD extraction
-        mock_extract.return_value = ("Test job description", {
-            "success": True,
-            "company": "Test Company",
-            "selectors_tried": [],
-            "method": "selector"
-        })
+        mock_extract.return_value = (
+            "Test job description",
+            {
+                "success": True,
+                "company": "Test Company",
+                "selectors_tried": [],
+                "method": "selector",
+            },
+        )
 
         # Mock pipeline result
         mock_result = MagicMock()
@@ -71,7 +74,7 @@ def test_batch_processor_enforces_max_size(mock_tracker_db, mock_pipeline):
     # Create 25 URLs (exceeds limit)
     urls = [f"https://example.com/job{i}" for i in range(25)]
 
-    batch_id = processor.submit_batch(urls)
+    processor.submit_batch(urls)
     progress = processor.get_progress()
 
     # Should truncate to 20
@@ -83,27 +86,18 @@ def test_batch_progress_segment_fields():
     """Test that BatchProgress has segment tracking fields."""
     from jseeker.batch_processor import BatchProgress
 
-    progress = BatchProgress(
-        total=20,
-        total_segments=2,
-        current_segment=1
-    )
+    progress = BatchProgress(total=20, total_segments=2, current_segment=1)
 
     assert progress.total_segments == 2
     assert progress.current_segment == 1
-    assert progress.learning_phase == False
+    assert not progress.learning_phase
 
 
 def test_batch_progress_to_dict_includes_segments():
     """Test that BatchProgress.to_dict() includes segment fields."""
     from jseeker.batch_processor import BatchProgress
 
-    progress = BatchProgress(
-        total=20,
-        total_segments=2,
-        current_segment=1,
-        learning_phase=False
-    )
+    progress = BatchProgress(total=20, total_segments=2, current_segment=1, learning_phase=False)
 
     data = progress.to_dict()
 
@@ -112,7 +106,7 @@ def test_batch_progress_to_dict_includes_segments():
     assert "learning_phase" in data
     assert data["total_segments"] == 2
     assert data["current_segment"] == 1
-    assert data["learning_phase"] == False
+    assert not data["learning_phase"]
 
 
 def test_batch_segments_calculated_correctly(mock_tracker_db, mock_pipeline):
@@ -121,7 +115,7 @@ def test_batch_segments_calculated_correctly(mock_tracker_db, mock_pipeline):
 
     # Test various batch sizes
     test_cases = [
-        (5, 1),   # 5 URLs = 1 segment
+        (5, 1),  # 5 URLs = 1 segment
         (10, 1),  # 10 URLs = 1 segment
         (11, 2),  # 11 URLs = 2 segments
         (15, 2),  # 15 URLs = 2 segments
@@ -130,11 +124,12 @@ def test_batch_segments_calculated_correctly(mock_tracker_db, mock_pipeline):
 
     for url_count, expected_segments in test_cases:
         urls = [f"https://example.com/job{i}" for i in range(url_count)]
-        batch_id = processor.submit_batch(urls)
+        processor.submit_batch(urls)
         progress = processor.get_progress()
 
-        assert progress.total_segments == expected_segments, \
-            f"Expected {expected_segments} segments for {url_count} URLs, got {progress.total_segments}"
+        assert (
+            progress.total_segments == expected_segments
+        ), f"Expected {expected_segments} segments for {url_count} URLs, got {progress.total_segments}"
 
 
 def test_learning_pause_triggered_at_segment_boundary(mock_tracker_db, mock_pipeline):
@@ -155,7 +150,7 @@ def test_learning_pause_triggered_at_segment_boundary(mock_tracker_db, mock_pipe
             "total_uses": 10,
         }
 
-        batch_id = processor.submit_batch(urls)
+        processor.submit_batch(urls)
 
         # Wait for first 10 jobs to complete and learning pause to trigger
         timeout = 20  # seconds
@@ -179,8 +174,9 @@ def test_learning_pause_triggered_at_segment_boundary(mock_tracker_db, mock_pipe
         # Should have triggered learning pause after 10 jobs
         assert jobs_done >= 10, f"Expected at least 10 jobs done, got {jobs_done}"
         # Learning phase should have been triggered (even if it already auto-resumed)
-        assert learning_phase_seen or progress.current_segment > 1, \
-            "Learning phase should have been triggered or segment should have advanced"
+        assert (
+            learning_phase_seen or progress.current_segment > 1
+        ), "Learning phase should have been triggered or segment should have advanced"
 
         # Cleanup
         processor.stop()
@@ -244,7 +240,7 @@ def test_learning_pause_auto_resumes(mock_tracker_db, mock_pipeline):
     with patch("jseeker.pattern_learner.analyze_batch_patterns") as mock_analyze:
         mock_analyze.return_value = {"pattern_count": 5, "message": "Test"}
 
-        batch_id = processor.submit_batch(urls)
+        processor.submit_batch(urls)
 
         # Wait for learning pause to trigger and auto-resume
         timeout = 25
@@ -254,14 +250,18 @@ def test_learning_pause_auto_resumes(mock_tracker_db, mock_pipeline):
 
         while time.time() - start < timeout:
             progress = processor.get_progress()
-            jobs_done = progress.completed + progress.failed + progress.skipped
+            progress.completed + progress.failed + progress.skipped
 
             # Track if we saw learning phase
             if progress.learning_phase:
                 learning_phase_seen = True
 
             # Check if it auto-resumed (learning_phase=False and segment incremented)
-            if learning_phase_seen and not progress.learning_phase and progress.current_segment == 2:
+            if (
+                learning_phase_seen
+                and not progress.learning_phase
+                and progress.current_segment == 2
+            ):
                 auto_resumed = True
                 break
 
@@ -282,7 +282,7 @@ def test_learning_pause_not_triggered_on_final_segment(mock_tracker_db, mock_pip
     urls = [f"https://example.com/job{i}" for i in range(10)]
 
     with patch("jseeker.pattern_learner.analyze_batch_patterns") as mock_analyze:
-        batch_id = processor.submit_batch(urls)
+        processor.submit_batch(urls)
 
         # Wait for all jobs to complete
         timeout = 15
@@ -311,7 +311,7 @@ def test_segment_tracking_persists_through_pause(mock_tracker_db, mock_pipeline)
     processor = BatchProcessor(max_workers=2)
 
     urls = [f"https://example.com/job{i}" for i in range(15)]
-    batch_id = processor.submit_batch(urls)
+    processor.submit_batch(urls)
 
     # Let it run for a bit
     time.sleep(2)

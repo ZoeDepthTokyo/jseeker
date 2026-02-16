@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from typing import Optional
 
 
@@ -28,7 +27,8 @@ def capture_edit(
     # Record edit event
     conn = tracker_db._conn()
     c = conn.cursor()
-    c.execute("""INSERT INTO feedback_events
+    c.execute(
+        """INSERT INTO feedback_events
         (resume_id, event_type, field, original_value, new_value)
         VALUES (?, 'edit', ?, ?, ?)""",
         (resume_id, field, original_value, new_value),
@@ -57,6 +57,7 @@ def _learn_from_edit(
 
     # Store pattern
     from jseeker.pattern_learner import learn_pattern
+
     learn_pattern(
         pattern_type=pattern_type,
         source_text=original,
@@ -126,6 +127,7 @@ def detect_patterns(min_edits: int = 5) -> list[str]:
 def save_preferences(rules: list[str]) -> None:
     """Save detected preference rules to preferences.json."""
     from config import settings
+
     prefs_path = settings.data_dir / "preferences.json"
     prefs_path.parent.mkdir(parents=True, exist_ok=True)
 

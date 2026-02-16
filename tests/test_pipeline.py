@@ -1,10 +1,8 @@
 """Tests for pipeline module."""
 
 import json
-import pytest
-from pathlib import Path
 from jseeker.pipeline import _write_metadata
-from jseeker.models import ParsedJD, MatchResult, ATSScore, TemplateType, ATSPlatform
+from jseeker.models import ParsedJD, MatchResult, ATSScore, TemplateType
 
 
 class TestWriteMetadata:

@@ -1,9 +1,8 @@
 """Tests for job_monitor.py — Job URL status monitoring."""
 
 from datetime import datetime, timedelta
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
-import pytest
 import requests
 
 from jseeker import job_monitor
@@ -147,8 +146,20 @@ class TestCheckAllActiveJobs:
     def test_check_all_active_jobs_updates_status(self, mock_check, mock_tracker):
         """Test check_all_active_jobs updates changed statuses."""
         mock_tracker.list_applications.return_value = [
-            {"id": 1, "jd_url": "https://job1.com", "job_status": "active", "company_name": "Co1", "role_title": "Dev"},
-            {"id": 2, "jd_url": "https://job2.com", "job_status": "active", "company_name": "Co2", "role_title": "Eng"},
+            {
+                "id": 1,
+                "jd_url": "https://job1.com",
+                "job_status": "active",
+                "company_name": "Co1",
+                "role_title": "Dev",
+            },
+            {
+                "id": 2,
+                "jd_url": "https://job2.com",
+                "job_status": "active",
+                "company_name": "Co2",
+                "role_title": "Eng",
+            },
         ]
         mock_check.side_effect = [JobStatus.CLOSED, JobStatus.ACTIVE]
 
@@ -284,7 +295,11 @@ class TestGetGhostCandidates:
         old_date = (datetime.now() - timedelta(days=20)).isoformat()
 
         mock_tracker.list_applications.return_value = [
-            {"id": 1, "applied_date": old_date, "application_status": "applied"},  # No last_activity
+            {
+                "id": 1,
+                "applied_date": old_date,
+                "application_status": "applied",
+            },  # No last_activity
         ]
 
         ghosts = job_monitor.get_ghost_candidates(days=14)

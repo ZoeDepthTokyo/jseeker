@@ -35,6 +35,7 @@ class BlockManager:
     def __init__(self, blocks_dir: Optional[Path] = None):
         if blocks_dir is None:
             from config import settings
+
             blocks_dir = settings.resume_blocks_dir
         self.blocks_dir = blocks_dir
         self._corpus: Optional[ResumeCorpus] = None
@@ -109,9 +110,7 @@ class BlockManager:
         # Certifications
         try:
             cert_data = _load_yaml(self.blocks_dir / "certifications.yaml")
-            certifications = [
-                Certification(**c) for c in cert_data.get("certifications", [])
-            ]
+            certifications = [Certification(**c) for c in cert_data.get("certifications", [])]
             logger.info(f"Loaded certifications.yaml | count={len(certifications)}")
         except Exception as e:
             logger.error(f"Failed to load certifications.yaml: {e}")
@@ -139,17 +138,14 @@ class BlockManager:
         logger.info("ResumeCorpus loaded successfully")
         return self._corpus
 
-    def get_experience_for_template(
-        self, template: TemplateType
-    ) -> list[ExperienceBlock]:
+    def get_experience_for_template(self, template: TemplateType) -> list[ExperienceBlock]:
         """Get experience blocks tagged for a specific template."""
         corpus = self.load_corpus()
         template_str = template.value
-        matching_blocks = [
-            exp for exp in corpus.experience
-            if template_str in exp.tags
-        ]
-        logger.info(f"get_experience_for_template | template={template_str} | matched={len(matching_blocks)}")
+        matching_blocks = [exp for exp in corpus.experience if template_str in exp.tags]
+        logger.info(
+            f"get_experience_for_template | template={template_str} | matched={len(matching_blocks)}"
+        )
         return matching_blocks
 
     def get_summary(self, template: TemplateType, language: str = "en") -> str:
@@ -175,9 +171,7 @@ class BlockManager:
         # Fallback to English variant
         return corpus.summaries.get(base_key, "")
 
-    def get_bullets(
-        self, experience: ExperienceBlock, template: TemplateType
-    ) -> list[str]:
+    def get_bullets(self, experience: ExperienceBlock, template: TemplateType) -> list[str]:
         """Get bullets for a specific experience block and template."""
         template_str = template.value
         bullets = experience.bullets.get(template_str, [])
@@ -194,9 +188,7 @@ class BlockManager:
                 keywords.extend(item.ats_keywords)
         return keywords
 
-    def get_skills_matching_keywords(
-        self, target_keywords: list[str]
-    ) -> dict[str, list[str]]:
+    def get_skills_matching_keywords(self, target_keywords: list[str]) -> dict[str, list[str]]:
         """Find skill items that match target JD keywords.
 
         Returns dict of {category_name: [matched_skill_names]}.

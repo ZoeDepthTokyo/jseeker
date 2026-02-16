@@ -27,7 +27,7 @@ class TestStarredJobsWorkflow:
             market="us",
             posting_date=date.today(),
             search_tags="product design, senior",
-            status=DiscoveryStatus.NEW
+            status=DiscoveryStatus.NEW,
         )
 
         discovery_id = db.add_discovery(discovery)
@@ -69,7 +69,7 @@ class TestStarredJobsWorkflow:
                 url=f"https://example.com/job/{i}",
                 source="linkedin",
                 market="us",
-                status=DiscoveryStatus.NEW
+                status=DiscoveryStatus.NEW,
             )
             for i in range(5)
         ]
@@ -98,7 +98,7 @@ class TestStarredJobsWorkflow:
             url="https://example.com/job/valid",
             source="linkedin",
             market="us",
-            status=DiscoveryStatus.NEW
+            status=DiscoveryStatus.NEW,
         )
 
         job_without_url = JobDiscovery(
@@ -107,7 +107,7 @@ class TestStarredJobsWorkflow:
             url="",  # Empty URL
             source="linkedin",
             market="us",
-            status=DiscoveryStatus.NEW
+            status=DiscoveryStatus.NEW,
         )
 
         id1 = db.add_discovery(job_with_url)
@@ -139,7 +139,7 @@ class TestStarredJobsWorkflow:
             url="https://example.com/test",
             source="linkedin",
             market="us",
-            status=DiscoveryStatus.STARRED
+            status=DiscoveryStatus.STARRED,
         )
 
         job_id = db.add_discovery(job)
@@ -162,7 +162,7 @@ class TestStarredJobsWorkflow:
                 market="us",
                 posting_date=date.today(),
                 search_tags="ux design",
-                status=DiscoveryStatus.NEW
+                status=DiscoveryStatus.NEW,
             )
             for i in range(10)
         ]
@@ -201,7 +201,7 @@ class TestStarredJobsWorkflow:
             url="https://lever.co/techcorp/ux-designer",
             source="indeed",
             market="us",
-            status=DiscoveryStatus.NEW
+            status=DiscoveryStatus.NEW,
         )
 
         job_id = db.add_discovery(job)
@@ -229,7 +229,7 @@ class TestStarredJobsWorkflow:
                 url=f"https://example.com/{market}/job",
                 source="linkedin",
                 market=market,
-                status=DiscoveryStatus.NEW
+                status=DiscoveryStatus.NEW,
             )
             job_id = db.add_discovery(job)
             db.update_discovery_status(job_id, "starred")
@@ -257,7 +257,7 @@ class TestStarredJobsWorkflow:
                 url=f"https://example.com/job/{i}",
                 source="linkedin",
                 market="us",
-                status=DiscoveryStatus.NEW
+                status=DiscoveryStatus.NEW,
             )
             job_ids.append(db.add_discovery(job))
 
@@ -287,7 +287,7 @@ class TestStarredJobsWorkflow:
                 url=f"https://example.com/job/{i}",
                 source="linkedin",
                 market="us",
-                status=DiscoveryStatus.NEW
+                status=DiscoveryStatus.NEW,
             )
             db.add_discovery(job)
 

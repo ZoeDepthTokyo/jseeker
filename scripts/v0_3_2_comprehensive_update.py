@@ -4,18 +4,17 @@ jSeeker v0.3.2 Comprehensive Update and Testing Script
 This script implements and tests ALL user feedback issues before committing.
 Run this to verify all fixes work correctly.
 """
+
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import logging
-from datetime import datetime
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
+
 
 class V032UpdateValidator:
     """Validates all v0.3.2 updates before deployment."""
@@ -36,11 +35,7 @@ class V032UpdateValidator:
         """Test: Backfill script created."""
         script_path = Path(__file__).parent / "backfill_application_data.py"
         passed = script_path.exists()
-        self.test_result(
-            "Backfill Script Exists",
-            passed,
-            f"Path: {script_path}"
-        )
+        self.test_result("Backfill Script Exists", passed, f"Path: {script_path}")
         return passed
 
     def test_location_parsing_robustness(self):
@@ -81,7 +76,7 @@ class V032UpdateValidator:
         """Test: Auto-save removes save button requirement."""
         tracker_path = Path(__file__).parent.parent / "ui" / "pages" / "4_tracker.py"
 
-        with open(tracker_path, 'r', encoding='utf-8') as f:
+        with open(tracker_path, "r", encoding="utf-8") as f:
             content = f.read()
 
         # Check for auto-save pattern, not button
@@ -98,7 +93,7 @@ class V032UpdateValidator:
         """Test: Emoji indicators added for status columns."""
         tracker_path = Path(__file__).parent.parent / "ui" / "pages" / "4_tracker.py"
 
-        with open(tracker_path, 'r', encoding='utf-8') as f:
+        with open(tracker_path, "r", encoding="utf-8") as f:
             content = f.read()
 
         # Check for emoji indicators
@@ -106,7 +101,9 @@ class V032UpdateValidator:
         has_job_status_emoji = "❌ closed" in content or "job_emojis" in content
 
         passed = has_app_status_emoji and has_job_status_emoji
-        details = f"App status emojis: {has_app_status_emoji}, Job status emojis: {has_job_status_emoji}"
+        details = (
+            f"App status emojis: {has_app_status_emoji}, Job status emojis: {has_job_status_emoji}"
+        )
 
         self.test_result("Emoji Status Indicators", passed, details)
         return passed
@@ -122,7 +119,7 @@ class V032UpdateValidator:
         version_found = []
         for filepath in files_to_check:
             if filepath.exists():
-                with open(filepath, 'r', encoding='utf-8') as f:
+                with open(filepath, "r", encoding="utf-8") as f:
                     content = f.read()
                     if "0.3.2" in content:
                         version_found.append(filepath.name)

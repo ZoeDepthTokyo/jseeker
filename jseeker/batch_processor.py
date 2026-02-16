@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 class JobStatus(str, Enum):
     """Status of individual batch job."""
+
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -36,6 +37,7 @@ class JobStatus(str, Enum):
 @dataclass
 class BatchJob:
     """Individual job within a batch."""
+
     id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     url: str = ""
     status: JobStatus = JobStatus.PENDING
@@ -64,6 +66,7 @@ class BatchJob:
 @dataclass
 class WorkerStatus:
     """Status of a single worker thread."""
+
     worker_id: int
     current_job: Optional[str] = None
     current_url: Optional[str] = None
@@ -75,6 +78,7 @@ class WorkerStatus:
 @dataclass
 class BatchProgress:
     """Overall batch progress tracking."""
+
     batch_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     total: int = 0
     completed: int = 0
@@ -134,18 +138,25 @@ class BatchProgress:
             "stopped": self.stopped,
             "progress_pct": round(self.progress_pct, 1),
             "elapsed_seconds": round(self.elapsed_seconds, 1),
-            "estimated_remaining_seconds": round(self.estimated_remaining_seconds, 1) if self.estimated_remaining_seconds else None,
+            "estimated_remaining_seconds": (
+                round(self.estimated_remaining_seconds, 1)
+                if self.estimated_remaining_seconds
+                else None
+            ),
             "current_segment": self.current_segment,
             "total_segments": self.total_segments,
             "learning_phase": self.learning_phase,
-            "workers": {wid: {
-                "worker_id": w.worker_id,
-                "current_job": w.current_job,
-                "current_url": w.current_url,
-                "jobs_completed": w.jobs_completed,
-                "jobs_failed": w.jobs_failed,
-                "is_active": w.is_active,
-            } for wid, w in self.workers.items()},
+            "workers": {
+                wid: {
+                    "worker_id": w.worker_id,
+                    "current_job": w.current_job,
+                    "current_url": w.current_url,
+                    "jobs_completed": w.jobs_completed,
+                    "jobs_failed": w.jobs_failed,
+                    "is_active": w.is_active,
+                }
+                for wid, w in self.workers.items()
+            },
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "started_at": self.started_at.isoformat() if self.started_at else None,
             "completed_at": self.completed_at.isoformat() if self.completed_at else None,
@@ -243,8 +254,10 @@ class BatchProcessor:
 
         # Enforce max batch size
         if len(urls) > self.MAX_BATCH_SIZE:
-            logger.warning(f"Batch size {len(urls)} exceeds maximum {self.MAX_BATCH_SIZE}, truncating")
-            urls = urls[:self.MAX_BATCH_SIZE]
+            logger.warning(
+                f"Batch size {len(urls)} exceeds maximum {self.MAX_BATCH_SIZE}, truncating"
+            )
+            urls = urls[: self.MAX_BATCH_SIZE]
 
         # Reset state for new batch
         self.jobs.clear()
@@ -261,9 +274,7 @@ class BatchProcessor:
 
         # Create progress tracker
         self.progress = BatchProgress(
-            total=len(urls),
-            total_segments=total_segments,
-            current_segment=1
+            total=len(urls), total_segments=total_segments, current_segment=1
         )
         self.progress.started_at = datetime.now()
 
@@ -283,7 +294,9 @@ class BatchProcessor:
             self.jobs[job.id] = job
 
         # Start executor
-        self.executor = ThreadPoolExecutor(max_workers=self.max_workers, thread_name_prefix="BatchWorker")
+        self.executor = ThreadPoolExecutor(
+            max_workers=self.max_workers, thread_name_prefix="BatchWorker"
+        )
 
         # Submit all jobs
         futures: dict[Future, str] = {}
@@ -311,13 +324,16 @@ class BatchProcessor:
                 failed_count=self.progress.failed,
                 skipped_count=self.progress.skipped,
             )
-            logger.info(f"Batch {batch_id} finished: {self.progress.completed} completed, {self.progress.failed} failed, {self.progress.skipped} skipped")
+            logger.info(
+                f"Batch {batch_id} finished: {self.progress.completed} completed, {self.progress.failed} failed, {self.progress.skipped} skipped"
+            )
 
             # Final progress callback
             if self._progress_callback:
                 self._progress_callback(self.progress)
 
         import threading
+
         threading.Thread(target=monitor_completion, daemon=True).start()
 
         return batch_id
@@ -329,6 +345,7 @@ class BatchProcessor:
             job_id: Job ID to process
         """
         import threading
+
         # Extract worker ID from thread name (format: BatchWorker_0, BatchWorker_1, etc.)
         thread_name = threading.current_thread().name
         try:
@@ -417,6 +434,7 @@ class BatchProcessor:
 
             # Run pipeline (expensive operation)
             from config import settings
+
             output_dir = self.output_dir or settings.output_dir
             result = run_pipeline(jd_text=jd_text, jd_url=job.url, output_dir=output_dir)
 
@@ -514,10 +532,12 @@ class BatchProcessor:
             segment_boundary = self._current_segment * self.BATCH_SEGMENT_SIZE
 
             # Trigger learning pause at segment boundaries (but not at the end of the final segment)
-            if (jobs_processed == segment_boundary and
-                jobs_processed < self.progress.total and
-                not self._learning_pause_triggered and
-                self._current_segment < self._total_segments):
+            if (
+                jobs_processed == segment_boundary
+                and jobs_processed < self.progress.total
+                and not self._learning_pause_triggered
+                and self._current_segment < self._total_segments
+            ):
                 self._trigger_learning_pause()
 
         # Invoke callback
@@ -537,6 +557,7 @@ class BatchProcessor:
 
         # Analyze patterns in background thread
         import threading
+
         def analyze_and_resume():
             try:
                 self._analyze_patterns()
@@ -562,8 +583,7 @@ class BatchProcessor:
         """Analyze patterns from completed jobs in current segment."""
         from jseeker.pattern_learner import analyze_batch_patterns
 
-        completed_jobs = [job for job in self.jobs.values()
-                         if job.status == JobStatus.COMPLETED]
+        completed_jobs = [job for job in self.jobs.values() if job.status == JobStatus.COMPLETED]
 
         if not completed_jobs:
             logger.info("No completed jobs to analyze patterns")
@@ -574,7 +594,9 @@ class BatchProcessor:
         try:
             # Call pattern learner to extract insights
             insights = analyze_batch_patterns(completed_jobs)
-            logger.info(f"Pattern analysis complete. Found {insights.get('pattern_count', 0)} patterns")
+            logger.info(
+                f"Pattern analysis complete. Found {insights.get('pattern_count', 0)} patterns"
+            )
         except Exception as e:
             logger.warning(f"Pattern analysis encountered error: {e}")
 

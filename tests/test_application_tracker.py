@@ -3,9 +3,8 @@
 import pytest
 import tempfile
 from pathlib import Path
-from datetime import datetime
 
-from jseeker.models import Application, ApplicationStatus, JobStatus, ResumeStatus
+from jseeker.models import Application, ApplicationStatus
 from jseeker.tracker import TrackerDB
 
 
@@ -79,10 +78,7 @@ class TestSalaryFields:
 
         # Update with salary data
         temp_db.update_application(
-            app_id,
-            salary_min=100000,
-            salary_max=130000,
-            salary_currency="EUR"
+            app_id, salary_min=100000, salary_max=130000, salary_currency="EUR"
         )
 
         # Verify update
@@ -213,7 +209,9 @@ class TestTrackerIntegration:
     def test_filter_applications_by_status(self, temp_db):
         """Test filtering applications preserves salary data."""
         # Create applications with different statuses
-        for i, status in enumerate([ApplicationStatus.NOT_APPLIED, ApplicationStatus.APPLIED, ApplicationStatus.INTERVIEW]):
+        for i, status in enumerate(
+            [ApplicationStatus.NOT_APPLIED, ApplicationStatus.APPLIED, ApplicationStatus.INTERVIEW]
+        ):
             app = Application(
                 company_id=temp_db.get_or_create_company(f"Company {i}"),
                 role_title=f"Role {i}",
@@ -242,10 +240,7 @@ class TestTrackerIntegration:
 
         # Update salary fields
         temp_db.update_application(
-            app_id,
-            salary_min=95000,
-            salary_max=115000,
-            salary_currency="GBP"
+            app_id, salary_min=95000, salary_max=115000, salary_currency="GBP"
         )
 
         # Verify update

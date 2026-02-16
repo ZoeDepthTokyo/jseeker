@@ -1,7 +1,6 @@
 """Tests for renderer module."""
 
 import pytest
-from pathlib import Path
 from unittest.mock import patch, MagicMock
 import subprocess
 from jseeker.renderer import _sanitize, _get_next_version, SECTION_LABELS, _html_to_pdf_sync, generate_output
@@ -76,9 +75,16 @@ class TestSectionLabels:
     def test_section_labels_en(self):
         """Test all section keys exist in English."""
         expected_keys = [
-            "contact", "online", "skills", "education",
-            "certifications", "awards", "languages",
-            "summary", "experience", "early_career",
+            "contact",
+            "online",
+            "skills",
+            "education",
+            "certifications",
+            "awards",
+            "languages",
+            "summary",
+            "experience",
+            "early_career",
         ]
         for key in expected_keys:
             assert key in SECTION_LABELS["en"]
@@ -86,9 +92,16 @@ class TestSectionLabels:
     def test_section_labels_es(self):
         """Test all section keys exist in Spanish."""
         expected_keys = [
-            "contact", "online", "skills", "education",
-            "certifications", "awards", "languages",
-            "summary", "experience", "early_career",
+            "contact",
+            "online",
+            "skills",
+            "education",
+            "certifications",
+            "awards",
+            "languages",
+            "summary",
+            "experience",
+            "early_career",
         ]
         for key in expected_keys:
             assert key in SECTION_LABELS["es"]
@@ -118,7 +131,7 @@ class TestPDFRendering:
         mock_result.stderr = long_error
         mock_result.stdout = ""
 
-        with patch('subprocess.run', return_value=mock_result):
+        with patch("subprocess.run", return_value=mock_result):
             with pytest.raises(RenderError) as exc_info:
                 _html_to_pdf_sync(html_content, output_path)
 
@@ -134,7 +147,7 @@ class TestPDFRendering:
         output_path = tmp_path / "test.pdf"
 
         # Mock subprocess.run to simulate timeout
-        with patch('subprocess.run', side_effect=subprocess.TimeoutExpired("python", 60)):
+        with patch("subprocess.run", side_effect=subprocess.TimeoutExpired("python", 60)):
             with pytest.raises(RenderError) as exc_info:
                 _html_to_pdf_sync(html_content, output_path)
 
@@ -164,7 +177,7 @@ class TestPDFRendering:
                 output_path.write_bytes(b"%PDF-1.4")
                 return result
 
-        with patch('subprocess.run', side_effect=mock_run):
+        with patch("subprocess.run", side_effect=mock_run):
             result_path = _html_to_pdf_sync(html_content, output_path)
 
             assert result_path == output_path
@@ -184,8 +197,8 @@ class TestPDFRendering:
         mock_result.stderr = "Detailed Playwright error with stack trace"
         mock_result.stdout = ""
 
-        with patch('subprocess.run', return_value=mock_result):
-            with patch('jseeker.renderer.Path') as mock_path_class:
+        with patch("subprocess.run", return_value=mock_result):
+            with patch("jseeker.renderer.Path") as mock_path_class:
                 # Create mock error log path
                 error_log = tmp_path / "pdf_error.log"
                 mock_path_class.return_value = error_log
@@ -206,7 +219,7 @@ class TestPDFRendering:
         mock_result.stderr = "Persistent failure"
         mock_result.stdout = ""
 
-        with patch('subprocess.run', return_value=mock_result):
+        with patch("subprocess.run", return_value=mock_result):
             with pytest.raises(RenderError) as exc_info:
                 _html_to_pdf_sync(html_content, output_path)
 
@@ -355,7 +368,9 @@ class TestDOCXStructure:
             elif "SKILLS" in para.text.upper() or "EDUCATION" in para.text.upper():
                 break
 
-        assert bullets_found <= 3, f"Condensed entry should have max 3 bullets, found {bullets_found}"
+        assert (
+            bullets_found <= 3
+        ), f"Condensed entry should have max 3 bullets, found {bullets_found}"
 
     def test_date_format_consistency(self, tmp_path):
         """Test that date format is consistent across all experience entries."""

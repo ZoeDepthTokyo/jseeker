@@ -1,7 +1,7 @@
 """Tests for adapter module."""
 
 import pytest
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 from jseeker.adapter import LOCATIONS_BY_MARKET, adapt_bullets_batch
 from jseeker.models import ParsedJD, TemplateType
 
@@ -67,9 +67,7 @@ class TestAdaptBulletsBatchErrorHandling:
             },
         ]
 
-    def test_adapt_bullets_malformed_json_raises_error(
-        self, mock_parsed_jd, experience_blocks
-    ):
+    def test_adapt_bullets_malformed_json_raises_error(self, mock_parsed_jd, experience_blocks):
         """Test that malformed JSON response raises AdaptationError."""
         from jseeker.models import AdaptationError
 
@@ -90,9 +88,7 @@ class TestAdaptBulletsBatchErrorHandling:
             assert "parse" in error_msg.lower() and "json" in error_msg.lower()
             assert "TechCorp" in error_msg or "experience" in error_msg.lower()
 
-    def test_adapt_bullets_wrong_array_length_raises_error(
-        self, mock_parsed_jd, experience_blocks
-    ):
+    def test_adapt_bullets_wrong_array_length_raises_error(self, mock_parsed_jd, experience_blocks):
         """Test that wrong array length raises AdaptationError."""
         from jseeker.models import AdaptationError
 
@@ -113,9 +109,7 @@ class TestAdaptBulletsBatchErrorHandling:
             assert "expected 2" in error_msg.lower()
             assert "1" in error_msg
 
-    def test_adapt_bullets_non_array_response_raises_error(
-        self, mock_parsed_jd, experience_blocks
-    ):
+    def test_adapt_bullets_non_array_response_raises_error(self, mock_parsed_jd, experience_blocks):
         """Test that non-array JSON raises AdaptationError."""
         from jseeker.models import AdaptationError
 
@@ -133,15 +127,11 @@ class TestAdaptBulletsBatchErrorHandling:
 
             assert "Expected array" in str(exc_info.value)
 
-    def test_adapt_bullets_backticks_stripped_before_parse(
-        self, mock_parsed_jd, experience_blocks
-    ):
+    def test_adapt_bullets_backticks_stripped_before_parse(self, mock_parsed_jd, experience_blocks):
         """Test that markdown code fences are properly stripped."""
         with patch("jseeker.adapter.llm.call_sonnet") as mock_llm:
             # LLM returns JSON wrapped in backticks
-            mock_llm.return_value = (
-                '```json\n[["bullet1", "bullet2"], ["bullet3", "bullet4"]]\n```'
-            )
+            mock_llm.return_value = '```json\n[["bullet1", "bullet2"], ["bullet3", "bullet4"]]\n```'
 
             result = adapt_bullets_batch(
                 experience_blocks,
@@ -155,9 +145,7 @@ class TestAdaptBulletsBatchErrorHandling:
             assert result[0] == ["bullet1", "bullet2"]
             assert result[1] == ["bullet3", "bullet4"]
 
-    def test_adapt_bullets_empty_response_raises_error(
-        self, mock_parsed_jd, experience_blocks
-    ):
+    def test_adapt_bullets_empty_response_raises_error(self, mock_parsed_jd, experience_blocks):
         """Test that empty LLM response raises AdaptationError."""
         from jseeker.models import AdaptationError
 

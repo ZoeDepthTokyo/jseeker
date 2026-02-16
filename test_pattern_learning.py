@@ -72,7 +72,9 @@ patterns = c.fetchall()
 
 print(f"Recent patterns in DB: {len(patterns)}")
 for row in patterns:
-    print(f"  - ID {row['id']}: {row['pattern_type']} | freq={row['frequency']} | source_len={len(row['source_text'])} | target_len={len(row['target_text'])}")
+    print(
+        f"  - ID {row['id']}: {row['pattern_type']} | freq={row['frequency']} | source_len={len(row['source_text'])} | target_len={len(row['target_text'])}"
+    )
 
 conn.close()
 

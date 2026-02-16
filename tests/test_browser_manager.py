@@ -2,9 +2,8 @@
 
 import subprocess
 import tempfile
-import time
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -82,7 +81,7 @@ class TestBrowserSubprocess:
         mock_new_proc = MagicMock()
         mock_start.return_value = mock_new_proc
 
-        proc = browser_manager._get_browser_subprocess()
+        browser_manager._get_browser_subprocess()
 
         mock_cleanup.assert_called_once()
         mock_start.assert_called_once()

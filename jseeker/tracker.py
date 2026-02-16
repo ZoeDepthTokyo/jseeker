@@ -6,7 +6,7 @@ import json
 import logging
 import sqlite3
 from contextlib import contextmanager
-from datetime import datetime, date
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -17,12 +17,12 @@ from jseeker.models import (
     DiscoveryStatus,
     JobDiscovery,
     Resume,
-    SearchTag,
 )
 
 
 def _get_db_path() -> Path:
     from config import settings
+
     return settings.db_path
 
 
@@ -222,7 +222,9 @@ def init_db(db_path: Path = None) -> None:
         completed_at TIMESTAMP
     )""")
 
-    c.execute("CREATE INDEX IF NOT EXISTS idx_batch_job_items_batch_id ON batch_job_items(batch_id)")
+    c.execute(
+        "CREATE INDEX IF NOT EXISTS idx_batch_job_items_batch_id ON batch_job_items(batch_id)"
+    )
     c.execute("CREATE INDEX IF NOT EXISTS idx_batch_job_items_status ON batch_job_items(status)")
 
     c.execute("""CREATE TABLE IF NOT EXISTS saved_searches (
@@ -266,9 +268,15 @@ def _run_migrations(db_path: Path) -> None:
 
         # Add indexes for performance
         try:
-            c.execute("CREATE INDEX IF NOT EXISTS idx_job_discoveries_market ON job_discoveries(market)")
-            c.execute("CREATE INDEX IF NOT EXISTS idx_job_discoveries_source ON job_discoveries(source)")
-            c.execute("CREATE INDEX IF NOT EXISTS idx_job_discoveries_market_location ON job_discoveries(market, location)")
+            c.execute(
+                "CREATE INDEX IF NOT EXISTS idx_job_discoveries_market ON job_discoveries(market)"
+            )
+            c.execute(
+                "CREATE INDEX IF NOT EXISTS idx_job_discoveries_source ON job_discoveries(source)"
+            )
+            c.execute(
+                "CREATE INDEX IF NOT EXISTS idx_job_discoveries_market_location ON job_discoveries(market, location)"
+            )
             conn.commit()
         except sqlite3.OperationalError as e:
             logger = logging.getLogger(__name__)
@@ -355,11 +363,7 @@ class TrackerDB:
         - check_same_thread=False for thread safety
         - Row factory for dict-like access
         """
-        conn = sqlite3.connect(
-            str(self.db_path),
-            timeout=30.0,
-            check_same_thread=False
-        )
+        conn = sqlite3.connect(str(self.db_path), timeout=30.0, check_same_thread=False)
         conn.row_factory = sqlite3.Row
 
         # Health check: verify connection is usable
@@ -368,11 +372,7 @@ class TrackerDB:
         except sqlite3.Error:
             conn.close()
             # Retry once if health check fails
-            conn = sqlite3.connect(
-                str(self.db_path),
-                timeout=30.0,
-                check_same_thread=False
-            )
+            conn = sqlite3.connect(str(self.db_path), timeout=30.0, check_same_thread=False)
             conn.row_factory = sqlite3.Row
 
         return conn
@@ -408,7 +408,14 @@ class TrackerDB:
         c = conn.cursor()
         c.execute(
             "INSERT INTO companies (name, industry, size, detected_ats, careers_url, notes) VALUES (?,?,?,?,?,?)",
-            (company.name, company.industry, company.size, company.detected_ats, company.careers_url, company.notes),
+            (
+                company.name,
+                company.industry,
+                company.size,
+                company.detected_ats,
+                company.careers_url,
+                company.notes,
+            ),
         )
         conn.commit()
         row_id = c.lastrowid
@@ -447,19 +454,33 @@ class TrackerDB:
     def add_application(self, app: Application) -> int:
         conn = self._conn()
         c = conn.cursor()
-        c.execute("""INSERT INTO applications
+        c.execute(
+            """INSERT INTO applications
             (company_id, role_title, jd_text, jd_url, salary_range, salary_min,
              salary_max, salary_currency, location,
              remote_policy, relevance_score, resume_status, application_status,
              job_status, recruiter_name, recruiter_email, recruiter_linkedin, notes)
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-            (app.company_id, app.role_title, app.jd_text, app.jd_url,
-             app.salary_range, app.salary_min, app.salary_max, app.salary_currency,
-             app.location, app.remote_policy,
-             app.relevance_score, app.resume_status.value,
-             app.application_status.value, app.job_status.value,
-             app.recruiter_name, app.recruiter_email, app.recruiter_linkedin,
-             app.notes),
+            (
+                app.company_id,
+                app.role_title,
+                app.jd_text,
+                app.jd_url,
+                app.salary_range,
+                app.salary_min,
+                app.salary_max,
+                app.salary_currency,
+                app.location,
+                app.remote_policy,
+                app.relevance_score,
+                app.resume_status.value,
+                app.application_status.value,
+                app.job_status.value,
+                app.recruiter_name,
+                app.recruiter_email,
+                app.recruiter_linkedin,
+                app.notes,
+            ),
         )
         conn.commit()
         row_id = c.lastrowid
@@ -469,10 +490,13 @@ class TrackerDB:
     def get_application(self, app_id: int) -> Optional[dict]:
         conn = self._conn()
         c = conn.cursor()
-        c.execute("""SELECT a.*, c.name as company_name
+        c.execute(
+            """SELECT a.*, c.name as company_name
             FROM applications a
             LEFT JOIN companies c ON a.company_id = c.id
-            WHERE a.id = ?""", (app_id,))
+            WHERE a.id = ?""",
+            (app_id,),
+        )
         row = c.fetchone()
         conn.close()
         return dict(row) if row else None
@@ -506,9 +530,7 @@ class TrackerDB:
         conn.close()
         return [dict(r) for r in rows]
 
-    def update_application_status(
-        self, app_id: int, field: str, value: str
-    ) -> None:
+    def update_application_status(self, app_id: int, field: str, value: str) -> None:
         allowed = {"resume_status", "application_status", "job_status"}
         if field not in allowed:
             raise ValueError(f"Field must be one of {allowed}")
@@ -522,13 +544,28 @@ class TrackerDB:
         conn.close()
 
     _ALLOWED_APP_FIELDS = {
-        "role_title", "jd_text", "jd_url", "salary_range",
-        "salary_min", "salary_max", "salary_currency", "location",
-        "remote_policy", "relevance_score", "resume_status",
-        "application_status", "job_status", "job_status_checked_at",
-        "applied_date", "last_activity", "recruiter_name",
-        "recruiter_email", "recruiter_linkedin", "outreach_sent",
-        "outreach_text", "notes",
+        "role_title",
+        "jd_text",
+        "jd_url",
+        "salary_range",
+        "salary_min",
+        "salary_max",
+        "salary_currency",
+        "location",
+        "remote_policy",
+        "relevance_score",
+        "resume_status",
+        "application_status",
+        "job_status",
+        "job_status_checked_at",
+        "applied_date",
+        "last_activity",
+        "recruiter_name",
+        "recruiter_email",
+        "recruiter_linkedin",
+        "outreach_sent",
+        "outreach_text",
+        "notes",
     }
 
     def update_application(self, app_id: int, **kwargs) -> None:
@@ -614,14 +651,23 @@ class TrackerDB:
     def add_resume(self, resume: Resume) -> int:
         conn = self._conn()
         c = conn.cursor()
-        c.execute("""INSERT INTO resumes
+        c.execute(
+            """INSERT INTO resumes
             (application_id, version, template_used, content_json, pdf_path,
              docx_path, ats_score, ats_platform, generation_cost, user_edited)
             VALUES (?,?,?,?,?,?,?,?,?,?)""",
-            (resume.application_id, resume.version, resume.template_used,
-             resume.content_json, resume.pdf_path, resume.docx_path,
-             resume.ats_score, resume.ats_platform, resume.generation_cost,
-             resume.user_edited),
+            (
+                resume.application_id,
+                resume.version,
+                resume.template_used,
+                resume.content_json,
+                resume.pdf_path,
+                resume.docx_path,
+                resume.ats_score,
+                resume.ats_platform,
+                resume.generation_cost,
+                resume.user_edited,
+            ),
         )
         conn.commit()
         row_id = c.lastrowid
@@ -641,11 +687,18 @@ class TrackerDB:
     def log_cost(self, cost: APICost) -> None:
         conn = self._conn()
         c = conn.cursor()
-        c.execute("""INSERT INTO api_costs
+        c.execute(
+            """INSERT INTO api_costs
             (model, task, input_tokens, output_tokens, cache_tokens, cost_usd)
             VALUES (?,?,?,?,?,?)""",
-            (cost.model, cost.task, cost.input_tokens, cost.output_tokens,
-             cost.cache_tokens, cost.cost_usd),
+            (
+                cost.model,
+                cost.task,
+                cost.input_tokens,
+                cost.output_tokens,
+                cost.cache_tokens,
+                cost.cost_usd,
+            ),
         )
         conn.commit()
         conn.close()
@@ -667,14 +720,23 @@ class TrackerDB:
         c = conn.cursor()
         normalized_status = _normalize_discovery_status(discovery.status)
         try:
-            c.execute("""INSERT INTO job_discoveries
+            c.execute(
+                """INSERT INTO job_discoveries
                 (title, company, location, salary_range, url, source, market,
                  posting_date, search_tags, status)
                 VALUES (?,?,?,?,?,?,?,?,?,?)""",
-                (discovery.title, discovery.company, discovery.location,
-                 discovery.salary_range, discovery.url, discovery.source, discovery.market,
-                 str(discovery.posting_date) if discovery.posting_date else None,
-                 discovery.search_tags, normalized_status),
+                (
+                    discovery.title,
+                    discovery.company,
+                    discovery.location,
+                    discovery.salary_range,
+                    discovery.url,
+                    discovery.source,
+                    discovery.market,
+                    str(discovery.posting_date) if discovery.posting_date else None,
+                    discovery.search_tags,
+                    normalized_status,
+                ),
             )
             conn.commit()
             row_id = c.lastrowid
@@ -689,7 +751,7 @@ class TrackerDB:
         search: str = "",
         market: str = None,
         location: str = None,
-        source: str = None
+        source: str = None,
     ) -> list[dict]:
         """List job discoveries with optional filters.
 
@@ -813,7 +875,8 @@ class TrackerDB:
 
         conn = self._conn()
         c = conn.cursor()
-        c.execute("""INSERT OR REPLACE INTO tag_weights
+        c.execute(
+            """INSERT OR REPLACE INTO tag_weights
             (tag, weight, created_at, updated_at)
             VALUES (?, ?, COALESCE((SELECT created_at FROM tag_weights WHERE tag = ?), CURRENT_TIMESTAMP), CURRENT_TIMESTAMP)""",
             (normalized_tag, weight, normalized_tag),
@@ -861,7 +924,8 @@ class TrackerDB:
         """Create a new search session."""
         conn = self._conn()
         c = conn.cursor()
-        c.execute("""INSERT INTO search_sessions
+        c.execute(
+            """INSERT INTO search_sessions
             (tags, markets, sources, status, total_found)
             VALUES (?, ?, ?, 'active', 0)""",
             (json.dumps(tags), json.dumps(markets), json.dumps(sources)),
@@ -876,7 +940,7 @@ class TrackerDB:
         session_id: int,
         status: str = None,
         total_found: int = None,
-        limit_reached: bool = None
+        limit_reached: bool = None,
     ) -> None:
         """Update search session status."""
         conn = self._conn()
@@ -1001,7 +1065,9 @@ class TrackerDB:
         """
         conn = self._conn()
         c = conn.cursor()
-        c.execute("SELECT MAX(version) as max_v FROM resumes WHERE application_id = ?", (application_id,))
+        c.execute(
+            "SELECT MAX(version) as max_v FROM resumes WHERE application_id = ?", (application_id,)
+        )
         row = c.fetchone()
         conn.close()
         return (row["max_v"] or 0) + 1
@@ -1064,6 +1130,7 @@ class TrackerDB:
 
         # Delete files
         from pathlib import Path
+
         for path_str in [row["pdf_path"], row["docx_path"]]:
             if path_str:
                 p = Path(path_str)
@@ -1126,14 +1193,18 @@ class TrackerDB:
         c.execute("SELECT COUNT(*) as total FROM applications")
         total = c.fetchone()["total"]
 
-        c.execute("SELECT COUNT(*) as active FROM applications WHERE application_status NOT IN ('rejected','ghosted','withdrawn')")
+        c.execute(
+            "SELECT COUNT(*) as active FROM applications WHERE application_status NOT IN ('rejected','ghosted','withdrawn')"
+        )
         active = c.fetchone()["active"]
 
         c.execute("SELECT AVG(r.ats_score) as avg_score FROM resumes r WHERE r.ats_score > 0")
         row = c.fetchone()
         avg_score = round(row["avg_score"], 1) if row and row["avg_score"] else 0
 
-        c.execute("SELECT COALESCE(SUM(cost_usd), 0) as cost FROM api_costs WHERE strftime('%Y-%m', timestamp) = strftime('%Y-%m', 'now')")
+        c.execute(
+            "SELECT COALESCE(SUM(cost_usd), 0) as cost FROM api_costs WHERE strftime('%Y-%m', timestamp) = strftime('%Y-%m', 'now')"
+        )
         monthly_cost = c.fetchone()["cost"]
 
         conn.close()
@@ -1157,6 +1228,7 @@ class TrackerDB:
         """
         import uuid
         import logging
+
         logger = logging.getLogger(__name__)
 
         batch_id = str(uuid.uuid4())[:8]
@@ -1358,7 +1430,7 @@ class TrackerDB:
         tag_weights: dict[str, int],
         markets: list[str] = None,
         sources: list[str] = None,
-        location: str = None
+        location: str = None,
     ) -> int:
         """Save a search configuration for later reuse.
 
@@ -1385,8 +1457,8 @@ class TrackerDB:
                 json.dumps(tag_weights),
                 json.dumps(markets or []),
                 json.dumps(sources or []),
-                location or ""
-            )
+                location or "",
+            ),
         )
         conn.commit()
         saved_id = c.lastrowid
@@ -1459,7 +1531,7 @@ class TrackerDB:
         tag_weights: dict[str, int] = None,
         markets: list[str] = None,
         sources: list[str] = None,
-        location: str = None
+        location: str = None,
     ) -> bool:
         """Update a saved search configuration.
 
@@ -1513,6 +1585,7 @@ class TrackerDB:
     def export_csv(self, output_path: Path) -> Path:
         """Export all applications to CSV."""
         import csv
+
         apps = self.list_applications()
         if not apps:
             return output_path
@@ -1527,6 +1600,7 @@ class TrackerDB:
     def import_csv(self, csv_path: Path) -> int:
         """Import applications from CSV. Returns count of imported rows."""
         import csv
+
         count = 0
         with open(csv_path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)

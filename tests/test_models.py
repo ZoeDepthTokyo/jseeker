@@ -1,11 +1,14 @@
 """Tests for Pydantic data models."""
 
-import pytest
 from jseeker.models import (
-    ParsedJD, MatchResult, AdaptedResume, ATSScore,
-    Application, Company, Resume, JobDiscovery, SearchTag,
-    TemplateType, ResumeStatus, ApplicationStatus, JobStatus,
-    ATSPlatform, DiscoveryStatus, ContactInfo, JDRequirement,
+    ParsedJD,
+    ATSScore,
+    Application,
+    TemplateType,
+    ResumeStatus,
+    ApplicationStatus,
+    JobStatus,
+    ATSPlatform,
 )
 
 

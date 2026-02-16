@@ -1,14 +1,22 @@
 """Tests for tracker module."""
 
 import pytest
-import tempfile
-from pathlib import Path
 from jseeker.tracker import TrackerDB
 from jseeker.models import (
-    Application, Company, Resume, APICost, JobDiscovery,
-    ResumeStatus, ApplicationStatus, JobStatus, DiscoveryStatus,
-    PipelineResult, ParsedJD, MatchResult, AdaptedResume, ATSScore,
-    ContactInfo, TemplateType, ATSPlatform,
+    Application,
+    Company,
+    Resume,
+    APICost,
+    JobDiscovery,
+    DiscoveryStatus,
+    PipelineResult,
+    ParsedJD,
+    MatchResult,
+    AdaptedResume,
+    ATSScore,
+    ContactInfo,
+    TemplateType,
+    ATSPlatform,
 )
 
 
@@ -228,7 +236,7 @@ class TestTrackerDB:
         app1 = Application(company_id=company_id, role_title="Role A")
         app2 = Application(company_id=company_id, role_title="Role B")
         id1 = db.add_application(app1)
-        id2 = db.add_application(app2)
+        db.add_application(app2)
 
         db.update_application_status(id1, "application_status", "applied")
 
@@ -482,7 +490,7 @@ class TestTrackerDB:
             pdf_path=str(pdf_path),
             ats_score=85,
         )
-        resume_id = db.add_resume(resume)
+        db.add_resume(resume)
 
         # Verify application and resume exist
         assert db.get_application(app_id) is not None
@@ -520,7 +528,7 @@ class TestTrackerDB:
 
             resume = Resume(
                 application_id=app_id,
-                version=i+1,
+                version=i + 1,
                 template_used="ai_ux",
                 pdf_path=str(pdf_path),
             )
@@ -622,7 +630,7 @@ class TestTrackerConcurrency:
         with db._transaction() as (conn, cursor):
             cursor.execute(
                 "INSERT INTO applications (company_id, role_title) VALUES (?, ?)",
-                (company_id, "Test Role")
+                (company_id, "Test Role"),
             )
             app_id = cursor.lastrowid
 
@@ -645,12 +653,12 @@ class TestTrackerConcurrency:
             with db._transaction() as (conn, cursor):
                 cursor.execute(
                     "INSERT INTO applications (company_id, role_title) VALUES (?, ?)",
-                    (company_id, "Test Role")
+                    (company_id, "Test Role"),
                 )
                 # Force an error by inserting invalid data
                 cursor.execute(
                     "INSERT INTO applications (company_id, role_title) VALUES (?, ?)",
-                    (999999, None)  # Invalid company_id and NULL role_title
+                    (999999, None),  # Invalid company_id and NULL role_title
                 )
         except Exception:
             pass  # Expected to fail
@@ -661,7 +669,6 @@ class TestTrackerConcurrency:
 
     def test_concurrent_updates_no_lock_error(self, tmp_db):
         """Test that concurrent updates don't cause 'database is locked' errors."""
-        import threading
         from concurrent.futures import ThreadPoolExecutor
 
         db = TrackerDB(tmp_db)
@@ -721,11 +728,14 @@ class TestTrackerConcurrency:
         # SQLite timestamps should have space separator, not 'T'
         # and should not have microseconds
         import re
-        sqlite_timestamp_pattern = r'^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$'
-        assert re.match(sqlite_timestamp_pattern, created_at), \
-            f"created_at '{created_at}' doesn't match SQLite timestamp format"
-        assert re.match(sqlite_timestamp_pattern, updated_at), \
-            f"updated_at '{updated_at}' doesn't match SQLite timestamp format"
+
+        sqlite_timestamp_pattern = r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$"
+        assert re.match(
+            sqlite_timestamp_pattern, created_at
+        ), f"created_at '{created_at}' doesn't match SQLite timestamp format"
+        assert re.match(
+            sqlite_timestamp_pattern, updated_at
+        ), f"updated_at '{updated_at}' doesn't match SQLite timestamp format"
 
     def test_update_uses_server_timestamp(self, tmp_db):
         """Test that update_application_status uses SQLite CURRENT_TIMESTAMP."""
@@ -749,9 +759,12 @@ class TestTrackerConcurrency:
         new_updated = app2["updated_at"]
 
         # Verify timestamp changed and is in SQLite format
-        assert new_updated != initial_updated, \
-            f"Timestamp should have changed: {initial_updated} -> {new_updated}"
+        assert (
+            new_updated != initial_updated
+        ), f"Timestamp should have changed: {initial_updated} -> {new_updated}"
         import re
-        sqlite_timestamp_pattern = r'^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$'
-        assert re.match(sqlite_timestamp_pattern, new_updated), \
-            f"updated_at '{new_updated}' doesn't match SQLite timestamp format"
+
+        sqlite_timestamp_pattern = r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$"
+        assert re.match(
+            sqlite_timestamp_pattern, new_updated
+        ), f"updated_at '{new_updated}' doesn't match SQLite timestamp format"

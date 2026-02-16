@@ -1,6 +1,5 @@
 """Tests for block manager module."""
 
-import pytest
 from jseeker.block_manager import BlockManager
 from jseeker.models import TemplateType
 

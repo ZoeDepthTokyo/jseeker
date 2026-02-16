@@ -26,7 +26,6 @@ from jseeker.renderer import generate_output
 from jseeker.style_extractor import get_available_template_styles, load_template_style
 from jseeker.tracker import tracker_db
 
-
 st.title("New Resume")
 
 # --- Budget Display and Check ---
@@ -35,9 +34,13 @@ try:
     session_cost = llm.get_total_session_cost()
 
     col1, col2, col3 = st.columns(3)
-    col1.metric("Monthly Cost", f"${monthly_cost:.2f}", f"of ${settings.max_monthly_budget_usd:.2f}")
+    col1.metric(
+        "Monthly Cost", f"${monthly_cost:.2f}", f"of ${settings.max_monthly_budget_usd:.2f}"
+    )
     col2.metric("Session Cost", f"${session_cost:.3f}")
-    col3.metric("Budget Remaining", f"${max(0, settings.max_monthly_budget_usd - monthly_cost):.2f}")
+    col3.metric(
+        "Budget Remaining", f"${max(0, settings.max_monthly_budget_usd - monthly_cost):.2f}"
+    )
 
     if monthly_cost >= settings.max_monthly_budget_usd:
         st.error(
@@ -108,7 +111,9 @@ try:
     )
 
     # Find selected template
-    selected_template = next((s for s in available_styles if s["name"] == selected_style_name), None)
+    selected_template = next(
+        (s for s in available_styles if s["name"] == selected_style_name), None
+    )
 
     if selected_template and selected_template.get("path"):
         # Show template metadata
@@ -150,7 +155,9 @@ if generate_button:
                     if extraction_meta.get("company"):
                         error_parts.append(f"Detected company: {extraction_meta['company']}")
                     if extraction_meta.get("selectors_tried"):
-                        error_parts.append(f"Tried {len(extraction_meta['selectors_tried'])} selectors")
+                        error_parts.append(
+                            f"Tried {len(extraction_meta['selectors_tried'])} selectors"
+                        )
                     error_parts.append(f"Method: {extraction_meta.get('method', 'unknown')}")
                     error_parts.append("Please paste the JD text and try again.")
                     raise ValueError(" | ".join(error_parts))

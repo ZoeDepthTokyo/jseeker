@@ -29,6 +29,7 @@ st.set_page_config(
 
 # Initialize DB on first load
 from jseeker.tracker import init_db
+
 init_db()
 
 st.sidebar.title("JSEEKER")
@@ -38,6 +39,7 @@ st.sidebar.markdown("---")
 # Session cost display
 try:
     from jseeker.llm import llm
+
     session_cost = llm.get_total_session_cost()
     st.sidebar.metric("Session Cost", f"${session_cost:.3f}")
 except Exception:

@@ -42,24 +42,109 @@ def infer_market_from_location(location: str) -> str:
 
     # US state patterns (two-letter codes and full names)
     us_states = [
-        "al", "ak", "az", "ar", "ca", "co", "ct", "de", "fl", "ga",
-        "hi", "id", "il", "in", "ia", "ks", "ky", "la", "me", "md",
-        "ma", "mi", "mn", "ms", "mo", "mt", "ne", "nv", "nh", "nj",
-        "nm", "ny", "nc", "nd", "oh", "ok", "or", "pa", "ri", "sc",
-        "sd", "tn", "tx", "ut", "vt", "va", "wa", "wv", "wi", "wy"
+        "al",
+        "ak",
+        "az",
+        "ar",
+        "ca",
+        "co",
+        "ct",
+        "de",
+        "fl",
+        "ga",
+        "hi",
+        "id",
+        "il",
+        "in",
+        "ia",
+        "ks",
+        "ky",
+        "la",
+        "me",
+        "md",
+        "ma",
+        "mi",
+        "mn",
+        "ms",
+        "mo",
+        "mt",
+        "ne",
+        "nv",
+        "nh",
+        "nj",
+        "nm",
+        "ny",
+        "nc",
+        "nd",
+        "oh",
+        "ok",
+        "or",
+        "pa",
+        "ri",
+        "sc",
+        "sd",
+        "tn",
+        "tx",
+        "ut",
+        "vt",
+        "va",
+        "wa",
+        "wv",
+        "wi",
+        "wy",
     ]
 
     us_state_names = [
-        "alabama", "alaska", "arizona", "arkansas", "california", "colorado",
-        "connecticut", "delaware", "florida", "georgia", "hawaii", "idaho",
-        "illinois", "indiana", "iowa", "kansas", "kentucky", "louisiana",
-        "maine", "maryland", "massachusetts", "michigan", "minnesota",
-        "mississippi", "missouri", "montana", "nebraska", "nevada",
-        "new hampshire", "new jersey", "new mexico", "new york",
-        "north carolina", "north dakota", "ohio", "oklahoma", "oregon",
-        "pennsylvania", "rhode island", "south carolina", "south dakota",
-        "tennessee", "texas", "utah", "vermont", "virginia", "washington",
-        "west virginia", "wisconsin", "wyoming"
+        "alabama",
+        "alaska",
+        "arizona",
+        "arkansas",
+        "california",
+        "colorado",
+        "connecticut",
+        "delaware",
+        "florida",
+        "georgia",
+        "hawaii",
+        "idaho",
+        "illinois",
+        "indiana",
+        "iowa",
+        "kansas",
+        "kentucky",
+        "louisiana",
+        "maine",
+        "maryland",
+        "massachusetts",
+        "michigan",
+        "minnesota",
+        "mississippi",
+        "missouri",
+        "montana",
+        "nebraska",
+        "nevada",
+        "new hampshire",
+        "new jersey",
+        "new mexico",
+        "new york",
+        "north carolina",
+        "north dakota",
+        "ohio",
+        "oklahoma",
+        "oregon",
+        "pennsylvania",
+        "rhode island",
+        "south carolina",
+        "south dakota",
+        "tennessee",
+        "texas",
+        "utah",
+        "vermont",
+        "virginia",
+        "washington",
+        "west virginia",
+        "wisconsin",
+        "wyoming",
     ]
 
     # Check for full state names
@@ -70,22 +155,59 @@ def infer_market_from_location(location: str) -> str:
     # Check for state abbreviations (word boundary required)
     # Pattern: ", TX" or " TX" at end
     for state_code in us_states:
-        pattern = rf'[,\s]{state_code}(?:\s|$)'
+        pattern = rf"[,\s]{state_code}(?:\s|$)"
         if re.search(pattern, location_lower):
             return "us"
 
     # US city patterns (common US cities)
     us_cities = [
-        "new york", "los angeles", "chicago", "houston", "phoenix",
-        "philadelphia", "san antonio", "san diego", "dallas", "san jose",
-        "austin", "jacksonville", "fort worth", "columbus", "charlotte",
-        "san francisco", "indianapolis", "seattle", "denver", "washington",
-        "boston", "nashville", "baltimore", "detroit", "memphis",
-        "portland", "las vegas", "milwaukee", "albuquerque", "tucson",
-        "fresno", "sacramento", "mesa", "kansas city", "atlanta",
-        "long beach", "colorado springs", "raleigh", "miami", "virginia beach",
-        "omaha", "oakland", "minneapolis", "tulsa", "arlington",
-        "alpharetta", "remote"
+        "new york",
+        "los angeles",
+        "chicago",
+        "houston",
+        "phoenix",
+        "philadelphia",
+        "san antonio",
+        "san diego",
+        "dallas",
+        "san jose",
+        "austin",
+        "jacksonville",
+        "fort worth",
+        "columbus",
+        "charlotte",
+        "san francisco",
+        "indianapolis",
+        "seattle",
+        "denver",
+        "washington",
+        "boston",
+        "nashville",
+        "baltimore",
+        "detroit",
+        "memphis",
+        "portland",
+        "las vegas",
+        "milwaukee",
+        "albuquerque",
+        "tucson",
+        "fresno",
+        "sacramento",
+        "mesa",
+        "kansas city",
+        "atlanta",
+        "long beach",
+        "colorado springs",
+        "raleigh",
+        "miami",
+        "virginia beach",
+        "omaha",
+        "oakland",
+        "minneapolis",
+        "tulsa",
+        "arlington",
+        "alpharetta",
+        "remote",
     ]
 
     for city in us_cities:
@@ -94,8 +216,16 @@ def infer_market_from_location(location: str) -> str:
 
     # Canadian city patterns
     canadian_cities = [
-        "toronto", "montreal", "vancouver", "calgary", "edmonton",
-        "ottawa", "winnipeg", "quebec", "hamilton", "kitchener"
+        "toronto",
+        "montreal",
+        "vancouver",
+        "calgary",
+        "edmonton",
+        "ottawa",
+        "winnipeg",
+        "quebec",
+        "hamilton",
+        "kitchener",
     ]
 
     for city in canadian_cities:
@@ -104,8 +234,16 @@ def infer_market_from_location(location: str) -> str:
 
     # UK city patterns
     uk_cities = [
-        "london", "manchester", "birmingham", "glasgow", "liverpool",
-        "edinburgh", "leeds", "sheffield", "bristol", "cardiff"
+        "london",
+        "manchester",
+        "birmingham",
+        "glasgow",
+        "liverpool",
+        "edinburgh",
+        "leeds",
+        "sheffield",
+        "bristol",
+        "cardiff",
     ]
 
     for city in uk_cities:
@@ -138,8 +276,15 @@ def infer_market_from_location(location: str) -> str:
 
     # Mexican city patterns
     mexican_cities = [
-        "mexico city", "guadalajara", "monterrey", "puebla", "tijuana",
-        "ciudad", "cdmx", "cuajimalpa", "tlalpan"
+        "mexico city",
+        "guadalajara",
+        "monterrey",
+        "puebla",
+        "tijuana",
+        "ciudad",
+        "cdmx",
+        "cuajimalpa",
+        "tlalpan",
     ]
 
     for city in mexican_cities:
@@ -181,11 +326,14 @@ def migrate_market_field():
     for job_id, location in rows:
         market = infer_market_from_location(location)
 
-        c.execute("""
+        c.execute(
+            """
             UPDATE job_discoveries
             SET market = ?
             WHERE id = ?
-        """, (market, job_id))
+        """,
+            (market, job_id),
+        )
 
         by_market[market] = by_market.get(market, 0) + 1
         updated += 1
@@ -193,9 +341,9 @@ def migrate_market_field():
     conn.commit()
     conn.close()
 
-    print(f"\nMigration complete!")
+    print("\nMigration complete!")
     print(f"Updated {updated} jobs")
-    print(f"\nBreakdown by market:")
+    print("\nBreakdown by market:")
     for market, count in sorted(by_market.items(), key=lambda x: -x[1]):
         print(f"  {market}: {count} jobs")
 

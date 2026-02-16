@@ -36,21 +36,21 @@ def merge_duplicates():
     print(f"Status: {app_7['application_status']}")
     print(f"Created: {app_7['created_at']}")
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("MERGE STRATEGY:")
     print("  - Keep ID 7 (most recent, has 'applied' status)")
     print("  - Delete ID 6 (older, 'not_applied' status)")
     print("  - Preserve both URLs in notes field of ID 7")
-    print("="*60)
+    print("=" * 60)
 
     # Prompt for confirmation
     response = input("\nProceed with merge? (yes/no): ")
-    if response.lower() != 'yes':
+    if response.lower() != "yes":
         print("❌ Merge cancelled")
         return
 
     # Update ID 7 notes to include both URLs
-    current_notes = app_7.get('notes') or ''
+    current_notes = app_7.get("notes") or ""
     url_note = f"\n\n[Merged duplicate] LinkedIn URL: {app_6['jd_url']}"
 
     if url_note not in current_notes:

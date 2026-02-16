@@ -4,6 +4,7 @@ Backfill missing salary and JD text for existing applications.
 Run this script to re-parse JD URLs and extract missing fields.
 Note: relevance_score is computed during matching, not JD parsing, so it's not backfilled here.
 """
+
 import sys
 from pathlib import Path
 
@@ -42,10 +43,7 @@ def backfill_application(app_id: int, tracker_db: TrackerDB):
             return False
 
         # Parse JD to extract all fields
-        jd_data = process_jd(
-            raw_text=jd_text,
-            jd_url=jd_url
-        )
+        jd_data = process_jd(raw_text=jd_text, jd_url=jd_url)
 
         # Prepare updates
         updates = {}
@@ -98,7 +96,9 @@ def main():
         app = tracker_db.get_application(app_id)
         if app:
             print(f"\nID {app_id}: {app.get('role_title')}")
-            print(f"  Salary: {app.get('salary_min')} - {app.get('salary_max')} {app.get('salary_currency')}")
+            print(
+                f"  Salary: {app.get('salary_min')} - {app.get('salary_max')} {app.get('salary_currency')}"
+            )
             print(f"  JD Text: {'Yes' if app.get('jd_text') else 'No'}")
             print(f"  Location: {app.get('location', 'N/A')}")
 

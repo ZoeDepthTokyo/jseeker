@@ -819,3 +819,24 @@ Upon plan approval:
 **Test results:** 435/437 passing (99.5%), 2 pre-existing known failures (French lang detection, perf boundary)
 **Files modified:** 11 files (jd_parser, renderer, pattern_learner, 7_learning_insights, test files)
 **New tests added:** 26 tests (14 market detection, 12 language detection, 2 company extraction, 2 output naming)
+
+### v0.3.8.1 (Feb 15, 2026) — Critical Hotfix (4 regressions)
+**Why regressions occurred:** Tests used fresh fixtures without old schema data, no backwards compatibility testing, UI layer gaps
+
+**Critical Fixes:**
+1. **pdf_validation AttributeError** — Reordered PDFValidationResult class before PipelineResult (forward ref), added defensive getattr() in UI, +3 backwards compat tests
+2. **Domain column KeyError** — Added try/except for malformed JSON parsing + defensive DataFrame column checks for old patterns without 'domain' field
+3. **Fetch JD button not working** — Fixed Streamlit widget key conflict using intermediate key pattern (temp key → rerun → widget key transfer)
+4. **Viterbit.site parser** — Added Playwright-based extraction for JS-rendered sites (403 on plain HTTP), subdomain company extraction
+
+**Learnings applied (added to CLAUDE.md):**
+- Always use Optional[] for new model fields + defensive access (getattr/hasattr)
+- Check DataFrame column existence before operations: `if "col" not in df.columns`
+- Wrap JSON parsing in try/except for old DB data
+- Define dependent Pydantic models before usage (class order matters)
+- Streamlit widget keys: use intermediate session state to avoid conflicts
+- Need backwards compatibility tests with old schemas
+
+**Team:** 3 agents (domain-fixer, validation-fixer, fetch-button-fixer), 8 files, 4 tests added, ~180 lines modified
+**Test results:** 439/440 passing (99.77%), only failure is pre-existing French language detection
+**Documentation:** Comprehensive HOTFIX_v0.3.8.1.md + CLAUDE.md updated with 6 critical gotchas

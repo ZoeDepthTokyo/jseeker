@@ -20,7 +20,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from jseeker.llm import create_client
+from jseeker.llm import llm
 from jseeker.tracker import tracker_db
 
 st.set_page_config(page_title="Regional Salary Analytics", page_icon="💰", layout="wide")
@@ -241,52 +241,44 @@ Be specific and actionable."""
 
 Provide a detailed, data-driven analysis addressing the query."""
 
-        # Call Opus 4.6
+        # Call Opus 4.6 using jSeeker LLM wrapper
         try:
-            client = create_client(model_override="claude-opus-4-6")
-            response = client.messages.create(
-                model="claude-opus-4-6",
-                max_tokens=4000,
-                temperature=0.3,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": prompt,
-                    }
-                ],
-            )
+            # Set model override to use Opus 4.6
+            llm.model_override = "opus"
 
-            analysis = response.content[0].text
+            # Call with the prompt (cost tracking happens automatically)
+            analysis = llm.call(
+                prompt=prompt,
+                task="regional_salary_analytics",
+                model="opus",
+                temperature=0.3,
+                max_tokens=4000,
+                use_local_cache=False,  # Don't cache expensive analyses
+            )
 
             # Display analysis
             st.markdown("### Analysis Results")
             st.markdown(analysis)
 
-            # Cost tracking
-            input_tokens = response.usage.input_tokens
-            output_tokens = response.usage.output_tokens
-            # Opus 4.6 pricing: $15/1M input, $75/1M output
-            cost = (input_tokens / 1_000_000 * 15) + (output_tokens / 1_000_000 * 75)
+            # Get cost info from last call
+            if llm._session_costs:
+                last_cost = llm._session_costs[-1]
+                cost = last_cost.cost_usd
+                input_tokens = last_cost.input_tokens
+                output_tokens = last_cost.output_tokens
 
-            st.caption(
-                f"💰 Analysis cost: ${cost:.3f} | "
-                f"Tokens: {input_tokens:,} in / {output_tokens:,} out | "
-                f"Model: Claude Opus 4.6"
-            )
-
-            # Log cost to database
-            from jseeker.tracker import TrackerDB
-
-            db = TrackerDB()
-            db.log_api_cost(
-                model="claude-opus-4-6",
-                task="regional_salary_analytics",
-                input_tokens=input_tokens,
-                output_tokens=output_tokens,
-                cost_usd=cost,
-            )
+                st.caption(
+                    f"💰 Analysis cost: ${cost:.3f} | "
+                    f"Tokens: {input_tokens:,} in / {output_tokens:,} out | "
+                    f"Model: Claude Opus 4.6"
+                )
+            else:
+                st.caption("💰 Analysis cost: Tracked in API costs table")
 
             st.success("✅ Analysis complete! Review insights above.")
+
+            # Reset model override
+            llm.model_override = None
 
         except Exception as e:
             st.error(f"Analysis failed: {str(e)}")

@@ -359,12 +359,40 @@ else:
     )
 
     # Auto-save changes (no button required per user feedback)
-    has_changes = not df[available].equals(edited_df)
+    # Use session state to prevent infinite rerun loop after save
+    if "resume_library_just_saved" not in st.session_state:
+        st.session_state.resume_library_just_saved = False
+
+    # Skip comparison immediately after save to prevent false positive loop
+    if st.session_state.resume_library_just_saved:
+        st.session_state.resume_library_just_saved = False
+        has_changes = False
+    else:
+        # Normalize data types to prevent false positives from type mismatches
+        df_compare = df[available].copy()
+        edited_compare = edited_df.copy()
+
+        # Convert float columns to same precision
+        for col in df_compare.columns:
+            if df_compare[col].dtype == "float64":
+                df_compare[col] = df_compare[col].round(6)
+                edited_compare[col] = edited_compare[col].round(6)
+
+        has_changes = not df_compare.equals(edited_compare)
 
     if has_changes:
         with st.spinner("💾 Auto-saving changes..."):
             changed_count = 0
-            for idx, row in edited_df.iterrows():
+
+            # Find only rows that actually changed (performance optimization)
+            changed_rows = []
+            for idx in range(len(df)):
+                if not df[available].iloc[idx].equals(edited_df.iloc[idx]):
+                    changed_rows.append(idx)
+
+            # Only process changed rows (much faster for large datasets)
+            for idx in changed_rows:
+                row = edited_df.iloc[idx]
                 original = df.iloc[idx]
                 resume_id = int(original["id"])
 
@@ -436,6 +464,8 @@ else:
 
         if changed_count > 0:
             st.success(f"✅ Auto-saved {changed_count} change(s)!")
+            # Set flag to skip comparison on next render (prevents infinite loop)
+            st.session_state.resume_library_just_saved = True
             st.rerun()
 
     st.markdown("---")

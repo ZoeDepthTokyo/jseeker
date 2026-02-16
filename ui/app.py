@@ -32,8 +32,11 @@ from jseeker.tracker import init_db
 
 init_db()
 
+import jseeker
+
 st.sidebar.title("JSEEKER")
 st.sidebar.caption("The Shape-Shifting Resume Engine")
+st.sidebar.caption(f"Version {jseeker.__version__}")
 st.sidebar.markdown("---")
 
 # Session cost display
@@ -45,13 +48,23 @@ try:
 except Exception:
     pass
 
-# Model selector
+# Model selector (persistent across tabs via session_state)
 st.sidebar.markdown("---")
 _model_options = ["Haiku (Fast/Cheap)", "Sonnet (Quality)", "Opus (Premium)"]
 
+# Initialize model selection in session state if not set
+if "model_selection" not in st.session_state:
+    st.session_state.model_selection = "Haiku (Fast/Cheap)"
+
+# Get current index for selectbox
+_current_index = _model_options.index(st.session_state.model_selection)
+
 # Track previous selection for change detection
-_prev_model = st.session_state.get("_prev_model_choice", "Haiku (Fast/Cheap)")
-_model_choice = st.sidebar.selectbox("Model", _model_options, index=0)
+_prev_model = st.session_state.get("_prev_model_choice", st.session_state.model_selection)
+_model_choice = st.sidebar.selectbox(
+    "Model", _model_options, index=_current_index, key="model_selector"
+)
+st.session_state.model_selection = _model_choice
 _model_map = {"Haiku (Fast/Cheap)": None, "Sonnet (Quality)": "sonnet", "Opus (Premium)": "opus"}
 
 try:
@@ -94,5 +107,5 @@ Navigate using the sidebar pages:
 5. **Job Discovery** — Tag-based job search across boards
 
 ---
-*GAIA Ecosystem Product v0.3.6*
+*GAIA Ecosystem Product*
 """)

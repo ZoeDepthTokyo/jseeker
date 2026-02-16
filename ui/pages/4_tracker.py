@@ -113,6 +113,35 @@ if apps:
 if apps:
     df = pd.DataFrame(apps)
 
+    # Convert data types first
+    if "relevance_score" in df.columns:
+        df["relevance_score"] = df["relevance_score"].fillna(0) * 100
+
+    # Convert None salary values to NaN for proper display
+    if "salary_min" in df.columns:
+        df["salary_min"] = pd.to_numeric(df["salary_min"], errors="coerce")
+    if "salary_max" in df.columns:
+        df["salary_max"] = pd.to_numeric(df["salary_max"], errors="coerce")
+
+    # Add emoji indicators for status (CREATE DISPLAY COLUMNS BEFORE FILTERING)
+    status_emojis = {
+        "rejected": "❌",
+        "applied": "✅",
+        "not_applied": "⏳",
+        "interviewing": "🗣️",
+        "offer": "🎉",
+    }
+    job_emojis = {"closed": "❌", "active": "✅", "paused": "⏸️"}
+
+    if "application_status" in df.columns:
+        df["app_status_display"] = df["application_status"].apply(
+            lambda x: f"{status_emojis.get(x, '')} {x}" if x else ""
+        )
+    if "job_status" in df.columns:
+        df["job_status_display"] = df["job_status"].apply(
+            lambda x: f"{job_emojis.get(x, '')} {x}" if x else ""
+        )
+
     # Column order: ID, Company, Location, Role, URL, Min Salary, Max Salary, Currency, App Status, Relevance, ATS Score, Resume Status, Job Status, Created, Notes
     display_cols = [
         "id",
@@ -132,34 +161,6 @@ if apps:
         "notes",
     ]
     available_cols = [c for c in display_cols if c in df.columns]
-
-    if "relevance_score" in df.columns:
-        df["relevance_score"] = df["relevance_score"].fillna(0) * 100
-
-    # Convert None salary values to NaN for proper display
-    if "salary_min" in df.columns:
-        df["salary_min"] = pd.to_numeric(df["salary_min"], errors="coerce")
-    if "salary_max" in df.columns:
-        df["salary_max"] = pd.to_numeric(df["salary_max"], errors="coerce")
-
-    # Add emoji indicators for status (visual cue since we can't color cells)
-    status_emojis = {
-        "rejected": "❌",
-        "applied": "✅",
-        "not_applied": "⏳",
-        "interviewing": "🗣️",
-        "offer": "🎉",
-    }
-    job_emojis = {"closed": "❌", "active": "✅", "paused": "⏸️"}
-
-    if "application_status" in df.columns:
-        df["app_status_display"] = df["application_status"].apply(
-            lambda x: f"{status_emojis.get(x, '')} {x}" if x else ""
-        )
-    if "job_status" in df.columns:
-        df["job_status_display"] = df["job_status"].apply(
-            lambda x: f"{job_emojis.get(x, '')} {x}" if x else ""
-        )
 
     # Apply color coding to application_status
     def style_app_status(val):

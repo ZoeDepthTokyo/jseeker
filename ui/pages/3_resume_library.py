@@ -48,7 +48,7 @@ with st.expander("Upload PDF Templates", expanded=False):
         template_lang = st.selectbox(
             "Language",
             options=["English", "Spanish", "French", "Other"],
-            key="template_lang_select",
+            key="pdf_template_lang",
         )
 
     if st.button("Upload Template(s)", width="stretch", disabled=not uploaded_files):
@@ -470,7 +470,16 @@ else:
 
     st.markdown("---")
 
-    selected_id = st.selectbox("Select resume ID", options=[r["id"] for r in resumes])
+    # Preserve selected resume ID in session state
+    if "resume_library_selected_id" not in st.session_state and resumes:
+        st.session_state.resume_library_selected_id = resumes[0]["id"]
+
+    selected_id = st.selectbox(
+        "Select resume ID",
+        options=[r["id"] for r in resumes],
+        key="resume_library_selected_id",
+        help="Selection persists when navigating between pages",
+    )
     selected = next((r for r in resumes if r["id"] == selected_id), None)
 
     if selected:

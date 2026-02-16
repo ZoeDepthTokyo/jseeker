@@ -385,9 +385,10 @@ else:
             changed_count = 0
 
             # Find only rows that actually changed (performance optimization)
+            # Use NORMALIZED dataframes to match the global comparison logic
             changed_rows = []
-            for idx in range(len(df)):
-                if not df[available].iloc[idx].equals(edited_df.iloc[idx]):
+            for idx in range(len(df_compare)):
+                if not df_compare.iloc[idx].equals(edited_compare.iloc[idx]):
                     changed_rows.append(idx)
 
             # Only process changed rows (much faster for large datasets)

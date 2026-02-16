@@ -27,11 +27,16 @@ playwright install  # Browser for PDF rendering
 ### Launch
 ```bash
 # Windows (recommended - clears cache + kills port automatically)
-start.bat
+start.bat                    # jSeeker only via run.py
 
-# Or manual launch
-python run.py                # Full pipeline (recommended)
-python launch.py             # Co-launch with ARGUS on :8502 + :8501
+# Standalone launches (choose one)
+python run.py                # jSeeker with venv/deps check (recommended)
+python launch.py             # jSeeker only on :8502 (quick start)
+python launch_jseeker.py     # jSeeker only (explicit)
+python launch_argus.py       # ARGUS only on :8501
+python launch_both.py        # Co-launch jSeeker + ARGUS together
+
+# Direct Streamlit (no checks)
 streamlit run ui/app.py --server.port 8502  # jSeeker only
 ```
 

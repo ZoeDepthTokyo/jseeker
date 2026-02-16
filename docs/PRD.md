@@ -875,3 +875,39 @@ Upon plan approval:
 
 **Deferred:** Manual URL editing (P4), manual location override (P5), regional salary analytics (P6 - Opus required)
 
+### v0.3.9.1 (Feb 16, 2026) — STABLE RELEASE: Critical P0 Hotfixes
+**Scope:** 3 critical fixes from post-v0.3.9 user testing
+
+**CRITICAL P0: Resume Library Auto-Save Regression**
+- Problem: Company name and role edits not saving, no confirmation message
+- Root cause: Row-level comparison used original dataframes instead of normalized copies → `has_changes=True` but `changed_rows` empty
+- Solution: Updated line 390 in `ui/pages/3_resume_library.py` to use normalized dataframes for both global and row-level change detection
+- Impact: Auto-save now correctly detects and persists all edits
+
+**DATA CONSISTENCY: Tracker ↔ Resume Library Harmonization**
+- Investigation: Created verification and cleanup tools
+- Findings: No mismatches found between views, SQL queries use identical join patterns
+- Cleanup: Auto-deleted 1 orphaned resume, identified 2 placeholder companies for manual cleanup
+- Tools: `scripts/verify_data_consistency.py` (diagnostic), `scripts/cleanup_database.py` (auto-fix)
+
+**FEATURE: Ashby-Embedded Job Board Support**
+- Problem: Couldn't extract JD from Deel careers page (ashby_jid parameter)
+- Root cause: Ashby detection only checked "ashbyhq.com" domain, missing company-embedded implementations
+- Solution: Added detection for "ashby_jid=" parameter in URLs (line 1090 in jd_parser.py)
+- Impact: Now supports both native Ashby URLs and embedded Ashby on company domains (Deel, etc.)
+- Testing: Successfully extracted 8701 chars from Deel URL, parsed 20 keywords + 13 requirements
+
+**Test Results:** 103/103 passing (100% on affected modules), 1 pre-existing failure (French detection)
+
+**Files Modified:**
+- `ui/pages/3_resume_library.py` (auto-save fix)
+- `jseeker/jd_parser.py` (Ashby detection)
+- `scripts/verify_data_consistency.py` (new tool)
+- `scripts/cleanup_database.py` (new tool)
+
+**Commits:**
+- 5401683: fix(p0): Resume Library auto-save + data consistency cleanup
+- 59a2511: feat(jd-parser): Add support for Ashby-embedded job boards
+
+**Status:** ✅ STABLE — All P0 issues resolved, tests passing, pushed to main
+

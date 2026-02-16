@@ -34,27 +34,52 @@ st.info(
     "Cost: ~$0.15-0.30 per analysis. Use for strategic decisions and negotiations."
 )
 
-# --- Load Applications with Salary Data ---
+# --- Load Applications ---
 apps = tracker_db.list_applications()
+
+# Show data availability summary
+total_apps = len(apps)
 apps_with_salary = [
     a for a in apps if a.get("salary_min") or a.get("salary_max") or a.get("salary_range")
 ]
+apps_with_location = [a for a in apps if a.get("location")]
+
+col1, col2, col3 = st.columns(3)
+with col1:
+    st.metric("Total Applications", total_apps)
+with col2:
+    st.metric("With Salary Data", len(apps_with_salary))
+with col3:
+    st.metric("With Location Data", len(apps_with_location))
 
 if not apps_with_salary:
     st.warning(
-        "No salary data found. Add salary information to applications in the Tracker to enable analysis."
+        "⚠️ No salary data found. Add salary information to applications in the Tracker to enable analysis."
+    )
+    st.info(
+        "💡 **How to add salary data**: Go to Tracker → Edit the salary columns (Min/Max/Currency) for each application."
     )
     st.stop()
 
 # Convert to DataFrame for analysis
 df = pd.DataFrame(apps_with_salary)
 
-# Extract location/market information
+# Warn if some apps lack location data
 if "location" not in df.columns or df["location"].isna().all():
     st.warning(
-        "No location data found. Add location information to applications to enable regional analysis."
+        "⚠️ No location data found. Add location information to applications to enable regional analysis."
+    )
+    st.info(
+        "💡 **How to add location data**: Go to Tracker → Edit the Location column for each application."
     )
     st.stop()
+
+apps_with_location_and_salary = df[df["location"].notna()]
+if len(apps_with_location_and_salary) < len(df):
+    missing_count = len(df) - len(apps_with_location_and_salary)
+    st.warning(
+        f"⚠️ {missing_count} application(s) with salary data are missing location information and won't appear in regional analysis."
+    )
 
 # --- Sidebar: Analysis Configuration ---
 st.sidebar.header("Analysis Configuration")
@@ -73,7 +98,8 @@ analysis_type = st.sidebar.selectbox(
 target_locations = st.sidebar.multiselect(
     "Target Locations",
     options=sorted(df["location"].dropna().unique()),
-    default=list(df["location"].dropna().unique())[:3] if len(df) >= 3 else None,
+    default=list(df["location"].dropna().unique()),  # Show ALL locations by default
+    help="All locations selected by default. Uncheck to filter.",
 )
 
 target_roles = st.sidebar.multiselect(

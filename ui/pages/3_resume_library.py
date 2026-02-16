@@ -297,7 +297,9 @@ with st.expander("Base Resume References", expanded=False):
 
 # --- Database Maintenance ---
 with st.expander("Database Maintenance", expanded=False):
-    st.caption("Fix corrupted company names in the database (e.g., sentence fragments from JD parsing).")
+    st.caption(
+        "Fix corrupted company names in the database (e.g., sentence fragments from JD parsing)."
+    )
     if st.button("Sanitize Company Names", key="sanitize_companies_btn"):
         with st.spinner("Fixing company names..."):
             changes = tracker_db.sanitize_existing_companies()

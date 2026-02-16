@@ -422,7 +422,7 @@ class TestCompanyNameSanitization:
         app_id = temp_db.add_application(app)
 
         # Run sanitization
-        changes = temp_db.sanitize_existing_companies()
+        temp_db.sanitize_existing_companies()
 
         # Application should now point to the clean company
         updated_app = temp_db.get_application(app_id)

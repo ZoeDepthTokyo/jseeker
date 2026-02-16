@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import logging
 import re
-from pathlib import Path
 from typing import Optional
 
 import requests
@@ -35,6 +34,7 @@ ATS_DETECTION = {
 def _load_prompt(name: str) -> str:
     """Load a prompt template from data/prompts/."""
     from config import settings
+
     path = settings.prompts_dir / f"{name}.txt"
     return path.read_text(encoding="utf-8")
 
@@ -42,35 +42,85 @@ def _load_prompt(name: str) -> str:
 # Location-to-market mapping for automatic market detection
 _LOCATION_TO_MARKET = {
     # Mexico
-    "mexico": "mx", "méxico": "mx", "cdmx": "mx", "ciudad de mexico": "mx",
-    "ciudad de méxico": "mx", "guadalajara": "mx", "monterrey": "mx",
-    "tijuana": "mx", "puebla": "mx", "queretaro": "mx", "querétaro": "mx",
-    "leon": "mx", "cancun": "mx", "merida": "mx", "mérida": "mx",
+    "mexico": "mx",
+    "méxico": "mx",
+    "cdmx": "mx",
+    "ciudad de mexico": "mx",
+    "ciudad de méxico": "mx",
+    "guadalajara": "mx",
+    "monterrey": "mx",
+    "tijuana": "mx",
+    "puebla": "mx",
+    "queretaro": "mx",
+    "querétaro": "mx",
+    "leon": "mx",
+    "cancun": "mx",
+    "merida": "mx",
+    "mérida": "mx",
     # Canada
-    "toronto": "ca", "vancouver": "ca", "montreal": "ca", "montréal": "ca",
-    "ottawa": "ca", "calgary": "ca", "edmonton": "ca", "winnipeg": "ca",
+    "toronto": "ca",
+    "vancouver": "ca",
+    "montreal": "ca",
+    "montréal": "ca",
+    "ottawa": "ca",
+    "calgary": "ca",
+    "edmonton": "ca",
+    "winnipeg": "ca",
     "canada": "ca",
     # UK
-    "london": "uk", "manchester": "uk", "edinburgh": "uk", "birmingham": "uk",
-    "bristol": "uk", "leeds": "uk", "glasgow": "uk",
-    "united kingdom": "uk", "uk": "uk",
+    "london": "uk",
+    "manchester": "uk",
+    "edinburgh": "uk",
+    "birmingham": "uk",
+    "bristol": "uk",
+    "leeds": "uk",
+    "glasgow": "uk",
+    "united kingdom": "uk",
+    "uk": "uk",
     # Spain
-    "madrid": "es", "barcelona": "es", "valencia": "es", "seville": "es",
-    "sevilla": "es", "bilbao": "es", "malaga": "es", "málaga": "es",
-    "spain": "es", "españa": "es",
+    "madrid": "es",
+    "barcelona": "es",
+    "valencia": "es",
+    "seville": "es",
+    "sevilla": "es",
+    "bilbao": "es",
+    "malaga": "es",
+    "málaga": "es",
+    "spain": "es",
+    "españa": "es",
     # Denmark
-    "copenhagen": "dk", "aarhus": "dk", "odense": "dk",
-    "denmark": "dk", "danmark": "dk",
+    "copenhagen": "dk",
+    "aarhus": "dk",
+    "odense": "dk",
+    "denmark": "dk",
+    "danmark": "dk",
     # France
-    "paris": "fr", "lyon": "fr", "marseille": "fr", "toulouse": "fr",
-    "nice": "fr", "nantes": "fr", "strasbourg": "fr",
+    "paris": "fr",
+    "lyon": "fr",
+    "marseille": "fr",
+    "toulouse": "fr",
+    "nice": "fr",
+    "nantes": "fr",
+    "strasbourg": "fr",
     "france": "fr",
     # US states/cities (common ones)
-    "new york": "us", "san francisco": "us", "los angeles": "us",
-    "chicago": "us", "seattle": "us", "austin": "us", "boston": "us",
-    "denver": "us", "san diego": "us", "miami": "us", "atlanta": "us",
-    "dallas": "us", "houston": "us", "portland": "us", "phoenix": "us",
-    "united states": "us", "usa": "us",
+    "new york": "us",
+    "san francisco": "us",
+    "los angeles": "us",
+    "chicago": "us",
+    "seattle": "us",
+    "austin": "us",
+    "boston": "us",
+    "denver": "us",
+    "san diego": "us",
+    "miami": "us",
+    "atlanta": "us",
+    "dallas": "us",
+    "houston": "us",
+    "portland": "us",
+    "phoenix": "us",
+    "united states": "us",
+    "usa": "us",
 }
 
 # Market-to-language mapping
@@ -100,9 +150,23 @@ def detect_market_from_location(location: str) -> str:
     location_lower = location.lower().strip()
 
     # Check for US/CA state/province abbreviations (e.g., "San Diego, CA")
-    state_match = re.search(r',\s*([A-Z]{2})\s*$', location.strip())
+    state_match = re.search(r",\s*([A-Z]{2})\s*$", location.strip())
     if state_match:
-        ca_provinces = {"ON", "BC", "QC", "AB", "MB", "SK", "NB", "NS", "PE", "NL", "YT", "NT", "NU"}
+        ca_provinces = {
+            "ON",
+            "BC",
+            "QC",
+            "AB",
+            "MB",
+            "SK",
+            "NB",
+            "NS",
+            "PE",
+            "NL",
+            "YT",
+            "NT",
+            "NU",
+        }
         if state_match.group(1) in ca_provinces:
             return "ca"
         return "us"
@@ -152,16 +216,52 @@ def detect_language(text: str) -> str:
 
     # Common Spanish words
     spanish_words = [
-        "de", "en", "para", "con", "los", "las", "del", "una", "por", "que",
-        "como", "sobre", "experiencia", "responsabilidades", "requisitos",
-        "empresa", "puesto", "trabajo", "años", "área", "desarrollo",
+        "de",
+        "en",
+        "para",
+        "con",
+        "los",
+        "las",
+        "del",
+        "una",
+        "por",
+        "que",
+        "como",
+        "sobre",
+        "experiencia",
+        "responsabilidades",
+        "requisitos",
+        "empresa",
+        "puesto",
+        "trabajo",
+        "años",
+        "área",
+        "desarrollo",
     ]
 
     # Common English words
     english_words = [
-        "the", "and", "for", "with", "our", "you", "this", "that", "from",
-        "have", "will", "are", "your", "requirements", "responsibilities",
-        "experience", "position", "company", "years", "team", "work",
+        "the",
+        "and",
+        "for",
+        "with",
+        "our",
+        "you",
+        "this",
+        "that",
+        "from",
+        "have",
+        "will",
+        "are",
+        "your",
+        "requirements",
+        "responsibilities",
+        "experience",
+        "position",
+        "company",
+        "years",
+        "team",
+        "work",
     ]
 
     spanish_count = sum(1 for word in words if word in spanish_words)
@@ -214,7 +314,9 @@ def _clean_extracted_text(text: str) -> str:
     return text.strip()
 
 
-def _extract_with_playwright(url: str, selectors: list[str], platform: str = "generic", wait_ms: int = 3000) -> str:
+def _extract_with_playwright(
+    url: str, selectors: list[str], platform: str = "generic", wait_ms: int = 3000
+) -> str:
     """Extract JD text from a JS-rendered page using Playwright.
 
     Launches a headless browser, navigates to the URL, tries each selector
@@ -236,7 +338,9 @@ def _extract_with_playwright(url: str, selectors: list[str], platform: str = "ge
         return ""
 
     try:
-        logger.info(f"_extract_with_playwright[{platform}] | launching browser for url={url[:100]}...")
+        logger.info(
+            f"_extract_with_playwright[{platform}] | launching browser for url={url[:100]}..."
+        )
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
             page = browser.new_page()
@@ -252,14 +356,18 @@ def _extract_with_playwright(url: str, selectors: list[str], platform: str = "ge
                         candidate = el.inner_text()
                         if len(candidate) >= 180:
                             text = candidate
-                            logger.info(f"_extract_with_playwright[{platform}] | selector '{selector}' matched {len(text)} chars")
+                            logger.info(
+                                f"_extract_with_playwright[{platform}] | selector '{selector}' matched {len(text)} chars"
+                            )
                             break
                 except Exception:
                     continue
 
             # If no selector worked, wait for JS and try body content
             if len(text) < 180:
-                logger.debug(f"_extract_with_playwright[{platform}] | selectors failed, waiting {wait_ms}ms for JS render")
+                logger.debug(
+                    f"_extract_with_playwright[{platform}] | selectors failed, waiting {wait_ms}ms for JS render"
+                )
                 page.wait_for_timeout(wait_ms)
                 # Try main/article/section before full body
                 for fallback_sel in ["main", "article", "[role='main']", "body"]:
@@ -268,7 +376,9 @@ def _extract_with_playwright(url: str, selectors: list[str], platform: str = "ge
                         candidate = el.inner_text()
                         if len(candidate) >= 180:
                             text = candidate
-                            logger.info(f"_extract_with_playwright[{platform}] | fallback '{fallback_sel}' matched {len(text)} chars")
+                            logger.info(
+                                f"_extract_with_playwright[{platform}] | fallback '{fallback_sel}' matched {len(text)} chars"
+                            )
                             break
 
             browser.close()
@@ -282,7 +392,7 @@ def _extract_with_playwright(url: str, selectors: list[str], platform: str = "ge
 _WORKDAY_SELECTORS = [
     '[data-automation-id="jobPostingDescription"]',
     '[data-automation-id="jobPostingRequirements"]',
-    '.css-cygeeu',
+    ".css-cygeeu",
     '[class*="jobDescription"]',
     '[class*="JobDescription"]',
     '[class*="job-description"]',
@@ -296,8 +406,8 @@ _ASHBY_SELECTORS = [
     '[class*="posting-page"]',
     '[class*="job-details"]',
     '[class*="JobDescription"]',
-    'div.ashby-job-posting-description',
-    'main',
+    "div.ashby-job-posting-description",
+    "main",
 ]
 
 
@@ -306,8 +416,8 @@ _VITERBIT_SELECTORS = [
     '[class*="job-description"]',
     '[class*="offer"]',
     '[class*="posting"]',
-    'main',
-    'article',
+    "main",
+    "article",
     '[role="main"]',
 ]
 
@@ -325,6 +435,125 @@ def _extract_ashby_jd(url: str) -> str:
 def _extract_viterbit_jd(url: str) -> str:
     """Extract JD from Viterbit pages using Playwright for JS rendering."""
     return _extract_with_playwright(url, _VITERBIT_SELECTORS, platform="viterbit", wait_ms=4000)
+
+
+def sanitize_company_name(name: str | None) -> str:
+    """Sanitize and validate a company name extracted from any source.
+
+    Cleans up common extraction artifacts:
+    - Sentence fragments ("PayPal has been revolutionizing...")
+    - Random words from JD text ("revenue", "position", "team")
+    - Excessive length or special characters
+    - Underscores from URL slugs
+
+    Args:
+        name: Raw company name from LLM, regex, or URL extraction.
+
+    Returns:
+        Cleaned company name, or empty string if invalid.
+    """
+    if not name or not name.strip():
+        return ""
+
+    cleaned = name.strip()
+
+    # Replace underscores with spaces (URL slug artifacts)
+    cleaned = cleaned.replace("_", " ")
+
+    # Truncate at common sentence-starting words (catches "PayPal has been revolutionizing...")
+    sentence_breakers = re.compile(
+        r"\b(?:has|have|had|is|are|was|were|will|would|shall|should|can|could|"
+        r"may|might|must|do|does|did|been|being|that|which|where|when|while|"
+        r"offers|provides|delivers|drives|seeks|looking|hiring|building|"
+        r"specializes|focuses|creates|develops|enables|powers|helps|"
+        r"revolutioniz\w*|transform\w*)\b",
+        re.IGNORECASE,
+    )
+    match = sentence_breakers.search(cleaned)
+    if match:
+        cleaned = cleaned[: match.start()].strip()
+
+    # Remove trailing punctuation and conjunctions
+    cleaned = re.sub(r"[\s,;:\-–—]+$", "", cleaned)
+    cleaned = re.sub(r"\s+(?:and|or|the|a|an|at|in|for|of)\s*$", "", cleaned, flags=re.IGNORECASE)
+
+    # Remove leading articles/prepositions
+    cleaned = re.sub(r"^(?:the|a|an)\s+", "", cleaned, flags=re.IGNORECASE)
+
+    # Strip any remaining leading/trailing whitespace
+    cleaned = cleaned.strip()
+
+    # Reject if result is a common false-positive word (not a company name)
+    false_positives = {
+        "revenue",
+        "position",
+        "team",
+        "company",
+        "role",
+        "job",
+        "career",
+        "opportunity",
+        "department",
+        "division",
+        "group",
+        "office",
+        "location",
+        "salary",
+        "compensation",
+        "benefits",
+        "about",
+        "overview",
+        "description",
+        "requirements",
+        "responsibilities",
+        "qualifications",
+        "experience",
+        "skills",
+        "education",
+        "apply",
+        "submit",
+        "click",
+        "here",
+        "more",
+        "details",
+        "information",
+        "contact",
+        "email",
+        "phone",
+        "address",
+        "remote",
+        "hybrid",
+        "onsite",
+        "full-time",
+        "part-time",
+        "contract",
+        "not specified",
+        "unknown",
+        "n/a",
+        "tbd",
+        "this",
+        "that",
+        "these",
+        "those",
+        "we",
+        "our",
+        "they",
+        "their",
+    }
+    if cleaned.lower() in false_positives:
+        return ""
+
+    # Reject if too short (single char) or too long (likely a sentence fragment)
+    if len(cleaned) < 2 or len(cleaned) > 60:
+        return ""
+
+    # Reject if it contains too many words (likely a sentence, not a name)
+    # Most company names are 1-5 words (e.g., "JPMorgan Chase & Co")
+    word_count = len(cleaned.split())
+    if word_count > 6:
+        return ""
+
+    return cleaned
 
 
 def _extract_company_from_url(url: str) -> str | None:
@@ -365,24 +594,42 @@ def _extract_company_from_url(url: str) -> str | None:
     if careers_match:
         company = careers_match.group(1)
         # Skip generic words that aren't company names
-        if company.lower() not in ["www", "jobs", "apply", "talent", "recruiting", "careers", "career"]:
+        if company.lower() not in [
+            "www",
+            "jobs",
+            "apply",
+            "talent",
+            "recruiting",
+            "careers",
+            "career",
+        ]:
             # Handle hyphenated compound names: "activision-blizzard" -> "Activision Blizzard"
-            if '-' in company:
-                parts = company.split('-')
+            if "-" in company:
+                parts = company.split("-")
                 return " ".join(p.capitalize() for p in parts if p and len(p) > 1)
             # Handle camelCase compound names: "activisionblizzard" -> "Activision Blizzard"
-            parts = re.findall(r'[A-Z][a-z]*|[0-9]+|[a-z]+', company)
+            parts = re.findall(r"[A-Z][a-z]*|[0-9]+|[a-z]+", company)
             return " ".join(p.capitalize() for p in parts if p)
 
     # Plain domain fallback: https://company.com or https://www.company.com
     # Handles cases like santander.com, microsoft.com, etc.
-    domain_match = re.search(r'https?://(?:www\.)?([a-zA-Z0-9-]+)\.(?:com|co|io|net|org|edu|gov)', url)
+    domain_match = re.search(
+        r"https?://(?:www\.)?([a-zA-Z0-9-]+)\.(?:com|co|io|net|org|edu|gov)", url
+    )
     if domain_match:
         company = domain_match.group(1)
         # Skip generic words
-        if company.lower() not in ["www", "jobs", "apply", "talent", "recruiting", "careers", "career"]:
+        if company.lower() not in [
+            "www",
+            "jobs",
+            "apply",
+            "talent",
+            "recruiting",
+            "careers",
+            "career",
+        ]:
             # Split hyphenated names: "activision-blizzard" -> "Activision Blizzard"
-            parts = company.split('-')
+            parts = company.split("-")
             return " ".join(p.capitalize() for p in parts if p and len(p) > 1)
 
     return None
@@ -408,33 +655,36 @@ def _extract_company_fallback(text: str) -> str | None:
 
     # Pattern 1: "Company: Name" or "Company Name:"
     company_label_match = re.search(
-        r'(?:Company|Organization|Employer)(?:\s*name)?[\s:]+([A-Z][A-Za-z0-9\s&.,\'-]+?)(?:\n|$|\.(?:\s|$))',
+        r"(?:Company|Organization|Employer)(?:\s*name)?[\s:]+([A-Z][A-Za-z0-9\s&.,\'-]+?)(?:\n|$|\.(?:\s|$))",
         text,
-        re.IGNORECASE | re.MULTILINE
+        re.IGNORECASE | re.MULTILINE,
     )
     if company_label_match:
         company = company_label_match.group(1).strip()
         # Filter out common false positives
-        if len(company) > 3 and not company.lower().startswith(("about", "overview", "description")):
+        if len(company) > 3 and not company.lower().startswith(
+            ("about", "overview", "description")
+        ):
             return company
 
     # Pattern 2: "About [Company]" at start of section
     about_match = re.search(
-        r'About\s+([A-Z][A-Za-z0-9\s&.,\'-]{2,40}?)(?:\n|$|:)',
-        text,
-        re.MULTILINE
+        r"About\s+([A-Z][A-Za-z0-9\s&.,\'-]{2,40}?)(?:\n|$|:)", text, re.MULTILINE
     )
     if about_match:
         company = about_match.group(1).strip()
         # Filter out generic phrases
-        if not any(word in company.lower() for word in ["the role", "this position", "the job", "us", "the company"]):
+        if not any(
+            word in company.lower()
+            for word in ["the role", "this position", "the job", "us", "the company"]
+        ):
             return company
 
     # Pattern 3: "Join [Company]" or "Work at [Company]"
     join_match = re.search(
-        r'(?:Join|Work at|Apply to)\s+(?:the\s+team\s+at\s+)?([A-Z][A-Za-z0-9\s&.,\'-]{2,40}?)(?:\n|$|\.|!)',
+        r"(?:Join|Work at|Apply to)\s+(?:the\s+team\s+at\s+)?([A-Z][A-Za-z0-9\s&.,\'-]{2,40}?)(?:\n|$|\.|!)",
         text,
-        re.MULTILINE
+        re.MULTILINE,
     )
     if join_match:
         company = join_match.group(1).strip()
@@ -442,27 +692,129 @@ def _extract_company_fallback(text: str) -> str | None:
             return company
 
     # Pattern 4: "At [Company], we..." or "At [Company] we..."
-    at_match = re.search(
-        r'\bAt\s+([A-Z][A-Za-z0-9\s&\'-]{1,40}?)\s*,?\s+we\b',
-        text,
-        re.MULTILINE
-    )
+    at_match = re.search(r"\bAt\s+([A-Z][A-Za-z0-9\s&\'-]{1,40}?)\s*,?\s+we\b", text, re.MULTILINE)
     if at_match:
         company = at_match.group(1).strip()
-        if len(company) >= 2 and not any(word in company.lower() for word in ["the", "this", "our"]):
+        if len(company) >= 2 and not any(
+            word in company.lower() for word in ["the", "this", "our"]
+        ):
             return company
 
     # Pattern 5: First capitalized name after "We are" at document start
     we_are_match = re.search(
-        r'(?:^|^\n)([A-Z][A-Za-z0-9\s&.,\'-]{2,40}?)\s+(?:is|are)\s+(?:hiring|looking|seeking)',
+        r"(?:^|^\n)([A-Z][A-Za-z0-9\s&.,\'-]{2,40}?)\s+(?:is|are)\s+(?:hiring|looking|seeking)",
         text[:500],  # Only check first 500 chars
-        re.MULTILINE
+        re.MULTILINE,
     )
     if we_are_match:
         company = we_are_match.group(1).strip()
         if len(company) > 3:
             return company
 
+    return None
+
+
+def _is_incomplete_jd(text: str) -> bool:
+    """Detect when extracted JD content is too thin to be useful.
+
+    Checks text length and presence of key JD sections (requirements,
+    responsibilities, qualifications) to determine if the content is
+    a stub or incomplete extraction.
+
+    Args:
+        text: Extracted JD text to evaluate.
+
+    Returns:
+        True if the JD appears incomplete and a fallback search is warranted.
+    """
+    if not text or len(text.strip()) < 200:
+        return True
+
+    text_lower = text.lower()
+    # Key sections that a complete JD typically contains
+    section_keywords = [
+        "responsibilities",
+        "requirements",
+        "qualifications",
+        "what you'll do",
+        "what we're looking for",
+        "about the role",
+        "job description",
+        "about this role",
+        "role overview",
+        "key responsibilities",
+        "minimum qualifications",
+    ]
+    found_sections = sum(1 for kw in section_keywords if kw in text_lower)
+
+    # If text is short AND missing typical JD sections, it's incomplete
+    if len(text.strip()) < 500 and found_sections == 0:
+        return True
+
+    return False
+
+
+def _search_company_career_site(company: str, title: str = "", timeout: int = 15) -> Optional[str]:
+    """Search a company's career site for the job posting.
+
+    Tries common career site URL patterns (careers.{company}.com, etc.)
+    and searches for the job title on those pages.
+
+    Args:
+        company: Company name (e.g., "Paramount").
+        title: Job title to search for (optional, improves matching).
+        timeout: Request timeout in seconds.
+
+    Returns:
+        URL of matching job posting on company career site, or None.
+    """
+    if not company:
+        return None
+
+    # Normalize company name to domain-friendly format
+    company_slug = re.sub(r"[^a-zA-Z0-9]", "", company.lower())
+
+    # Common career site patterns to try
+    career_patterns = [
+        f"https://careers.{company_slug}.com",
+        f"https://www.{company_slug}.com/careers",
+        f"https://jobs.{company_slug}.com",
+        f"https://{company_slug}.com/careers",
+    ]
+
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+
+    for career_url in career_patterns:
+        try:
+            resp = requests.get(career_url, timeout=timeout, headers=headers, allow_redirects=True)
+            if resp.status_code == 200 and len(resp.text) > 500:
+                logger.info(f"_search_company_career_site | found career site: {career_url}")
+                # If we have a title, search for it on the page
+                if title:
+                    soup = BeautifulSoup(resp.text, "html.parser")
+                    title_lower = title.lower()
+                    for link in soup.find_all("a", href=True):
+                        link_text = link.get_text(strip=True).lower()
+                        if title_lower in link_text or any(
+                            word in link_text for word in title_lower.split() if len(word) > 3
+                        ):
+                            href = link["href"]
+                            # Make absolute URL if relative
+                            if href.startswith("/"):
+                                from urllib.parse import urlparse
+
+                                parsed = urlparse(career_url)
+                                href = f"{parsed.scheme}://{parsed.netloc}{href}"
+                            logger.info(
+                                f"_search_company_career_site | matched job link: {href[:100]}"
+                            )
+                            return href
+                # Return the career site URL even without title match
+                return career_url
+        except requests.RequestException:
+            continue
+
+    logger.debug(f"_search_company_career_site | no career site found for company={company}")
     return None
 
 
@@ -489,9 +841,7 @@ def _resolve_linkedin_url(url: str, timeout: int = 15) -> Optional[str]:
         response = requests.get(
             url.strip(),
             timeout=timeout,
-            headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-            },
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"},
         )
         response.raise_for_status()
     except requests.RequestException:
@@ -502,11 +852,17 @@ def _resolve_linkedin_url(url: str, timeout: int = 15) -> Optional[str]:
 
     # Known ATS domain patterns to look for in links
     ats_domains = [
-        "myworkdayjobs.com", "workday.com",
-        "boards.greenhouse.io", "greenhouse.io",
-        "jobs.lever.co", "lever.co",
-        "icims.com", "ashbyhq.com", "taleo.net",
-        "careers.", "jobs.",
+        "myworkdayjobs.com",
+        "workday.com",
+        "boards.greenhouse.io",
+        "greenhouse.io",
+        "jobs.lever.co",
+        "lever.co",
+        "icims.com",
+        "ashbyhq.com",
+        "taleo.net",
+        "careers.",
+        "jobs.",
     ]
 
     # Strategy 1: Look for apply links with class hints
@@ -515,7 +871,7 @@ def _resolve_linkedin_url(url: str, timeout: int = 15) -> Optional[str]:
         'a[class*="Apply"]',
         'a[class*="original"]',
         'a[data-tracking-control-name*="apply"]',
-        'a.apply-button',
+        "a.apply-button",
     ]
     for selector in apply_selectors:
         for link in soup.select(selector):
@@ -539,9 +895,10 @@ def _resolve_linkedin_url(url: str, timeout: int = 15) -> Optional[str]:
     for link in soup.find_all("a", href=True):
         href = link["href"]
         # LinkedIn sometimes wraps external URLs in redirect params
-        url_match = re.search(r'[?&]url=([^&]+)', href)
+        url_match = re.search(r"[?&]url=([^&]+)", href)
         if url_match:
             from urllib.parse import unquote
+
             decoded = unquote(url_match.group(1))
             if any(domain in decoded.lower() for domain in ats_domains):
                 logger.debug(f"_resolve_linkedin_url | found redirect URL: {decoded[:100]}")
@@ -590,18 +947,23 @@ def _search_alternate_posting(title: str, company: str) -> Optional[str]:
 
     # Known job board domains to look for in search results
     job_board_domains = [
-        "myworkdayjobs.com", "boards.greenhouse.io", "jobs.lever.co",
-        "indeed.com/viewjob", "glassdoor.com/job-listing",
-        "ashbyhq.com", "icims.com",
+        "myworkdayjobs.com",
+        "boards.greenhouse.io",
+        "jobs.lever.co",
+        "indeed.com/viewjob",
+        "glassdoor.com/job-listing",
+        "ashbyhq.com",
+        "icims.com",
     ]
 
     soup = BeautifulSoup(response.text, "html.parser")
     for link in soup.find_all("a", href=True):
         href = link["href"]
         # Google wraps results in /url?q=...
-        url_match = re.search(r'/url\?q=([^&]+)', href)
+        url_match = re.search(r"/url\?q=([^&]+)", href)
         if url_match:
             from urllib.parse import unquote
+
             candidate = unquote(url_match.group(1))
             if any(domain in candidate.lower() for domain in job_board_domains):
                 logger.debug(f"_search_alternate_posting | found: {candidate[:100]}")
@@ -609,6 +971,70 @@ def _search_alternate_posting(title: str, company: str) -> Optional[str]:
 
     logger.debug("_search_alternate_posting | no alternate posting found")
     return None
+
+
+def _linkedin_fallback_search(
+    original_url: str, partial_text: str, metadata: dict, timeout: int = 20
+) -> tuple[str, dict]:
+    """Fallback chain when LinkedIn JD extraction produces incomplete content.
+
+    Tries in order:
+    1. Company career site (careers.{company}.com patterns)
+    2. Web search for alternate posting on job boards
+
+    Args:
+        original_url: Original LinkedIn URL (preserved for application tracking).
+        partial_text: Whatever text was extracted so far (may be empty).
+        metadata: Current extraction metadata dict.
+        timeout: Request timeout in seconds.
+
+    Returns:
+        Tuple of (jd_text, metadata) if alternate source found,
+        or ("", metadata) if all fallbacks fail.
+    """
+    company = metadata.get("company", "")
+    if not company:
+        company = _extract_company_from_url(original_url)
+
+    logger.info(
+        f"_linkedin_fallback_search | triggered for company={company} | "
+        f"partial_text_len={len(partial_text)}"
+    )
+
+    # Strategy 1: Try company career site directly
+    if company:
+        career_url = _search_company_career_site(company, timeout=timeout)
+        if career_url:
+            logger.info(f"_linkedin_fallback_search | trying career site: {career_url[:100]}")
+            alt_text, alt_meta = extract_jd_from_url(career_url, timeout=timeout)
+            if alt_text and not _is_incomplete_jd(alt_text):
+                alt_meta["alternate_source_url"] = career_url
+                alt_meta["linkedin_fallback_used"] = True
+                alt_meta["method"] = "linkedin_fallback_career_site"
+                logger.info(
+                    f"_linkedin_fallback_search | career site success | "
+                    f"text_len={len(alt_text)} | source={career_url[:80]}"
+                )
+                return alt_text, alt_meta
+
+    # Strategy 2: Web search for alternate posting
+    if company:
+        alt_url = _search_alternate_posting(title="", company=company)
+        if alt_url and alt_url.lower() != original_url.lower():
+            logger.info(f"_linkedin_fallback_search | trying web search result: {alt_url[:100]}")
+            alt_text, alt_meta = extract_jd_from_url(alt_url, timeout=timeout)
+            if alt_text and not _is_incomplete_jd(alt_text):
+                alt_meta["alternate_source_url"] = alt_url
+                alt_meta["linkedin_fallback_used"] = True
+                alt_meta["method"] = "linkedin_fallback_web_search"
+                logger.info(
+                    f"_linkedin_fallback_search | web search success | "
+                    f"text_len={len(alt_text)} | source={alt_url[:80]}"
+                )
+                return alt_text, alt_meta
+
+    logger.warning(f"_linkedin_fallback_search | all fallbacks failed for company={company}")
+    return "", metadata
 
 
 def extract_jd_from_url(url: str, timeout: int = 20) -> tuple[str, dict]:
@@ -625,7 +1051,9 @@ def extract_jd_from_url(url: str, timeout: int = 20) -> tuple[str, dict]:
         "success": False,
         "company": _extract_company_from_url(url),
         "selectors_tried": [],
-        "method": "failed"
+        "method": "failed",
+        "alternate_source_url": "",
+        "linkedin_fallback_used": False,
     }
 
     if not url or not url.strip():
@@ -633,12 +1061,20 @@ def extract_jd_from_url(url: str, timeout: int = 20) -> tuple[str, dict]:
 
     logger.info(f"extract_jd_from_url | url={url[:100]}...")
 
+    is_linkedin = "linkedin.com/jobs/view/" in url.lower()
+
     # LinkedIn URLs: try to resolve to original company posting first
-    if "linkedin.com/jobs/view/" in url.lower():
+    if is_linkedin:
         resolved_url = _resolve_linkedin_url(url)
         if resolved_url:
             logger.info(f"extract_jd_from_url | LinkedIn resolved to: {resolved_url[:100]}")
-            return extract_jd_from_url(resolved_url, timeout=timeout)
+            text, alt_meta = extract_jd_from_url(resolved_url, timeout=timeout)
+            if text and not _is_incomplete_jd(text):
+                alt_meta["alternate_source_url"] = resolved_url
+                return text, alt_meta
+            logger.info(
+                "extract_jd_from_url | LinkedIn resolved URL produced incomplete JD, trying fallback"
+            )
         logger.debug("extract_jd_from_url | LinkedIn resolve failed, falling through to scrape")
 
     # Workday sites require JS rendering
@@ -672,12 +1108,12 @@ def extract_jd_from_url(url: str, timeout: int = 20) -> tuple[str, dict]:
         response = requests.get(
             url.strip(),
             timeout=timeout,
-            headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-            },
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"},
         )
         response.raise_for_status()
-        logger.info(f"extract_jd_from_url | status={response.status_code} | content_length={len(response.text)}")
+        logger.info(
+            f"extract_jd_from_url | status={response.status_code} | content_length={len(response.text)}"
+        )
     except requests.RequestException:
         logger.exception("Failed to fetch JD URL: %s", url)
         metadata["method"] = "request_failed"
@@ -715,6 +1151,11 @@ def extract_jd_from_url(url: str, timeout: int = 20) -> tuple[str, dict]:
         best = max(candidates, key=len)
         metadata["success"] = True
         metadata["method"] = "selector"
+        # LinkedIn fallback: if selector result is incomplete, try alternate sources
+        if is_linkedin and _is_incomplete_jd(best):
+            alt_text, alt_meta = _linkedin_fallback_search(url, best, metadata)
+            if alt_text:
+                return alt_text, alt_meta
         return best, metadata
 
     fallback = _clean_extracted_text(soup.get_text(" ", strip=True))
@@ -732,7 +1173,18 @@ def extract_jd_from_url(url: str, timeout: int = 20) -> tuple[str, dict]:
         if generic_text and len(generic_text) >= 180:
             metadata["success"] = True
             metadata["method"] = "playwright_fallback"
+            # LinkedIn fallback on Playwright result too
+            if is_linkedin and _is_incomplete_jd(generic_text):
+                alt_text, alt_meta = _linkedin_fallback_search(url, generic_text, metadata)
+                if alt_text:
+                    return alt_text, alt_meta
             return generic_text, metadata
+
+        # LinkedIn-specific fallback chain before generic alternate search
+        if is_linkedin:
+            alt_text, alt_meta = _linkedin_fallback_search(url, "", metadata)
+            if alt_text:
+                return alt_text, alt_meta
 
         # Try alternate posting search if we have a company name
         if metadata["company"]:
@@ -748,6 +1200,11 @@ def extract_jd_from_url(url: str, timeout: int = 20) -> tuple[str, dict]:
 
     metadata["success"] = True
     metadata["method"] = "fallback"
+    # LinkedIn fallback: if full-page fallback is incomplete, try alternate sources
+    if is_linkedin and _is_incomplete_jd(fallback):
+        alt_text, alt_meta = _linkedin_fallback_search(url, fallback, metadata)
+        if alt_text:
+            return alt_text, alt_meta
     return fallback, metadata
 
 
@@ -767,7 +1224,9 @@ def prune_jd(raw_text: str) -> str:
 
     pruned = llm.call_haiku(prompt, task="jd_prune")
     output_length = len(pruned)
-    logger.info(f"prune_jd | output_length={output_length} | reduction={input_length - output_length}")
+    logger.info(
+        f"prune_jd | output_length={output_length} | reduction={input_length - output_length}"
+    )
     return pruned.strip()
 
 
@@ -832,19 +1291,19 @@ def _extract_salary(text: str) -> tuple[Optional[int], Optional[int], str]:
     # Patterns to match salary ranges
     patterns = [
         # "$120,000 - $150,000", "£60,000-£80,000" (with comma separators)
-        r'([€£¥₹$]|C\$|A\$)\s*(\d{1,3}),(\d{3}),?(\d{3})?\s*[-–—to]+\s*\1?\s*(\d{1,3}),(\d{3}),?(\d{3})?',
+        r"([€£¥₹$]|C\$|A\$)\s*(\d{1,3}),(\d{3}),?(\d{3})?\s*[-–—to]+\s*\1?\s*(\d{1,3}),(\d{3}),?(\d{3})?",
         # "$100k-150k", "$100K-$150K", "€80k-€100k"
-        r'([€£¥₹$]|C\$|A\$)\s*(\d+)[\.,]?(\d*)\s*k?\s*[-–—to]+\s*\1?\s*(\d+)[\.,]?(\d*)\s*k',
+        r"([€£¥₹$]|C\$|A\$)\s*(\d+)[\.,]?(\d*)\s*k?\s*[-–—to]+\s*\1?\s*(\d+)[\.,]?(\d*)\s*k",
         # "100000-150000 USD", "100,000-150,000 EUR"
-        r'(\d{2,3})[\.,]?(\d{3})[\.,]?(\d{3})?\s*[-–—to]+\s*(\d{2,3})[\.,]?(\d{3})[\.,]?(\d{3})?\s*(USD|EUR|GBP|CAD|AUD|JPY|INR)',
+        r"(\d{2,3})[\.,]?(\d{3})[\.,]?(\d{3})?\s*[-–—to]+\s*(\d{2,3})[\.,]?(\d{3})[\.,]?(\d{3})?\s*(USD|EUR|GBP|CAD|AUD|JPY|INR)",
         # "100k-150k USD", "80k-100k"
-        r'(\d+)[\.,]?(\d*)\s*k\s*[-–—to]+\s*(\d+)[\.,]?(\d*)\s*k\s*(USD|EUR|GBP|CAD|AUD|JPY|INR)?',
+        r"(\d+)[\.,]?(\d*)\s*k\s*[-–—to]+\s*(\d+)[\.,]?(\d*)\s*k\s*(USD|EUR|GBP|CAD|AUD|JPY|INR)?",
         # "100000 - 150000" (no currency symbol, assume USD if 5+ digits)
-        r'(?<![€£¥₹$\d])(\d{5,7})\s*[-–—to]+\s*(\d{5,7})(?!\d)',
+        r"(?<![€£¥₹$\d])(\d{5,7})\s*[-–—to]+\s*(\d{5,7})(?!\d)",
         # "Up to $150k", "Up to 150000 USD"
-        r'(?:up\s+to|maximum|max)\s+(?:of\s+)?([€£¥₹$]|C\$|A\$)?\s*(\d+)[\.,]?(\d*)\s*k?\s*(USD|EUR|GBP|CAD|AUD|JPY|INR)?',
+        r"(?:up\s+to|maximum|max)\s+(?:of\s+)?([€£¥₹$]|C\$|A\$)?\s*(\d+)[\.,]?(\d*)\s*k?\s*(USD|EUR|GBP|CAD|AUD|JPY|INR)?",
         # "Starting at $100k", "Starting from 100000 USD"
-        r'(?:starting\s+(?:at|from)|minimum|min)\s+(?:of\s+)?([€£¥₹$]|C\$|A\$)?\s*(\d+)[\.,]?(\d*)\s*k?\s*(USD|EUR|GBP|CAD|AUD|JPY|INR)?',
+        r"(?:starting\s+(?:at|from)|minimum|min)\s+(?:of\s+)?([€£¥₹$]|C\$|A\$)?\s*(\d+)[\.,]?(\d*)\s*k?\s*(USD|EUR|GBP|CAD|AUD|JPY|INR)?",
     ]
 
     for pattern in patterns:
@@ -854,23 +1313,31 @@ def _extract_salary(text: str) -> tuple[Optional[int], Optional[int], str]:
 
             try:
                 # Pattern 1: "$120,000 - $150,000" (comma-separated)
-                if len(groups) >= 7 and groups[0] in currency_map and ',' in match.group():
+                if len(groups) >= 7 and groups[0] in currency_map and "," in match.group():
                     currency = currency_map.get(groups[0], "USD")
                     # Join all digit groups for min and max, ignoring None values
                     min_parts = [g for g in groups[1:4] if g and g.isdigit()]
                     max_parts = [g for g in groups[4:7] if g and g.isdigit()]
 
                     if min_parts and max_parts:
-                        min_sal = int(''.join(min_parts))
-                        max_sal = int(''.join(max_parts))
+                        min_sal = int("".join(min_parts))
+                        max_sal = int("".join(max_parts))
                         return min_sal, max_sal, currency
 
                 # Pattern 2: "$100k-150k"
                 elif len(groups) >= 5 and groups[0] in currency_map:
                     currency = currency_map.get(groups[0], "USD")
                     # Handle None and empty string
-                    min_sal = int(groups[1]) * 1000 if (not groups[2] or groups[2] == '') else int(groups[1] + (groups[2] or ''))
-                    max_sal = int(groups[3]) * 1000 if (not groups[4] or groups[4] == '') else int(groups[3] + (groups[4] or ''))
+                    min_sal = (
+                        int(groups[1]) * 1000
+                        if (not groups[2] or groups[2] == "")
+                        else int(groups[1] + (groups[2] or ""))
+                    )
+                    max_sal = (
+                        int(groups[3]) * 1000
+                        if (not groups[4] or groups[4] == "")
+                        else int(groups[3] + (groups[4] or ""))
+                    )
 
                     # Multiply by 1000 if values look like "k" format (< 10000)
                     if min_sal < 10000:
@@ -881,15 +1348,19 @@ def _extract_salary(text: str) -> tuple[Optional[int], Optional[int], str]:
                     return min_sal, max_sal, currency
 
                 # Pattern 3: "100000-150000 USD"
-                elif len(groups) >= 7 and groups[-1] and groups[-1] in ["USD", "EUR", "GBP", "CAD", "AUD", "JPY", "INR"]:
+                elif (
+                    len(groups) >= 7
+                    and groups[-1]
+                    and groups[-1] in ["USD", "EUR", "GBP", "CAD", "AUD", "JPY", "INR"]
+                ):
                     currency = groups[-1]
                     # Join digits without separators
                     min_parts = [g for g in groups[:3] if g and g.isdigit()]
                     max_parts = [g for g in groups[3:6] if g and g.isdigit()]
 
                     if min_parts and max_parts:
-                        min_sal = int(''.join(min_parts))
-                        max_sal = int(''.join(max_parts))
+                        min_sal = int("".join(min_parts))
+                        max_sal = int("".join(max_parts))
                         return min_sal, max_sal, currency
 
                 # Pattern 4: "100k-150k" or "100k-150k USD"
@@ -906,14 +1377,14 @@ def _extract_salary(text: str) -> tuple[Optional[int], Optional[int], str]:
                     return min_sal, max_sal, "USD"
 
                 # Pattern 6: "Up to $150k" or "Up to 150000 USD"
-                elif len(groups) >= 2 and 'up' in match.group().lower():
+                elif len(groups) >= 2 and "up" in match.group().lower():
                     currency_symbol = groups[0] if groups[0] in currency_map else None
                     amount_str = groups[1] if groups[1] and groups[1].isdigit() else None
 
                     if amount_str:
                         amount = int(amount_str)
                         # Check if 'k' format
-                        if 'k' in match.group().lower() and amount < 10000:
+                        if "k" in match.group().lower() and amount < 10000:
                             amount *= 1000
                         # Determine currency
                         if currency_symbol:
@@ -926,14 +1397,16 @@ def _extract_salary(text: str) -> tuple[Optional[int], Optional[int], str]:
                         return None, amount, currency
 
                 # Pattern 7: "Starting at $100k" or "Starting from 100000 USD"
-                elif len(groups) >= 2 and ('starting' in match.group().lower() or 'minimum' in match.group().lower()):
+                elif len(groups) >= 2 and (
+                    "starting" in match.group().lower() or "minimum" in match.group().lower()
+                ):
                     currency_symbol = groups[0] if groups[0] in currency_map else None
                     amount_str = groups[1] if groups[1] and groups[1].isdigit() else None
 
                     if amount_str:
                         amount = int(amount_str)
                         # Check if 'k' format
-                        if 'k' in match.group().lower() and amount < 10000:
+                        if "k" in match.group().lower() and amount < 10000:
                             amount *= 1000
                         # Determine currency
                         if currency_symbol:
@@ -953,7 +1426,9 @@ def _extract_salary(text: str) -> tuple[Optional[int], Optional[int], str]:
     # Log if no salary was extracted
     salary_keywords = ["salary", "compensation", "pay", "$", "€", "£", "k", "usd", "eur", "gbp"]
     if any(keyword in text.lower() for keyword in salary_keywords):
-        logger.debug(f"_extract_salary | salary keywords found but no match | text_sample: {text[:200]}")
+        logger.debug(
+            f"_extract_salary | salary keywords found but no match | text_sample: {text[:200]}"
+        )
 
     return None, None, "USD"
 
@@ -971,9 +1446,24 @@ def _compute_jd_similarity(text1: str, text2: str) -> float:
     def normalize_and_tokenize(text: str) -> set[str]:
         """Normalize and extract meaningful tokens."""
         # Lowercase and extract words (alphanumeric + hyphen)
-        tokens = re.findall(r'\b[a-z0-9]+(?:-[a-z0-9]+)?\b', text.lower())
+        tokens = re.findall(r"\b[a-z0-9]+(?:-[a-z0-9]+)?\b", text.lower())
         # Filter stopwords
-        stopwords = {"the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for", "of", "with", "by"}
+        stopwords = {
+            "the",
+            "a",
+            "an",
+            "and",
+            "or",
+            "but",
+            "in",
+            "on",
+            "at",
+            "to",
+            "for",
+            "of",
+            "with",
+            "by",
+        }
         return {t for t in tokens if t not in stopwords and len(t) > 2}
 
     tokens1 = normalize_and_tokenize(text1)
@@ -1004,19 +1494,25 @@ def _get_cached_jd(pruned_text: str) -> Optional[dict]:
 
     conn = tracker_db._conn()
     c = conn.cursor()
-    c.execute("""
+    c.execute(
+        """
         SELECT parsed_json FROM jd_cache
         WHERE pruned_text_hash = ?
-    """, (text_hash,))
+    """,
+        (text_hash,),
+    )
     row = c.fetchone()
 
     if row:
         # Update hit count and last_used
-        c.execute("""
+        c.execute(
+            """
             UPDATE jd_cache
             SET hit_count = hit_count + 1, last_used_at = CURRENT_TIMESTAMP
             WHERE pruned_text_hash = ?
-        """, (text_hash,))
+        """,
+            (text_hash,),
+        )
         conn.commit()
         conn.close()
         logger.info(f"_get_cached_jd | cache HIT | hash={text_hash[:16]}...")
@@ -1041,17 +1537,20 @@ def _cache_jd(pruned_text: str, parsed_data: dict) -> None:
 
     conn = tracker_db._conn()
     c = conn.cursor()
-    c.execute("""
+    c.execute(
+        """
         INSERT OR REPLACE INTO jd_cache
         (pruned_text_hash, parsed_json, title, company, ats_keywords)
         VALUES (?, ?, ?, ?, ?)
-    """, (
-        text_hash,
-        json.dumps(parsed_data),
-        parsed_data.get("title", ""),
-        parsed_data.get("company", ""),
-        json.dumps(parsed_data.get("ats_keywords", [])),
-    ))
+    """,
+        (
+            text_hash,
+            json.dumps(parsed_data),
+            parsed_data.get("title", ""),
+            parsed_data.get("company", ""),
+            json.dumps(parsed_data.get("ats_keywords", [])),
+        ),
+    )
     conn.commit()
     conn.close()
 
@@ -1099,19 +1598,23 @@ def process_jd(raw_text: str, jd_url: str = "", use_semantic_cache: bool = True)
     # Step 4: Build requirements list
     requirements = []
     for req in parsed_data.get("hard_requirements", []):
-        requirements.append(JDRequirement(
-            text=req.get("text", ""),
-            category="hard_skill",
-            priority="required",
-            keywords=req.get("keywords", []),
-        ))
+        requirements.append(
+            JDRequirement(
+                text=req.get("text", ""),
+                category="hard_skill",
+                priority="required",
+                keywords=req.get("keywords", []),
+            )
+        )
     for req in parsed_data.get("soft_requirements", []):
-        requirements.append(JDRequirement(
-            text=req.get("text", ""),
-            category="soft_skill",
-            priority="preferred",
-            keywords=req.get("keywords", []),
-        ))
+        requirements.append(
+            JDRequirement(
+                text=req.get("text", ""),
+                category="soft_skill",
+                priority="preferred",
+                keywords=req.get("keywords", []),
+            )
+        )
 
     # Step 5: Detect ATS platform
     ats_platform = detect_ats_platform(jd_url)
@@ -1123,21 +1626,24 @@ def process_jd(raw_text: str, jd_url: str = "", use_semantic_cache: bool = True)
     )
 
     # Step 7: Company name fallback chain (LLM → Regex → URL → Manual)
-    company_name = parsed_data.get("company", "")
+    company_name = sanitize_company_name(parsed_data.get("company", ""))
 
-    # Treat placeholder values as empty (trigger fallback chain)
-    placeholders = ["not specified", "unknown", "n/a", "not available", "tbd", "to be determined", "company name"]
-    if not company_name or company_name.strip() == "" or company_name.strip().lower() in placeholders:
-        logger.info(f"process_jd | LLM company extraction failed or returned placeholder '{company_name}', trying fallback chain")
+    # If sanitization emptied the name, trigger fallback chain
+    if not company_name:
+        logger.info(
+            f"process_jd | LLM company extraction failed or returned invalid '{parsed_data.get('company', '')}', trying fallback chain"
+        )
 
         # Try regex fallback on text
-        company_name = _extract_company_fallback(raw_text) or _extract_company_fallback(pruned)
+        raw_fallback = sanitize_company_name(_extract_company_fallback(raw_text))
+        pruned_fallback = sanitize_company_name(_extract_company_fallback(pruned))
+        company_name = raw_fallback or pruned_fallback
         if company_name:
             logger.info(f"process_jd | company extracted from text: {company_name}")
 
         # Try URL fallback if text extraction failed
         if not company_name and jd_url:
-            company_name = _extract_company_from_url(jd_url)
+            company_name = sanitize_company_name(_extract_company_from_url(jd_url))
             if company_name:
                 logger.info(f"process_jd | company extracted from URL: {company_name}")
 

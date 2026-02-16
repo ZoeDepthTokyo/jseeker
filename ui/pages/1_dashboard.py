@@ -9,10 +9,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 import streamlit as st
 
 from config import settings
-from jseeker.jd_parser import extract_jd_from_url
 from jseeker.pipeline import run_pipeline
 from jseeker.tracker import tracker_db
-
 
 st.title("Dashboard")
 
@@ -63,7 +61,9 @@ with st.expander("Recent Applications", expanded=True):
 
 # --- Batch URL Intake ---
 with st.expander("Batch Generate From Job URLs", expanded=False):
-    st.caption("Paste up to 20 job URLs (one per line). jSeeker will process them in parallel with learning pauses every 10 resumes.")
+    st.caption(
+        "Paste up to 20 job URLs (one per line). jSeeker will process them in parallel with learning pauses every 10 resumes."
+    )
 
     # Import Starred Jobs button
     col_import, col_spacer = st.columns([2, 3])
@@ -100,11 +100,14 @@ with st.expander("Batch Generate From Job URLs", expanded=False):
 
     # Show warning if exceeding max batch size
     if len(urls) > 20:
-        st.warning(f"⚠️ You have {len(urls)} URLs. Only the first 20 will be processed (batch limit).")
+        st.warning(
+            f"⚠️ You have {len(urls)} URLs. Only the first 20 will be processed (batch limit)."
+        )
 
     # Initialize batch processor in session state
     if "batch_processor" not in st.session_state:
         from jseeker.batch_processor import BatchProcessor
+
         st.session_state.batch_processor = BatchProcessor(max_workers=5)
 
     if "batch_progress" not in st.session_state:
@@ -128,14 +131,20 @@ with st.expander("Batch Generate From Job URLs", expanded=False):
                 st.session_state.batch_progress = progress
 
             # Submit batch
-            batch_id = st.session_state.batch_processor.submit_batch(urls, progress_callback=on_progress)
+            batch_id = st.session_state.batch_processor.submit_batch(
+                urls, progress_callback=on_progress
+            )
             st.session_state.batch_running = True
             st.session_state.batch_id = batch_id
             st.rerun()
 
     with col_btn2:
         if st.button(
-            "⏸️ Pause" if not (st.session_state.batch_progress and st.session_state.batch_progress.paused) else "▶️ Resume",
+            (
+                "⏸️ Pause"
+                if not (st.session_state.batch_progress and st.session_state.batch_progress.paused)
+                else "▶️ Resume"
+            ),
             disabled=not st.session_state.batch_running,
             width="stretch",
             key="batch_pause_btn",
@@ -161,13 +170,16 @@ with st.expander("Batch Generate From Job URLs", expanded=False):
     # (background thread callbacks can't trigger Streamlit reruns)
     if st.session_state.batch_running and "batch_processor" in st.session_state:
         import time
+
         try:
             current_progress = st.session_state.batch_processor.get_progress()
             if current_progress:
                 st.session_state.batch_progress = current_progress
 
                 # Check if batch completed
-                done_count = current_progress.completed + current_progress.failed + current_progress.skipped
+                done_count = (
+                    current_progress.completed + current_progress.failed + current_progress.skipped
+                )
                 if done_count == current_progress.total and current_progress.total > 0:
                     st.session_state.batch_running = False
                     time.sleep(0.5)
@@ -178,6 +190,7 @@ with st.expander("Batch Generate From Job URLs", expanded=False):
     # Show initial "Starting..." state when batch just started but no progress yet
     if st.session_state.batch_running and not st.session_state.batch_progress:
         import time
+
         st.progress(0.0, text="Starting batch... preparing workers")
         time.sleep(2)
         st.rerun()
@@ -203,10 +216,7 @@ with st.expander("Batch Generate From Job URLs", expanded=False):
             progress_text = f"{segment_text}Processing {progress.completed + running_count}/{progress.total} jobs "
             progress_text += f"({progress.completed} completed, {progress.failed} failed, {progress.skipped} skipped)"
 
-            st.progress(
-                progress.progress_pct / 100,
-                text=progress_text
-            )
+            st.progress(progress.progress_pct / 100, text=progress_text)
 
         with col_refresh:
             # Manual refresh button
@@ -235,34 +245,52 @@ with st.expander("Batch Generate From Job URLs", expanded=False):
             st.caption(status_text)
 
         # Worker status expander
-        with st.expander(f"Worker Status ({len([w for w in progress.workers.values() if w.is_active])} active)", expanded=False):
+        with st.expander(
+            f"Worker Status ({len([w for w in progress.workers.values() if w.is_active])} active)",
+            expanded=False,
+        ):
             for worker_id, worker in sorted(progress.workers.items()):
                 if worker.is_active:
                     st.caption(f"**Worker {worker_id}**: {worker.current_url or 'idle'}")
                 else:
-                    st.caption(f"Worker {worker_id}: {worker.jobs_completed} completed, {worker.jobs_failed} failed")
+                    st.caption(
+                        f"Worker {worker_id}: {worker.jobs_completed} completed, {worker.jobs_failed} failed"
+                    )
 
         # Detailed results (after completion)
-        if progress.completed + progress.failed + progress.skipped == progress.total and not progress.stopped:
+        if (
+            progress.completed + progress.failed + progress.skipped == progress.total
+            and not progress.stopped
+        ):
             with st.expander("Detailed Results", expanded=False):
                 jobs = st.session_state.batch_processor.get_all_jobs()
                 for job in jobs:
                     if job.status.value == "completed":
-                        st.success(f"✅ {job.url}: {job.result.get('company')} - {job.result.get('role')}")
+                        st.success(
+                            f"✅ {job.url}: {job.result.get('company')} - {job.result.get('role')}"
+                        )
                     elif job.status.value == "failed":
                         st.error(f"❌ {job.url}: {job.error}")
                     elif job.status.value == "skipped":
                         st.info(f"⏭️ {job.url}: {job.error}")
 
         # Manual fallback for failed extractions (OUTSIDE expander, always visible when batch complete)
-        if progress.completed + progress.failed + progress.skipped == progress.total and not progress.stopped:
-            failed_jobs = [job for job in st.session_state.batch_processor.get_all_jobs()
-                          if job.status.value == "failed"]
+        if (
+            progress.completed + progress.failed + progress.skipped == progress.total
+            and not progress.stopped
+        ):
+            failed_jobs = [
+                job
+                for job in st.session_state.batch_processor.get_all_jobs()
+                if job.status.value == "failed"
+            ]
 
             if failed_jobs:
                 st.markdown("---")
                 st.subheader(f"⚠️ Manual Retry Required ({len(failed_jobs)} failed)")
-                st.caption("JD extraction failed for these URLs. Paste the job description text manually to retry.")
+                st.caption(
+                    "JD extraction failed for these URLs. Paste the job description text manually to retry."
+                )
 
                 for job in failed_jobs:
                     with st.expander(f"🔧 Retry: {job.url}", expanded=False):
@@ -274,7 +302,7 @@ with st.expander("Batch Generate From Job URLs", expanded=False):
                             "Paste Job Description",
                             placeholder="Paste the full job description text here...",
                             height=200,
-                            key=f"manual_jd_{job.id}"
+                            key=f"manual_jd_{job.id}",
                         )
 
                         col_retry, col_spacer = st.columns([1, 3])
@@ -283,7 +311,7 @@ with st.expander("Batch Generate From Job URLs", expanded=False):
                                 "🔄 Retry with Manual JD",
                                 key=f"retry_btn_{job.id}",
                                 disabled=not manual_jd or len(manual_jd.strip()) < 100,
-                                help="Retry pipeline with manually pasted JD text"
+                                help="Retry pipeline with manually pasted JD text",
                             ):
                                 with st.spinner(f"Processing {job.url}..."):
                                     try:
@@ -291,12 +319,14 @@ with st.expander("Batch Generate From Job URLs", expanded=False):
                                         result = run_pipeline(
                                             jd_text=manual_jd.strip(),
                                             jd_url=job.url,
-                                            output_dir=settings.output_dir
+                                            output_dir=settings.output_dir,
                                         )
 
                                         # Create application in tracker
                                         created = tracker_db.create_from_pipeline(result)
-                                        tracker_db.update_application(created["application_id"], resume_status="exported")
+                                        tracker_db.update_application(
+                                            created["application_id"], resume_status="exported"
+                                        )
 
                                         # Update batch_job_items status
                                         tracker_db.update_batch_job_item_status(
@@ -304,7 +334,7 @@ with st.expander("Batch Generate From Job URLs", expanded=False):
                                             job.url,
                                             status="completed",
                                             resume_id=created.get("resume_id"),
-                                            application_id=created["application_id"]
+                                            application_id=created["application_id"],
                                         )
 
                                         # Update job status in memory
@@ -322,7 +352,9 @@ with st.expander("Batch Generate From Job URLs", expanded=False):
                                         st.session_state.batch_progress.completed += 1
                                         st.session_state.batch_progress.failed -= 1
 
-                                        st.success(f"✅ Successfully processed: {result.company} - {result.role}")
+                                        st.success(
+                                            f"✅ Successfully processed: {result.company} - {result.role}"
+                                        )
                                         st.rerun()
 
                                     except Exception as e:
@@ -335,6 +367,7 @@ with st.expander("Batch Generate From Job URLs", expanded=False):
         # Placed AFTER all UI elements so everything renders before the sleep
         if st.session_state.batch_running and not progress.paused and not progress.stopped:
             import time
+
             time.sleep(2)
             st.rerun()
 

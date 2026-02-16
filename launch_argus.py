@@ -63,7 +63,7 @@ def launch():
     # Step 1: Check if ARGUS exists
     if not ARGUS_APP.exists():
         print(f"\n  ERROR: ARGUS not found at {ARGUS_APP}")
-        print(f"  Please ensure ARGUS is installed at X:\\Projects\\_GAIA\\_ARGUS")
+        print("  Please ensure ARGUS is installed at X:\\Projects\\_GAIA\\_ARGUS")
         return
 
     # Step 2: Check port availability

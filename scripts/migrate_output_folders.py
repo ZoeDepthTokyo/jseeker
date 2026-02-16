@@ -22,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from config import settings
 from jseeker.tracker import tracker_db
 
-logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -115,11 +115,9 @@ def migrate_files(dry_run: bool = False):
         # Update database paths
         if not dry_run and (new_pdf_path or new_docx_path):
             tracker_db.update_resume_paths(
-                resume_id,
-                pdf_path=new_pdf_path,
-                docx_path=new_docx_path
+                resume_id, pdf_path=new_pdf_path, docx_path=new_docx_path
             )
-            logger.info(f"  ✓ Updated database paths")
+            logger.info("  ✓ Updated database paths")
             migrated_count += 1
 
     # Clean up empty Not_specified folder
@@ -143,7 +141,7 @@ def main():
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Show what would be migrated without actually moving files"
+        help="Show what would be migrated without actually moving files",
     )
     args = parser.parse_args()
 

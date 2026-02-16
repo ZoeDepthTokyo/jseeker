@@ -305,13 +305,9 @@ else:
 
     # Show single output folder (PDF and DOCX are always in same folder)
     if "pdf_path" in df.columns:
-        df["output_folder"] = df["pdf_path"].apply(
-            lambda x: str(Path(x).parent) if x else ""
-        )
+        df["output_folder"] = df["pdf_path"].apply(lambda x: str(Path(x).parent) if x else "")
     elif "docx_path" in df.columns:
-        df["output_folder"] = df["docx_path"].apply(
-            lambda x: str(Path(x).parent) if x else ""
-        )
+        df["output_folder"] = df["docx_path"].apply(lambda x: str(Path(x).parent) if x else "")
 
     display_cols = [
         "id",
@@ -367,7 +363,10 @@ else:
                         new_company_id = tracker_db.get_or_create_company(str(new_val))
                         conn = tracker_db._conn()
                         c = conn.cursor()
-                        c.execute("UPDATE applications SET company_id = ? WHERE id = ?", (new_company_id, application_id))
+                        c.execute(
+                            "UPDATE applications SET company_id = ? WHERE id = ?",
+                            (new_company_id, application_id),
+                        )
                         conn.commit()
                         conn.close()
                         changed_count += 1
@@ -384,16 +383,27 @@ else:
                 if "output_folder" in edited_df.columns and "output_folder" in original:
                     new_folder = row.get("output_folder")
                     old_folder = original.get("output_folder")
-                    if not (pd.isna(new_folder) and pd.isna(old_folder)) and new_folder != old_folder:
+                    if (
+                        not (pd.isna(new_folder) and pd.isna(old_folder))
+                        and new_folder != old_folder
+                    ):
                         # Build new paths by replacing folder portion
                         new_folder_str = str(new_folder).strip()
                         old_pdf = original.get("pdf_path", "")
                         old_docx = original.get("docx_path", "")
 
                         if new_folder_str and (old_pdf or old_docx):
-                            new_pdf = str(Path(new_folder_str) / Path(old_pdf).name) if old_pdf else None
-                            new_docx = str(Path(new_folder_str) / Path(old_docx).name) if old_docx else None
-                            tracker_db.update_resume_paths(resume_id, pdf_path=new_pdf, docx_path=new_docx)
+                            new_pdf = (
+                                str(Path(new_folder_str) / Path(old_pdf).name) if old_pdf else None
+                            )
+                            new_docx = (
+                                str(Path(new_folder_str) / Path(old_docx).name)
+                                if old_docx
+                                else None
+                            )
+                            tracker_db.update_resume_paths(
+                                resume_id, pdf_path=new_pdf, docx_path=new_docx
+                            )
                             changed_count += 1
 
         if changed_count > 0:

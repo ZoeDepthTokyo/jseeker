@@ -13,7 +13,6 @@ import streamlit as st
 from config import settings
 from jseeker.pattern_learner import get_pattern_stats
 
-
 st.set_page_config(page_title="Learning Insights - jSeeker", page_icon="🧠", layout="wide")
 
 st.title("🧠 Learning Insights")
@@ -31,7 +30,9 @@ try:
     stats = get_pattern_stats(db_path=settings.db_path)
 
     if stats["total_patterns"] == 0:
-        st.info("No patterns learned yet. Generate a few resumes to start building the pattern library.")
+        st.info(
+            "No patterns learned yet. Generate a few resumes to start building the pattern library."
+        )
     else:
         col1, col2, col3 = st.columns(3)
 
@@ -59,8 +60,19 @@ try:
             # Add domain column if missing (backwards compat with pre-v0.3.8 data)
             if "domain" not in pattern_df.columns:
                 pattern_df["domain"] = "General"
-            pattern_df = pattern_df[["id", "type", "domain", "frequency", "confidence", "context", "source", "target"]]
-            pattern_df.columns = ["ID", "Type", "Domain", "Uses", "Confidence", "Target JD Role", "Original Text", "Adapted Text"]
+            pattern_df = pattern_df[
+                ["id", "type", "domain", "frequency", "confidence", "context", "source", "target"]
+            ]
+            pattern_df.columns = [
+                "ID",
+                "Type",
+                "Domain",
+                "Uses",
+                "Confidence",
+                "Target JD Role",
+                "Original Text",
+                "Adapted Text",
+            ]
 
             st.dataframe(
                 pattern_df,
@@ -265,15 +277,20 @@ try:
         top_ctx = json.loads(top["jd_context"] or "{}")
         st.markdown("### Pattern JSON Schema")
         st.caption("Raw JSON structure of the most-used pattern:")
-        st.json({
-            "id": top["id"],
-            "pattern_type": top["pattern_type"],
-            "source_text": top["source_text"][:150] + ("..." if len(top["source_text"]) > 150 else ""),
-            "target_text": top["target_text"][:150] + ("..." if len(top["target_text"]) > 150 else ""),
-            "jd_context": top_ctx,
-            "frequency": top["frequency"],
-            "confidence": top["confidence"],
-        }, expanded=True)
+        st.json(
+            {
+                "id": top["id"],
+                "pattern_type": top["pattern_type"],
+                "source_text": top["source_text"][:150]
+                + ("..." if len(top["source_text"]) > 150 else ""),
+                "target_text": top["target_text"][:150]
+                + ("..." if len(top["target_text"]) > 150 else ""),
+                "jd_context": top_ctx,
+                "frequency": top["frequency"],
+                "confidence": top["confidence"],
+            },
+            expanded=True,
+        )
 
     else:
         st.info("No patterns learned yet. Generate resumes to build the pattern library.")
@@ -281,19 +298,22 @@ try:
         # Show schema documentation even with no patterns
         st.markdown("### Pattern JSON Schema")
         st.caption("Each learned pattern follows this structure:")
-        st.json({
-            "id": "Unique pattern identifier (integer)",
-            "pattern_type": "Category: bullet_adaptation, summary_style, skills, etc.",
-            "source_text": "Original text from resume block",
-            "target_text": "LLM-adapted or user-edited text",
-            "jd_context": {
-                "role": "Target job role (lowercase)",
-                "keywords": ["ats", "keywords", "from", "jd"],
-                "industry": "Industry classification (if available)",
+        st.json(
+            {
+                "id": "Unique pattern identifier (integer)",
+                "pattern_type": "Category: bullet_adaptation, summary_style, skills, etc.",
+                "source_text": "Original text from resume block",
+                "target_text": "LLM-adapted or user-edited text",
+                "jd_context": {
+                    "role": "Target job role (lowercase)",
+                    "keywords": ["ats", "keywords", "from", "jd"],
+                    "industry": "Industry classification (if available)",
+                },
+                "frequency": "Number of times reused (integer)",
+                "confidence": "Trust score 0.0-1.0",
             },
-            "frequency": "Number of times reused (integer)",
-            "confidence": "Trust score 0.0-1.0",
-        }, expanded=True)
+            expanded=True,
+        )
 
 except Exception as e:
     st.warning(f"Could not load pattern data: {e}")
@@ -302,21 +322,24 @@ except Exception as e:
 st.markdown("### Your Resume Skills (Available for Adaptation)")
 try:
     import yaml
+
     skills_path = Path(__file__).parent.parent.parent / "data" / "resume_blocks" / "skills.yaml"
 
     if skills_path.exists():
-        with open(skills_path, 'r', encoding='utf-8') as f:
+        with open(skills_path, "r", encoding="utf-8") as f:
             skills_data = yaml.safe_load(f)
 
         skill_categories = []
         for category_key, category_data in skills_data.get("skills", {}).items():
             category_name = category_data.get("display_name", category_key)
             skill_items = [item["name"] for item in category_data.get("items", [])]
-            skill_categories.append({
-                "Category": category_name,
-                "Skills": ", ".join(skill_items[:3]) + ("..." if len(skill_items) > 3 else ""),
-                "Total": len(skill_items)
-            })
+            skill_categories.append(
+                {
+                    "Category": category_name,
+                    "Skills": ", ".join(skill_items[:3]) + ("..." if len(skill_items) > 3 else ""),
+                    "Total": len(skill_items),
+                }
+            )
 
         if skill_categories:
             st.markdown("jSeeker adapts these skills based on JD keywords:")
@@ -380,14 +403,17 @@ try:
 
         # Display grouped by type
         for ptype, type_patterns in pattern_types.items():
-            with st.expander(f"**{ptype.replace('_', ' ').title()}** ({len(type_patterns)} patterns)", expanded=False):
+            with st.expander(
+                f"**{ptype.replace('_', ' ').title()}** ({len(type_patterns)} patterns)",
+                expanded=False,
+            ):
                 for pattern in type_patterns:
                     # Parse JD context
                     try:
                         context = json.loads(pattern["jd_context"] or "{}")
                         role = context.get("role", "N/A")
                         keywords = ", ".join(context.get("keywords", [])[:5])
-                    except:
+                    except (json.JSONDecodeError, KeyError, TypeError, AttributeError):
                         role = "N/A"
                         keywords = "N/A"
 
@@ -401,10 +427,18 @@ try:
 
                         # Show before/after
                         st.markdown("**Before:**")
-                        st.code(pattern["source_text"][:200] + ("..." if len(pattern["source_text"]) > 200 else ""), language="text")
+                        st.code(
+                            pattern["source_text"][:200]
+                            + ("..." if len(pattern["source_text"]) > 200 else ""),
+                            language="text",
+                        )
 
                         st.markdown("**After:**")
-                        st.code(pattern["target_text"][:200] + ("..." if len(pattern["target_text"]) > 200 else ""), language="text")
+                        st.code(
+                            pattern["target_text"][:200]
+                            + ("..." if len(pattern["target_text"]) > 200 else ""),
+                            language="text",
+                        )
 
                     with col2:
                         st.metric("Used", f"{pattern['frequency']}x")
@@ -412,7 +446,9 @@ try:
 
                         # Format dates
                         created = datetime.fromisoformat(pattern["created_at"]).strftime("%b %d")
-                        last_used = datetime.fromisoformat(pattern["last_used_at"]).strftime("%b %d")
+                        last_used = datetime.fromisoformat(pattern["last_used_at"]).strftime(
+                            "%b %d"
+                        )
 
                         st.caption(f"Created: {created}")
                         st.caption(f"Last used: {last_used}")
@@ -435,13 +471,15 @@ try:
             timeline_df["cumulative"] = timeline_df["count"].cumsum()
 
             fig = go.Figure()
-            fig.add_trace(go.Scatter(
-                x=timeline_df["date"],
-                y=timeline_df["cumulative"],
-                mode="lines+markers",
-                name="Total Patterns",
-                line=dict(color="blue", width=2),
-            ))
+            fig.add_trace(
+                go.Scatter(
+                    x=timeline_df["date"],
+                    y=timeline_df["cumulative"],
+                    mode="lines+markers",
+                    name="Total Patterns",
+                    line=dict(color="blue", width=2),
+                )
+            )
 
             fig.update_layout(
                 title="Pattern Library Growth",
@@ -470,13 +508,15 @@ try:
         savings_data = []
         for row in c.fetchall():
             cost_saved = row["cache_hits"] * 0.01  # $0.01 per cache hit
-            savings_data.append({
-                "Type": row["pattern_type"].replace("_", " ").title(),
-                "Patterns": row["pattern_count"],
-                "Total Uses": row["total_uses"],
-                "Cache Hits": row["cache_hits"],
-                "Cost Saved": f"${cost_saved:.2f}",
-            })
+            savings_data.append(
+                {
+                    "Type": row["pattern_type"].replace("_", " ").title(),
+                    "Patterns": row["pattern_count"],
+                    "Total Uses": row["total_uses"],
+                    "Cache Hits": row["cache_hits"],
+                    "Cost Saved": f"${cost_saved:.2f}",
+                }
+            )
 
         if savings_data:
             savings_df = pd.DataFrame(savings_data)
@@ -490,7 +530,9 @@ try:
             st.success(f"💰 Total saved from pattern reuse: **${total_saved:.2f}**")
 
     else:
-        st.info("No patterns learned yet. Generate a few resumes and the system will start learning adaptation patterns.")
+        st.info(
+            "No patterns learned yet. Generate a few resumes and the system will start learning adaptation patterns."
+        )
 
     conn.close()
 
@@ -547,27 +589,39 @@ try:
                 title="Cost per Resume Over Time (Should Decrease)",
                 labels={"resume_number": "Resume Number", "cost": "Generation Cost ($)"},
             )
-            st.info("📊 Trendline unavailable (statsmodels not installed). Run: `pip install statsmodels`")
+            st.info(
+                "📊 Trendline unavailable (statsmodels not installed). Run: `pip install statsmodels`"
+            )
 
         fig.update_traces(marker=dict(size=10, color="blue"))
         st.plotly_chart(fig, width="stretch")
 
         # Calculate trend
-        first_5_avg = cost_df.head(5)["cost"].mean() if len(cost_df) >= 5 else cost_df["cost"].mean()
+        first_5_avg = (
+            cost_df.head(5)["cost"].mean() if len(cost_df) >= 5 else cost_df["cost"].mean()
+        )
         last_5_avg = cost_df.tail(5)["cost"].mean()
         improvement = ((first_5_avg - last_5_avg) / first_5_avg * 100) if first_5_avg > 0 else 0
 
         if improvement > 0:
-            st.success(f"✅ Cost optimization working! Average cost decreased by {improvement:.1f}% from first 5 to last 5 resumes.")
+            st.success(
+                f"✅ Cost optimization working! Average cost decreased by {improvement:.1f}% from first 5 to last 5 resumes."
+            )
         elif improvement < -10:
-            st.warning("⚠️ Costs increasing. This may indicate more complex JDs or different patterns.")
+            st.warning(
+                "⚠️ Costs increasing. This may indicate more complex JDs or different patterns."
+            )
         else:
-            st.info("📊 Cost trend is stable. Continue generating resumes to build pattern library.")
+            st.info(
+                "📊 Cost trend is stable. Continue generating resumes to build pattern library."
+            )
 
     elif len(resume_costs) == 1:
         st.info("Generate at least 2 resumes to see cost trends.")
     else:
-        st.info("No resume generation data yet. Create your first resume to start tracking performance.")
+        st.info(
+            "No resume generation data yet. Create your first resume to start tracking performance."
+        )
 
     conn.close()
 
@@ -586,11 +640,28 @@ Compare salary ranges across different geographic regions to understand market r
 
 # Market code to region label mapping
 _MARKET_TO_REGION = {
-    "us": "US", "ca": "CA", "mx": "MEX", "uk": "UK",
-    "fr": "EU", "es": "EU", "dk": "EU", "de": "EU", "nl": "EU", "se": "EU", "it": "EU",
-    "br": "LATAM", "ar": "LATAM", "cl": "LATAM", "co": "LATAM",
-    "jp": "ASIA", "in": "ASIA", "sg": "ASIA", "kr": "ASIA", "cn": "ASIA",
+    "us": "US",
+    "ca": "CA",
+    "mx": "MEX",
+    "uk": "UK",
+    "fr": "EU",
+    "es": "EU",
+    "dk": "EU",
+    "de": "EU",
+    "nl": "EU",
+    "se": "EU",
+    "it": "EU",
+    "br": "LATAM",
+    "ar": "LATAM",
+    "cl": "LATAM",
+    "co": "LATAM",
+    "jp": "ASIA",
+    "in": "ASIA",
+    "sg": "ASIA",
+    "kr": "ASIA",
+    "cn": "ASIA",
 }
+
 
 def normalize_location_to_region(location: str) -> str:
     """Map location string to standardized region."""
@@ -599,23 +670,133 @@ def normalize_location_to_region(location: str) -> str:
 
     loc_lower = location.lower()
 
-    if any(term in loc_lower for term in ["united states", "us", "usa", "california", "new york", "texas", "massachusetts", "illinois", "minnesota", "virginia", "washington", "oregon", "florida", "georgia", "colorado", "atlanta", "boston", "chicago", "dallas", "denver", "detroit", "houston", "los angeles", "mclean", "hoboken", "philadelphia", "san francisco", "seattle", "san diego", "santa monica", "acton", "frisco", "eagan"]):
+    if any(
+        term in loc_lower
+        for term in [
+            "united states",
+            "us",
+            "usa",
+            "california",
+            "new york",
+            "texas",
+            "massachusetts",
+            "illinois",
+            "minnesota",
+            "virginia",
+            "washington",
+            "oregon",
+            "florida",
+            "georgia",
+            "colorado",
+            "atlanta",
+            "boston",
+            "chicago",
+            "dallas",
+            "denver",
+            "detroit",
+            "houston",
+            "los angeles",
+            "mclean",
+            "hoboken",
+            "philadelphia",
+            "san francisco",
+            "seattle",
+            "san diego",
+            "santa monica",
+            "acton",
+            "frisco",
+            "eagan",
+        ]
+    ):
         return "US"
-    if any(term in loc_lower for term in ["canada", "toronto", "ontario", "vancouver", "montreal", "calgary"]):
+    if any(
+        term in loc_lower
+        for term in ["canada", "toronto", "ontario", "vancouver", "montreal", "calgary"]
+    ):
         return "CA"
-    if any(term in loc_lower for term in ["mexico", "méxico", "mx", "ciudad de mexico", "monterrey", "guadalajara", "santa fe"]):
+    if any(
+        term in loc_lower
+        for term in [
+            "mexico",
+            "méxico",
+            "mx",
+            "ciudad de mexico",
+            "monterrey",
+            "guadalajara",
+            "santa fe",
+        ]
+    ):
         return "MEX"
-    if any(term in loc_lower for term in ["uk", "united kingdom", "london", "manchester", "edinburgh", "bristol", "ireland", "dublin"]):
+    if any(
+        term in loc_lower
+        for term in [
+            "uk",
+            "united kingdom",
+            "london",
+            "manchester",
+            "edinburgh",
+            "bristol",
+            "ireland",
+            "dublin",
+        ]
+    ):
         return "UK"
-    if any(term in loc_lower for term in ["germany", "france", "spain", "italy", "netherlands", "sweden", "denmark", "norway", "berlin", "paris", "madrid", "amsterdam", "copenhagen", "stockholm"]):
+    if any(
+        term in loc_lower
+        for term in [
+            "germany",
+            "france",
+            "spain",
+            "italy",
+            "netherlands",
+            "sweden",
+            "denmark",
+            "norway",
+            "berlin",
+            "paris",
+            "madrid",
+            "amsterdam",
+            "copenhagen",
+            "stockholm",
+        ]
+    ):
         return "EU"
-    if any(term in loc_lower for term in ["brazil", "argentina", "chile", "colombia", "peru", "buenos aires", "santiago", "bogota", "lima", "são paulo"]):
+    if any(
+        term in loc_lower
+        for term in [
+            "brazil",
+            "argentina",
+            "chile",
+            "colombia",
+            "peru",
+            "buenos aires",
+            "santiago",
+            "bogota",
+            "lima",
+            "são paulo",
+        ]
+    ):
         return "LATAM"
-    if any(term in loc_lower for term in ["china", "japan", "india", "singapore", "korea", "tokyo", "beijing", "shanghai", "bangalore", "seoul"]):
+    if any(
+        term in loc_lower
+        for term in [
+            "china",
+            "japan",
+            "india",
+            "singapore",
+            "korea",
+            "tokyo",
+            "beijing",
+            "shanghai",
+            "bangalore",
+            "seoul",
+        ]
+    ):
         return "ASIA"
     if "remote" in loc_lower:
         return "US"  # Most remote roles default to US market
     return "Other"
+
 
 try:
     conn_salary = sqlite3.connect(str(settings.db_path))
@@ -664,15 +845,19 @@ try:
         with col2:
             if len(market_df) >= 3:
                 fig_radar = go.Figure()
-                fig_radar.add_trace(go.Scatterpolar(
-                    r=market_df["count"],
-                    theta=market_df["region"],
-                    fill="toself",
-                    name="Jobs",
-                    line=dict(color="teal", width=2),
-                ))
+                fig_radar.add_trace(
+                    go.Scatterpolar(
+                        r=market_df["count"],
+                        theta=market_df["region"],
+                        fill="toself",
+                        name="Jobs",
+                        line=dict(color="teal", width=2),
+                    )
+                )
                 fig_radar.update_layout(
-                    polar=dict(radialaxis=dict(visible=True, range=[0, market_df["count"].max() * 1.15])),
+                    polar=dict(
+                        radialaxis=dict(visible=True, range=[0, market_df["count"].max() * 1.15])
+                    ),
                     showlegend=False,
                     title="Regional Coverage (Radar)",
                 )
@@ -704,11 +889,15 @@ try:
 
     if len(salary_data) >= 2:
         salary_df = pd.DataFrame(salary_data)
-        regional_stats = salary_df.groupby("region").agg(
-            {"salary": ["mean", "count", "min", "max"]}
-        ).reset_index()
+        regional_stats = (
+            salary_df.groupby("region")
+            .agg({"salary": ["mean", "count", "min", "max"]})
+            .reset_index()
+        )
         regional_stats.columns = ["Region", "Avg Salary", "Job Count", "Min Salary", "Max Salary"]
-        regional_stats = regional_stats[regional_stats["Job Count"] >= 1].sort_values("Avg Salary", ascending=False)
+        regional_stats = regional_stats[regional_stats["Job Count"] >= 1].sort_values(
+            "Avg Salary", ascending=False
+        )
 
         if len(regional_stats) > 0:
             st.markdown("### Salary Comparison by Region")
@@ -735,15 +924,21 @@ try:
             with col2:
                 if len(regional_stats) >= 3:
                     fig_radar = go.Figure()
-                    fig_radar.add_trace(go.Scatterpolar(
-                        r=regional_stats["Avg Salary"],
-                        theta=regional_stats["Region"],
-                        fill="toself",
-                        name="Avg Salary",
-                        line=dict(color="blue", width=2),
-                    ))
+                    fig_radar.add_trace(
+                        go.Scatterpolar(
+                            r=regional_stats["Avg Salary"],
+                            theta=regional_stats["Region"],
+                            fill="toself",
+                            name="Avg Salary",
+                            line=dict(color="blue", width=2),
+                        )
+                    )
                     fig_radar.update_layout(
-                        polar=dict(radialaxis=dict(visible=True, range=[0, regional_stats["Avg Salary"].max() * 1.1])),
+                        polar=dict(
+                            radialaxis=dict(
+                                visible=True, range=[0, regional_stats["Avg Salary"].max() * 1.1]
+                            )
+                        ),
                         showlegend=False,
                         title="Salary Distribution (Radar)",
                     )
@@ -762,12 +957,16 @@ try:
 
             highest_region = regional_stats.iloc[0]["Region"]
             highest_salary = regional_stats.iloc[0]["Avg Salary"]
-            st.success(f"Highest average salary: **{highest_region}** at **${highest_salary:,.0f}** ({int(regional_stats.iloc[0]['Job Count'])} jobs)")
+            st.success(
+                f"Highest average salary: **{highest_region}** at **${highest_salary:,.0f}** ({int(regional_stats.iloc[0]['Job Count'])} jobs)"
+            )
 
     elif len(salary_data) == 1:
         st.info("Only 1 job with salary data. Add more jobs to see salary comparison.")
     elif not market_rows:
-        st.info("No salary data available yet. Job discovery will populate salary ranges when available.")
+        st.info(
+            "No salary data available yet. Job discovery will populate salary ranges when available."
+        )
 
 except Exception as exc:
     st.error(f"Failed to load regional salary analytics: {exc}")
@@ -776,4 +975,6 @@ except Exception as exc:
 # ── Footer ──────────────────────────────────────────────────────────────────
 
 st.markdown("---")
-st.caption("💡 **Tip**: The more resumes you generate, the smarter jSeeker becomes and the less each resume costs.")
+st.caption(
+    "💡 **Tip**: The more resumes you generate, the smarter jSeeker becomes and the less each resume costs."
+)

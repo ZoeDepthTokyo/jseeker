@@ -1072,7 +1072,9 @@ class TrackerDB:
         conn.close()
         return (row["max_v"] or 0) + 1
 
-    def update_resume_paths(self, resume_id: int, pdf_path: str = None, docx_path: str = None) -> bool:
+    def update_resume_paths(
+        self, resume_id: int, pdf_path: str = None, docx_path: str = None
+    ) -> bool:
         """Update file paths for a resume.
 
         Args:
@@ -1154,10 +1156,13 @@ class TrackerDB:
             return None
         conn = self._conn()
         c = conn.cursor()
-        c.execute("""SELECT a.*, c.name as company_name
+        c.execute(
+            """SELECT a.*, c.name as company_name
             FROM applications a
             LEFT JOIN companies c ON a.company_id = c.id
-            WHERE a.jd_url = ?""", (url,))
+            WHERE a.jd_url = ?""",
+            (url,),
+        )
         row = c.fetchone()
         conn.close()
         return dict(row) if row else None

@@ -9,7 +9,6 @@ import streamlit as st
 
 from jseeker.tracker import tracker_db
 
-
 st.title("Job Discovery")
 
 # --- Saved Searches Sidebar ---
@@ -23,11 +22,11 @@ with st.sidebar:
         for search in saved_searches:
             with st.expander(f"📌 {search['name']}", expanded=False):
                 st.caption(f"Tags: {', '.join(search['tag_weights'].keys())}")
-                if search.get('markets'):
+                if search.get("markets"):
                     st.caption(f"Markets: {', '.join(search['markets'])}")
-                if search.get('sources'):
+                if search.get("sources"):
                     st.caption(f"Sources: {', '.join(search['sources'])}")
-                if search.get('location'):
+                if search.get("location"):
                     st.caption(f"Location: {search['location']}")
 
                 col1, col2 = st.columns(2)
@@ -35,18 +34,18 @@ with st.sidebar:
                 # Load button
                 if col1.button("Load", key=f"load_{search['id']}"):
                     # Load tag weights
-                    for tag, weight in search['tag_weights'].items():
+                    for tag, weight in search["tag_weights"].items():
                         tracker_db.set_tag_weight(tag, weight)
 
                     # Load markets
-                    if search.get('markets'):
-                        st.session_state["job_discovery_markets"] = search['markets']
+                    if search.get("markets"):
+                        st.session_state["job_discovery_markets"] = search["markets"]
 
                     # Store sources and location in session for later UI sync
-                    if search.get('sources'):
-                        st.session_state["loaded_sources"] = search['sources']
-                    if search.get('location'):
-                        st.session_state["loaded_location"] = search['location']
+                    if search.get("sources"):
+                        st.session_state["loaded_sources"] = search["sources"]
+                    if search.get("location"):
+                        st.session_state["loaded_location"] = search["location"]
 
                     # Load from DB cache instead of re-scraping
                     st.session_state["auto_run_search"] = "from_db"
@@ -56,7 +55,7 @@ with st.sidebar:
 
                 # Delete button
                 if col2.button("Delete", key=f"delete_{search['id']}"):
-                    if tracker_db.delete_saved_search(search['id']):
+                    if tracker_db.delete_saved_search(search["id"]):
                         st.success(f"Deleted: {search['name']}")
                         st.rerun()
                     else:
@@ -64,15 +63,19 @@ with st.sidebar:
 
                 # Rename form
                 with st.form(key=f"rename_form_{search['id']}"):
-                    new_name = st.text_input("Rename", value=search['name'], key=f"rename_input_{search['id']}")
+                    new_name = st.text_input(
+                        "Rename", value=search["name"], key=f"rename_input_{search['id']}"
+                    )
                     if st.form_submit_button("✏️ Rename"):
                         if not new_name.strip():
                             st.error("Name cannot be empty")
-                        elif new_name.strip() == search['name']:
+                        elif new_name.strip() == search["name"]:
                             st.info("No change")
                         else:
                             try:
-                                if tracker_db.update_saved_search(search['id'], name=new_name.strip()):
+                                if tracker_db.update_saved_search(
+                                    search["id"], name=new_name.strip()
+                                ):
                                     st.success(f"Renamed to: {new_name.strip()}")
                                     st.rerun()
                                 else:
@@ -112,7 +115,7 @@ with st.sidebar:
                         tag_weights=tag_weights,
                         markets=current_markets,
                         sources=current_sources,
-                        location=current_location
+                        location=current_location,
                     )
                     st.success(f"Saved: {search_name}")
                     st.rerun()
@@ -124,7 +127,9 @@ with st.sidebar:
 
 # --- Search Tags Management ---
 with st.expander("Search Tags & Weights", expanded=False):
-    st.caption("Configure search tags and their weights (%). All active tag weights must sum to 100%.")
+    st.caption(
+        "Configure search tags and their weights (%). All active tag weights must sum to 100%."
+    )
 
     tags = tracker_db.list_search_tags(active_only=False)
     tag_weights = {tw["tag"]: tw["weight"] for tw in tracker_db.list_tag_weights()}
@@ -151,7 +156,11 @@ with st.expander("Search Tags & Weights", expanded=False):
             # Weight slider (only enabled for active tags)
             current_weight = tag_weights.get(tag["tag"], 50)
             # Use draft weight if in draft mode, otherwise use current weight
-            display_weight = st.session_state["draft_weights"].get(tag["tag"], current_weight) if st.session_state["draft_mode"] else current_weight
+            display_weight = (
+                st.session_state["draft_weights"].get(tag["tag"], current_weight)
+                if st.session_state["draft_mode"]
+                else current_weight
+            )
 
             new_weight = col3.slider(
                 "Weight %",
@@ -160,7 +169,7 @@ with st.expander("Search Tags & Weights", expanded=False):
                 value=display_weight,
                 key=f"weight_{tag['id']}",
                 label_visibility="collapsed",
-                disabled=not active
+                disabled=not active,
             )
 
             # Store changes in draft mode without rerunning
@@ -206,13 +215,17 @@ with st.expander("Search Tags & Weights", expanded=False):
 
     with st.form("add_tag"):
         new_col1, new_col2 = st.columns([3, 1])
-        new_tag = new_col1.text_input("New search tag", placeholder="e.g., Director of Product Design")
+        new_tag = new_col1.text_input(
+            "New search tag", placeholder="e.g., Director of Product Design"
+        )
 
         # Calculate default weight suggestion (remaining percentage / 2, or 20 if sum is 0)
         remaining_pct = 100 - weight_sum if weight_sum < 100 else 20
         suggested_weight = max(1, min(100, remaining_pct // 2)) if active_tags else 100
 
-        new_weight = new_col2.number_input("Initial weight %", min_value=0, max_value=100, value=suggested_weight)
+        new_weight = new_col2.number_input(
+            "Initial weight %", min_value=0, max_value=100, value=suggested_weight
+        )
         submitted = st.form_submit_button("Add Tag")
         if submitted:
             if new_tag.strip():
@@ -249,7 +262,9 @@ st.subheader("Search Jobs")
 
 # Check if we have loaded values from a saved search (persist until search executes)
 default_location = st.session_state.get("loaded_location", "")
-location = st.text_input("Location filter", placeholder="e.g., San Francisco, Remote", value=default_location)
+location = st.text_input(
+    "Location filter", placeholder="e.g., San Francisco, Remote", value=default_location
+)
 st.session_state["current_location"] = location
 
 # Check if we have loaded sources from a saved search (persist until search executes)
@@ -260,7 +275,9 @@ sources = st.multiselect(
     default=default_sources,
 )
 st.session_state["current_sources"] = sources
-st.caption("Note: Web scraping results vary. If no results appear, try different tags or check the Search Details after running.")
+st.caption(
+    "Note: Web scraping results vary. If no results appear, try different tags or check the Search Details after running."
+)
 
 if "linkedin" in sources:
     st.info(
@@ -284,34 +301,42 @@ if "ranked_discoveries_cache" not in st.session_state:
 if "ranked_discoveries_filter_key" not in st.session_state:
     st.session_state["ranked_discoveries_filter_key"] = None
 
+
 # Generate cache key from current search parameters
 def get_cache_key(markets, location, sources):
     """Generate cache key from search parameters."""
     return {
         "markets": tuple(sorted(markets)),
         "location": location.strip().lower() if location else "",
-        "sources": tuple(sorted(sources))
+        "sources": tuple(sorted(sources)),
     }
+
 
 current_cache_key = get_cache_key(selected_markets, location, sources)
 
 # Display cache status
 cache_match = (
     st.session_state["cached_search_params"] == current_cache_key
-    if st.session_state["cached_search_params"] else False
+    if st.session_state["cached_search_params"]
+    else False
 )
 
 if st.session_state["cached_search_timestamp"]:
     from datetime import datetime
+
     cache_time = datetime.fromisoformat(st.session_state["cached_search_timestamp"])
     cache_col1, cache_col2 = st.columns([5, 1])
 
     if cache_match:
-        cache_col1.info(f"💾 Using cached results from {cache_time.strftime('%Y-%m-%d %H:%M:%S')}. "
-                        f"Change parameters and click 'Run Search' to refresh.")
+        cache_col1.info(
+            f"💾 Using cached results from {cache_time.strftime('%Y-%m-%d %H:%M:%S')}. "
+            f"Change parameters and click 'Run Search' to refresh."
+        )
     else:
-        cache_col1.warning(f"💾 Showing cached results from {cache_time.strftime('%Y-%m-%d %H:%M:%S')}. "
-                           f"Current parameters differ - click 'Run Search' to update.")
+        cache_col1.warning(
+            f"💾 Showing cached results from {cache_time.strftime('%Y-%m-%d %H:%M:%S')}. "
+            f"Current parameters differ - click 'Run Search' to update."
+        )
 
     if cache_col2.button("Clear Cache"):
         st.session_state["cached_search_results"] = None
@@ -349,8 +374,8 @@ if auto_run == "from_db":
                 "markets": len(selected_markets),
                 "total_combinations": 0,
                 "total_found": len(db_discoveries),
-                "new_saved": 0
-            }
+                "new_saved": 0,
+            },
         }
         st.session_state["cached_search_params"] = current_cache_key
         st.session_state["cached_search_timestamp"] = datetime.now().isoformat()
@@ -366,7 +391,9 @@ if col_search.button("🔍 Run Search", type="primary") or (auto_run is True):
     tag_strings = [t["tag"] for t in active_tags]
 
     # Validate tag weights sum to 100%
-    tag_weights_active = {tw["tag"]: tw["weight"] for tw in tracker_db.list_tag_weights() if tw["tag"] in tag_strings}
+    tag_weights_active = {
+        tw["tag"]: tw["weight"] for tw in tracker_db.list_tag_weights() if tw["tag"] in tag_strings
+    }
     weight_sum = sum(tag_weights_active.values())
 
     if not tag_strings:
@@ -391,9 +418,15 @@ if col_search.button("🔍 Run Search", type="primary") or (auto_run is True):
             total_combinations = len(tag_strings) * len(sources) * len(selected_markets)
             progress = current / total_combinations if total_combinations > 0 else 0
             progress_bar.progress(min(progress, 1.0))
-            status_text.text(f"Searching... {current}/{total_combinations} combinations, {total} results found")
+            status_text.text(
+                f"Searching... {current}/{total_combinations} combinations, {total} results found"
+            )
 
-        from jseeker.job_discovery import save_discoveries, search_jobs_async, rank_discoveries_by_tag_weight
+        from jseeker.job_discovery import (
+            save_discoveries,
+            search_jobs_async,
+            rank_discoveries_by_tag_weight,
+        )
 
         discoveries = search_jobs_async(
             tag_strings,
@@ -403,7 +436,7 @@ if col_search.button("🔍 Run Search", type="primary") or (auto_run is True):
             pause_check=pause_check,
             progress_callback=progress_callback,
             max_results=250,
-            max_results_per_country=100
+            max_results_per_country=100,
         )
 
         # Rank by tag weights and freshness, limit to top 100 per country
@@ -417,11 +450,12 @@ if col_search.button("🔍 Run Search", type="primary") or (auto_run is True):
             session_id,
             status="completed" if not st.session_state["search_paused"] else "paused",
             total_found=len(discoveries),
-            limit_reached=(len(discoveries) >= 250)
+            limit_reached=(len(discoveries) >= 250),
         )
 
         # Cache results
         from datetime import datetime
+
         st.session_state["cached_search_results"] = {
             "discoveries": discoveries,
             "ranked_discoveries": ranked_discoveries,
@@ -433,8 +467,8 @@ if col_search.button("🔍 Run Search", type="primary") or (auto_run is True):
                 "markets": len(selected_markets),
                 "total_combinations": len(tag_strings) * len(sources) * len(selected_markets),
                 "total_found": len(discoveries),
-                "new_saved": saved
-            }
+                "new_saved": saved,
+            },
         }
         st.session_state["cached_search_params"] = current_cache_key
         st.session_state["cached_search_timestamp"] = datetime.now().isoformat()
@@ -450,15 +484,23 @@ if col_search.button("🔍 Run Search", type="primary") or (auto_run is True):
         if st.session_state["search_paused"]:
             st.info(f"Search paused at {len(discoveries)} results.")
         else:
-            st.success(f"Search complete: Found {len(discoveries)} jobs across {len(selected_markets)} market(s), {saved} new (max 100 per market)")
+            st.success(
+                f"Search complete: Found {len(discoveries)} jobs across {len(selected_markets)} market(s), {saved} new (max 100 per market)"
+            )
 
         # Show search diagnostics
         with st.expander("Search Details", expanded=False):
-            st.caption(f"Searched {len(tag_strings)} tag(s) x {len(sources)} source(s) x {len(selected_markets)} market(s)")
-            st.caption(f"= {len(tag_strings) * len(sources) * len(selected_markets)} search combinations")
+            st.caption(
+                f"Searched {len(tag_strings)} tag(s) x {len(sources)} source(s) x {len(selected_markets)} market(s)"
+            )
+            st.caption(
+                f"= {len(tag_strings) * len(sources) * len(selected_markets)} search combinations"
+            )
             st.caption(f"Total results before dedup: {len(discoveries)}")
             st.caption(f"New results saved: {saved}")
-            st.caption(f"Results ranked by tag weights: {sum(d.search_tag_weights.values() if d.search_tag_weights else 0 for d in ranked_discoveries[:10])} total weight in top 10")
+            st.caption(
+                f"Results ranked by tag weights: {sum(d.search_tag_weights.values() if d.search_tag_weights else 0 for d in ranked_discoveries[:10])} total weight in top 10"
+            )
 
         # Results section below will recalculate cache_match and display results (no rerun needed)
 
@@ -468,10 +510,7 @@ if col_pause.button("⏸️ Pause"):
 
 if col_stop.button("⏹️ Stop"):
     if st.session_state.get("search_session_id"):
-        tracker_db.update_search_session(
-            st.session_state["search_session_id"],
-            status="stopped"
-        )
+        tracker_db.update_search_session(st.session_state["search_session_id"], status="stopped")
     st.session_state["search_paused"] = True
     st.session_state["search_session_id"] = None
     st.warning("Search stopped.")
@@ -483,26 +522,35 @@ st.subheader("Discovered Jobs")
 # Recalculate cache_match (it may have been updated by search button handler above)
 cache_match = (
     st.session_state["cached_search_params"] == current_cache_key
-    if st.session_state["cached_search_params"] else False
+    if st.session_state["cached_search_params"]
+    else False
 )
 
 # 🐛 DEBUG: Cache diagnostics (helps diagnose display issues)
 with st.expander("🐛 Debug: Cache Status", expanded=False):
-    st.json({
-        "cache_match": cache_match,
-        "cached_results_exists": st.session_state["cached_search_results"] is not None,
-        "current_cache_key": current_cache_key,
-        "cached_search_params": st.session_state["cached_search_params"],
-        "cached_timestamp": st.session_state["cached_search_timestamp"],
-        "results_count": len(st.session_state["cached_search_results"]["discoveries"]) if st.session_state["cached_search_results"] else 0,
-    })
+    st.json(
+        {
+            "cache_match": cache_match,
+            "cached_results_exists": st.session_state["cached_search_results"] is not None,
+            "current_cache_key": current_cache_key,
+            "cached_search_params": st.session_state["cached_search_params"],
+            "cached_timestamp": st.session_state["cached_search_timestamp"],
+            "results_count": (
+                len(st.session_state["cached_search_results"]["discoveries"])
+                if st.session_state["cached_search_results"]
+                else 0
+            ),
+        }
+    )
 
 # Check if we should display cached results or prompt user to search
 # PERSISTENCE FIX: Display cached results even if widgets don't match (tab navigation case)
 # Only prompt to search if NO cached results exist at all
 if st.session_state["cached_search_results"] is None:
-    st.info("👆 Configure your search parameters above, then click **Run Search** to discover jobs.")
-    st.caption(f"Debug: No cached results available. Run a search to see results.")
+    st.info(
+        "👆 Configure your search parameters above, then click **Run Search** to discover jobs."
+    )
+    st.caption("Debug: No cached results available. Run a search to see results.")
     # Don't display results section if no cached results available
     st.stop()
 
@@ -529,7 +577,7 @@ status_filter = col1.selectbox(
 market_filter = col2.selectbox(
     "Market",
     options=["All"] + list(market_options.keys()),
-    format_func=lambda x: market_options.get(x, x) if x != "All" else "All"
+    format_func=lambda x: market_options.get(x, x) if x != "All" else "All",
 )
 
 source_filter = col3.selectbox(
@@ -560,10 +608,12 @@ else:
     _all_ranked_raw = tracker_db.list_discoveries()
     if _all_ranked_raw:
         from jseeker.job_discovery import rank_discoveries_by_tag_weight
+
         _all_ranked = rank_discoveries_by_tag_weight(_all_ranked_raw, max_per_country=100)
         st.session_state["ranked_discoveries_cache"] = _all_ranked
     else:
         _all_ranked = []
+
 
 # Apply filters in-memory on the ranked cache (no DB re-query needed)
 def _filter_discoveries(ranked_list, status, search, market, location_val, source):
@@ -580,14 +630,19 @@ def _filter_discoveries(ranked_list, status, search, market, location_val, sourc
         result = [d for d in result if loc_lower in (d.get("location") or "").lower()]
     if search:
         q = search.lower()
-        result = [d for d in result if (
-            q in (d.get("title") or "").lower()
-            or q in (d.get("company") or "").lower()
-            or q in (d.get("location") or "").lower()
-            or q in (d.get("source") or "").lower()
-            or any(q in tag.lower() for tag in (d.get("search_tag_weights") or {}).keys())
-        )]
+        result = [
+            d
+            for d in result
+            if (
+                q in (d.get("title") or "").lower()
+                or q in (d.get("company") or "").lower()
+                or q in (d.get("location") or "").lower()
+                or q in (d.get("source") or "").lower()
+                or any(q in tag.lower() for tag in (d.get("search_tag_weights") or {}).keys())
+            )
+        ]
     return result
+
 
 def _update_cached_discovery_status(disc_id, new_status):
     """Update a discovery's status in the ranked cache in-place."""
@@ -598,13 +653,14 @@ def _update_cached_discovery_status(disc_id, new_status):
                 d["status"] = new_status
                 break
 
+
 discoveries = _filter_discoveries(
     _all_ranked,
     status=status_value,
     search=search_query,
     market=market_value,
     location_val=location_value,
-    source=source_value
+    source=source_value,
 )
 
 if discoveries:
@@ -625,9 +681,14 @@ if discoveries:
         """
         # Market to country mapping
         market_countries = {
-            "us": "United States", "mx": "Mexico", "ca": "Canada",
-            "uk": "United Kingdom", "es": "Spain", "dk": "Denmark",
-            "fr": "France", "de": "Germany"
+            "us": "United States",
+            "mx": "Mexico",
+            "ca": "Canada",
+            "uk": "United Kingdom",
+            "es": "Spain",
+            "dk": "Denmark",
+            "fr": "France",
+            "de": "Germany",
         }
 
         if not location_str or location_str.strip().lower() in ["remote", "unknown", "anywhere"]:
@@ -636,7 +697,16 @@ if discoveries:
         loc = location_str.strip()
 
         # Handle just country name
-        if loc in ["Canada", "United States", "Mexico", "Denmark", "Spain", "France", "Germany", "United Kingdom"]:
+        if loc in [
+            "Canada",
+            "United States",
+            "Mexico",
+            "Denmark",
+            "Spain",
+            "France",
+            "Germany",
+            "United Kingdom",
+        ]:
             return (loc, "", "")
 
         parts = [p.strip() for p in loc.split(",")]
@@ -664,43 +734,71 @@ if discoveries:
         elif len(parts) >= 3:
             # "City, State, Country" - standard format
             country = parts[-1].strip()  # Last is country
-            state = parts[-2].strip()     # Second to last is state/province
-            city = parts[0].strip()       # First is city
+            state = parts[-2].strip()  # Second to last is state/province
+            city = parts[0].strip()  # First is city
             return (country, state, city)
 
         return ("Unknown", "", loc)
 
     # --- Location normalization aliases ---
     STATE_ALIASES = {
-        "New York": "NY", "New York City": "NY", "California": "CA",
-        "Illinois": "IL", "Texas": "TX", "Florida": "FL",
-        "Massachusetts": "MA", "Washington": "WA", "Georgia": "GA",
-        "Colorado": "CO", "Oregon": "OR", "Pennsylvania": "PA",
-        "Virginia": "VA", "North Carolina": "NC", "Ohio": "OH",
-        "Michigan": "MI", "Arizona": "AZ", "Minnesota": "MN",
-        "New Jersey": "NJ", "Connecticut": "CT", "Maryland": "MD",
-        "Tennessee": "TN", "Indiana": "IN", "Missouri": "MO",
-        "Wisconsin": "WI", "Nevada": "NV", "Utah": "UT",
-        "District of Columbia": "DC", "D.C.": "DC",
+        "New York": "NY",
+        "New York City": "NY",
+        "California": "CA",
+        "Illinois": "IL",
+        "Texas": "TX",
+        "Florida": "FL",
+        "Massachusetts": "MA",
+        "Washington": "WA",
+        "Georgia": "GA",
+        "Colorado": "CO",
+        "Oregon": "OR",
+        "Pennsylvania": "PA",
+        "Virginia": "VA",
+        "North Carolina": "NC",
+        "Ohio": "OH",
+        "Michigan": "MI",
+        "Arizona": "AZ",
+        "Minnesota": "MN",
+        "New Jersey": "NJ",
+        "Connecticut": "CT",
+        "Maryland": "MD",
+        "Tennessee": "TN",
+        "Indiana": "IN",
+        "Missouri": "MO",
+        "Wisconsin": "WI",
+        "Nevada": "NV",
+        "Utah": "UT",
+        "District of Columbia": "DC",
+        "D.C.": "DC",
         "New York City Metropolitan Area": "NY",
         "Greater New York City Area": "NY",
         # Canadian provinces
-        "British Columbia": "BC", "Greater Vancouver": "BC",
-        "Ontario": "ON", "Quebec": "QC", "Alberta": "AB",
+        "British Columbia": "BC",
+        "Greater Vancouver": "BC",
+        "Ontario": "ON",
+        "Quebec": "QC",
+        "Alberta": "AB",
     }
 
     CITY_ALIASES = {
-        "New York City": "New York", "NYC": "New York",
+        "New York City": "New York",
+        "NYC": "New York",
         "New York City Metropolitan Area": "New York",
         "Greater New York City Area": "New York",
-        "México": "Mexico City", "CDMX": "Mexico City",
-        "Ciudad de México": "Mexico City", "Mexico City Metropolitan Area": "Mexico City",
+        "México": "Mexico City",
+        "CDMX": "Mexico City",
+        "Ciudad de México": "Mexico City",
+        "Mexico City Metropolitan Area": "Mexico City",
         "Greater Mexico City": "Mexico City",
         "Mexico Metropolitan Area": "Mexico City",
         "Mexico metropolitan area": "Mexico City",
-        "San Francisco Bay Area": "San Francisco", "SF": "San Francisco",
-        "Greater Los Angeles": "Los Angeles", "LA": "Los Angeles",
-        "Greater Toronto Area": "Toronto", "GTA": "Toronto",
+        "San Francisco Bay Area": "San Francisco",
+        "SF": "San Francisco",
+        "Greater Los Angeles": "Los Angeles",
+        "LA": "Los Angeles",
+        "Greater Toronto Area": "Toronto",
+        "GTA": "Toronto",
         "Greater Vancouver Area": "Vancouver",
         "Greater Vancouver": "Vancouver",
         "Greater London": "London",
@@ -720,7 +818,13 @@ if discoveries:
 
         # Fuzzy normalization for "Greater X" and "X Metropolitan Area" patterns
         if "Metropolitan" in city or "Greater" in city:
-            clean = city.replace("Greater ", "").replace(" Metropolitan Area", "").replace(" Metropolitan area", "").replace(" Area", "").strip()
+            clean = (
+                city.replace("Greater ", "")
+                .replace(" Metropolitan Area", "")
+                .replace(" Metropolitan area", "")
+                .replace(" Area", "")
+                .strip()
+            )
             if clean in CITY_ALIASES:
                 city = CITY_ALIASES[clean]
             elif clean:
@@ -778,10 +882,17 @@ if discoveries:
     # Sort countries by average relevance (high to low)
     country_avgs = {}
     for country, states in by_location_hierarchy.items():
-        all_jobs = [job for state_cities in states.values() for city_jobs in state_cities.values() for job in city_jobs]
+        all_jobs = [
+            job
+            for state_cities in states.values()
+            for city_jobs in state_cities.values()
+            for job in city_jobs
+        ]
         country_avgs[country] = calc_avg_relevance(all_jobs)
 
-    sorted_countries = sorted(by_location_hierarchy.keys(), key=lambda c: country_avgs[c], reverse=True)
+    sorted_countries = sorted(
+        by_location_hierarchy.keys(), key=lambda c: country_avgs[c], reverse=True
+    )
 
     # Helper function to render job card
     def render_job_card(disc):
@@ -839,7 +950,9 @@ if discoveries:
                 tag_weights = disc.get("search_tag_weights", {})
                 if tag_weights:
                     st.caption("**Matching Tags:**")
-                    for tag, weight in sorted(tag_weights.items(), key=lambda x: x[1], reverse=True):
+                    for tag, weight in sorted(
+                        tag_weights.items(), key=lambda x: x[1], reverse=True
+                    ):
                         st.caption(f"  • {tag}: {weight}%")
 
             # Action buttons row
@@ -886,7 +999,9 @@ if discoveries:
                                 f"(ATS: {result['ats_score']}%, Relevance: {result['relevance_score']}%)"
                             )
                         else:
-                            st.error("Failed to generate resume. JD extraction may have failed — try manual entry in New Resume.")
+                            st.error(
+                                "Failed to generate resume. JD extraction may have failed — try manual entry in New Resume."
+                            )
                     st.rerun()
 
             if disc.get("url"):
@@ -897,12 +1012,17 @@ if discoveries:
     # Display with 3-level hierarchy: Country > State > City
     for country in sorted_countries:
         states = by_location_hierarchy[country]
-        country_total = sum(len(jobs) for state_cities in states.values() for jobs in state_cities.values())
+        country_total = sum(
+            len(jobs) for state_cities in states.values() for jobs in state_cities.values()
+        )
         country_emoji = COUNTRY_EMOJIS.get(country, "🌍")
         country_avg = country_avgs[country]
         country_avg_pct = int(country_avg * 100)
 
-        with st.expander(f"{country_emoji} {country} · {country_total} jobs · avg: {country_avg_pct}%", expanded=False):
+        with st.expander(
+            f"{country_emoji} {country} · {country_total} jobs · avg: {country_avg_pct}%",
+            expanded=False,
+        ):
             # Calculate state averages for sorting
             state_avgs = {}
             for state, cities in states.items():
@@ -923,18 +1043,28 @@ if discoveries:
                     for city in sorted_cities:
                         city_jobs = cities[city]
                         city_avg_pct = int(city_avgs[city] * 100)
-                        with st.expander(f"📍 {city} · {len(city_jobs)} jobs · avg: {city_avg_pct}%", expanded=False):
+                        with st.expander(
+                            f"📍 {city} · {len(city_jobs)} jobs · avg: {city_avg_pct}%",
+                            expanded=False,
+                        ):
                             for disc in city_jobs:
                                 render_job_card(disc)
                 else:
                     # State/province level exists
                     state_avg_pct = int(state_avgs[state] * 100)
-                    with st.expander(f"📌 {state} · {state_total} jobs · avg: {state_avg_pct}%", expanded=False):
-                        sorted_cities = sorted(cities.keys(), key=lambda c: city_avgs[c], reverse=True)
+                    with st.expander(
+                        f"📌 {state} · {state_total} jobs · avg: {state_avg_pct}%", expanded=False
+                    ):
+                        sorted_cities = sorted(
+                            cities.keys(), key=lambda c: city_avgs[c], reverse=True
+                        )
                         for city in sorted_cities:
                             city_jobs = cities[city]
                             city_avg_pct = int(city_avgs[city] * 100)
-                            with st.expander(f"📍 {city} · {len(city_jobs)} jobs · avg: {city_avg_pct}%", expanded=False):
+                            with st.expander(
+                                f"📍 {city} · {len(city_jobs)} jobs · avg: {city_avg_pct}%",
+                                expanded=False,
+                            ):
                                 for disc in city_jobs:
                                     render_job_card(disc)
 else:

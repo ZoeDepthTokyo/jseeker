@@ -48,6 +48,7 @@ SECTION_LABELS = {
 def _get_templates_env() -> Environment:
     """Create Jinja2 environment for templates."""
     from config import settings
+
     return Environment(
         loader=FileSystemLoader(str(settings.templates_dir)),
         autoescape=True,
@@ -87,29 +88,35 @@ def _render_html(
             end_display = "Present" if language == "en" else "Presente"
         else:
             end_display = _format_date(end)
-        experiences.append({
-            **exp,
-            "start_display": _format_date(exp.get("start", "")),
-            "end_display": end_display,
-        })
+        experiences.append(
+            {
+                **exp,
+                "start_display": _format_date(exp.get("start", "")),
+                "end_display": end_display,
+            }
+        )
 
     # Overflow entries become early career (title/company/dates only, no bullets)
     early_career_overflow = []
     for exp in overflow_entries:
-        early_career_overflow.append({
-            "role": exp.get("role", ""),
-            "company": exp.get("company", ""),
-        })
+        early_career_overflow.append(
+            {
+                "role": exp.get("role", ""),
+                "company": exp.get("company", ""),
+            }
+        )
 
     education = []
     for edu in adapted.education:
-        education.append({
-            "institution": edu.institution,
-            "degree": edu.degree or "",
-            "field": edu.field,
-            "start": edu.start,
-            "end": edu.end,
-        })
+        education.append(
+            {
+                "institution": edu.institution,
+                "degree": edu.degree or "",
+                "field": edu.field,
+                "start": edu.start,
+                "end": edu.end,
+            }
+        )
 
     # Get section labels for the specified language
     section_labels = SECTION_LABELS.get(language, SECTION_LABELS["en"])
@@ -223,6 +230,7 @@ def _log_render_error(output_path: Path, attempt: int, stderr: str, stdout: str)
         stdout: Full stdout from subprocess.
     """
     from config import settings
+
     error_log_dir = settings.gaia_root / "logs" / "jseeker_render_errors"
     error_log_dir.mkdir(parents=True, exist_ok=True)
 
@@ -230,16 +238,16 @@ def _log_render_error(output_path: Path, attempt: int, stderr: str, stdout: str)
     error_log_path = error_log_dir / f"render_error_{timestamp}_attempt{attempt}.log"
 
     with open(error_log_path, "w", encoding="utf-8") as f:
-        f.write(f"Render Error Log\n")
-        f.write(f"================\n\n")
+        f.write("Render Error Log\n")
+        f.write("================\n\n")
         f.write(f"Timestamp: {datetime.now().isoformat()}\n")
         f.write(f"Attempt: {attempt}\n")
         f.write(f"Output Path: {output_path}\n\n")
-        f.write(f"STDERR (full, not truncated):\n")
+        f.write("STDERR (full, not truncated):\n")
         f.write(f"{'-' * 80}\n")
         f.write(stderr)
         f.write(f"\n{'-' * 80}\n\n")
-        f.write(f"STDOUT:\n")
+        f.write("STDOUT:\n")
         f.write(f"{'-' * 80}\n")
         f.write(stdout)
         f.write(f"\n{'-' * 80}\n")
@@ -298,22 +306,24 @@ with sync_playwright() as p:
                 if result.returncode == 0:
                     # Success
                     from jseeker.integrations.argus_telemetry import log_runtime_event
+
                     log_runtime_event(
                         task="pdf_render",
                         model="playwright",
                         cost_usd=0.0,
-                        details=f"Success on attempt {attempt}/{max_attempts}"
+                        details=f"Success on attempt {attempt}/{max_attempts}",
                     )
                     return output_path
                 else:
                     # Non-zero return code
-                    error_msg = f"Attempt {attempt}/{max_attempts} failed (returncode={result.returncode})"
-                    error_details.append({
-                        "attempt": attempt,
-                        "returncode": result.returncode,
-                        "stderr": result.stderr,
-                        "stdout": result.stdout,
-                    })
+                    error_details.append(
+                        {
+                            "attempt": attempt,
+                            "returncode": result.returncode,
+                            "stderr": result.stderr,
+                            "stdout": result.stdout,
+                        }
+                    )
                     last_error = result.stderr
 
                     # Log detailed error
@@ -324,12 +334,13 @@ with sync_playwright() as p:
                         time.sleep(delay)
 
             except subprocess.TimeoutExpired as e:
-                error_msg = f"Attempt {attempt}/{max_attempts} timeout after {e.timeout}s"
-                error_details.append({
-                    "attempt": attempt,
-                    "error": "TimeoutExpired",
-                    "timeout": e.timeout,
-                })
+                error_details.append(
+                    {
+                        "attempt": attempt,
+                        "error": "TimeoutExpired",
+                        "timeout": e.timeout,
+                    }
+                )
                 last_error = f"Subprocess timeout after {e.timeout}s"
 
                 # Log timeout error
@@ -341,16 +352,16 @@ with sync_playwright() as p:
 
         # All retries exhausted
         from jseeker.integrations.argus_telemetry import log_runtime_event
+
         log_runtime_event(
             task="pdf_render",
             model="playwright",
             cost_usd=0.0,
-            details=f"Failed after {max_attempts} attempts"
+            details=f"Failed after {max_attempts} attempts",
         )
 
         raise RenderError(
-            f"PDF generation failed after {max_attempts} attempts. "
-            f"Last error: {last_error}"
+            f"PDF generation failed after {max_attempts} attempts. " f"Last error: {last_error}"
         )
 
     finally:
@@ -367,10 +378,12 @@ def _html_to_pdf_fast(html: str, output_path: Path) -> Path:
     """
     try:
         from jseeker.browser_manager import html_to_pdf_fast
+
         return html_to_pdf_fast(html, output_path)
     except Exception as e:
         # Fallback to slow method if persistent browser fails
         import warnings
+
         warnings.warn(f"Fast PDF rendering failed ({e}), falling back to slow method")
         return _html_to_pdf_sync(html, output_path)
 
@@ -403,18 +416,14 @@ def _html_to_pdf_weasyprint(html: str, output_path: Path) -> Path:
             optimize_size=("fonts",),  # Subset fonts to reduce size
         )
 
-        logger.info(
-            f"_html_to_pdf_weasyprint | rendered {len(html)} chars -> {output_path}"
-        )
+        logger.info(f"_html_to_pdf_weasyprint | rendered {len(html)} chars -> {output_path}")
         return output_path
 
     except ImportError as e:
         logger.warning(f"WeasyPrint not available ({e}), falling back to Playwright")
         return _html_to_pdf_sync(html, output_path)
     except Exception as e:
-        logger.error(
-            f"_html_to_pdf_weasyprint | failed: {e}, falling back to Playwright"
-        )
+        logger.error(f"_html_to_pdf_weasyprint | failed: {e}, falling back to Playwright")
         return _html_to_pdf_sync(html, output_path)
 
 
@@ -468,7 +477,7 @@ def render_docx(adapted: AdaptedResume, output_path: Path, language: str = "en")
         Path to the generated DOCX file.
     """
     from docx import Document
-    from docx.shared import Inches, Pt, RGBColor
+    from docx.shared import Pt, RGBColor
     from docx.enum.text import WD_ALIGN_PARAGRAPH
 
     # Get section labels for the specified language
@@ -532,7 +541,9 @@ def render_docx(adapted: AdaptedResume, output_path: Path, language: str = "en")
     _add_section_header(doc, section_labels["experience"])
     for exp in adapted.experience_blocks:
         end = exp.get("end")
-        end_display = ("Present" if language == "en" else "Presente") if end is None else _format_date(end)
+        end_display = (
+            ("Present" if language == "en" else "Presente") if end is None else _format_date(end)
+        )
         start_display = _format_date(exp.get("start", ""))
 
         # Check if this is a condensed entry
@@ -558,7 +569,7 @@ def render_docx(adapted: AdaptedResume, output_path: Path, language: str = "en")
         date_para = doc.add_paragraph()
         date_para.paragraph_format.space_before = Pt(0)
         date_para.paragraph_format.space_after = Pt(1)
-        date_run = date_para.add_run(f"{start_display} – {end_display}")
+        date_para.add_run(f"{start_display} – {end_display}")
         if exp.get("location"):
             date_para.add_run(f" | {exp['location']}")
         if is_condensed:
@@ -631,7 +642,7 @@ def render_docx(adapted: AdaptedResume, output_path: Path, language: str = "en")
                 run.font.size = Pt(9.5)
 
     # Languages
-    if hasattr(adapted.contact, 'languages') and adapted.contact.languages:
+    if hasattr(adapted.contact, "languages") and adapted.contact.languages:
         _add_section_header(doc, section_labels["languages"])
         lang_strs = [
             f"{lang['lang']} ({lang['level']})" if isinstance(lang, dict) else str(lang)
@@ -657,14 +668,14 @@ def _add_bottom_border(paragraph, color: str = "2B5797") -> None:
     from lxml import etree
 
     pPr = paragraph._p.get_or_add_pPr()
-    pBdr = pPr.find(qn('w:pBdr'))
+    pBdr = pPr.find(qn("w:pBdr"))
     if pBdr is None:
-        pBdr = etree.SubElement(pPr, qn('w:pBdr'))
-    bottom = etree.SubElement(pBdr, qn('w:bottom'))
-    bottom.set(qn('w:val'), 'single')
-    bottom.set(qn('w:sz'), '4')  # 0.5pt
-    bottom.set(qn('w:space'), '1')
-    bottom.set(qn('w:color'), color)
+        pBdr = etree.SubElement(pPr, qn("w:pBdr"))
+    bottom = etree.SubElement(pBdr, qn("w:bottom"))
+    bottom.set(qn("w:val"), "single")
+    bottom.set(qn("w:sz"), "4")  # 0.5pt
+    bottom.set(qn("w:space"), "1")
+    bottom.set(qn("w:color"), color)
 
 
 def _add_section_header(doc, text: str) -> None:
@@ -675,6 +686,7 @@ def _add_section_header(doc, text: str) -> None:
         text: Section header text.
     """
     from docx.shared import Pt, RGBColor
+
     para = doc.add_paragraph()
     run = para.add_run(text)
     run.bold = True
@@ -690,6 +702,7 @@ def _add_section_header(doc, text: str) -> None:
 def _get_display_name() -> str:
     """Read display_name from contact.yaml."""
     from config import settings
+
     contact_path = settings.resume_blocks_dir / "contact.yaml"
     data = yaml.safe_load(contact_path.read_text(encoding="utf-8"))
     return data.get("contact", {}).get("display_name", "Resume")
@@ -760,6 +773,7 @@ def generate_output(
     """
     if output_dir is None:
         from config import settings
+
         output_dir = settings.output_dir
 
     if formats is None:
@@ -770,10 +784,21 @@ def generate_output(
     safe_name = _sanitize(display_name)
 
     # Reject placeholder values that aren't real company names
-    _placeholders = {"not specified", "unknown", "n/a", "not available", "tbd", "to be determined", "company name"}
+    _placeholders = {
+        "not specified",
+        "unknown",
+        "n/a",
+        "not available",
+        "tbd",
+        "to be determined",
+        "company name",
+    }
     if not company or not company.strip() or company.strip().lower() in _placeholders:
         import logging
-        logging.warning(f"Company name is empty or placeholder ('{company}'), using fallback 'Unknown_Company'")
+
+        logging.warning(
+            f"Company name is empty or placeholder ('{company}'), using fallback 'Unknown_Company'"
+        )
         company = "Unknown_Company"
 
     safe_company = _sanitize(company)
@@ -804,7 +829,9 @@ def generate_output(
     return results
 
 
-def compress_pdf(input_path: Path, output_path: Optional[Path] = None, quality: str = "medium") -> Path:
+def compress_pdf(
+    input_path: Path, output_path: Optional[Path] = None, quality: str = "medium"
+) -> Path:
     """Compress PDF to reduce file size.
 
     Uses PyMuPDF to optimize:
@@ -844,7 +871,9 @@ def compress_pdf(input_path: Path, output_path: Optional[Path] = None, quality: 
 
     original_size = input_path.stat().st_size / 1024
     compressed_size = output_path.stat().st_size / 1024
-    reduction = ((original_size - compressed_size) / original_size) * 100 if original_size > 0 else 0
+    reduction = (
+        ((original_size - compressed_size) / original_size) * 100 if original_size > 0 else 0
+    )
 
     logger.info(
         f"compress_pdf | {original_size:.0f}KB -> {compressed_size:.0f}KB "

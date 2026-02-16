@@ -109,6 +109,7 @@ class ParsedJD(BaseModel):
     culture_signals: list[str] = Field(default_factory=list)
     detected_ats: ATSPlatform = ATSPlatform.UNKNOWN
     jd_url: str = ""
+    alternate_source_url: str = ""  # URL where full JD was fetched (if different from jd_url)
     language: str = "en"  # "en" or "es" — auto-detected from JD
     market: str = "us"  # "us", "mx", "ca", "uk", "es", "dk", "fr"
 
@@ -218,6 +219,7 @@ class AdaptedResume(BaseModel):
 
 class PDFValidationResult(BaseModel):
     """Result of ATS compliance validation."""
+
     is_valid: bool
     issues: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
@@ -362,9 +364,15 @@ class JobDiscovery(BaseModel):
     search_tag_weights: dict[str, int] = {}  # Tag weights for ranking (not persisted to DB)
     resume_match_score: float = 0.0  # Resume library content match score (not persisted to DB)
     composite_score: float = 0.0  # Composite relevance score (not persisted to DB)
-    tag_weight_contribution: float = 0.0  # Tag weight component of composite score (not persisted to DB)
-    resume_match_contribution: float = 0.0  # Resume match component of composite score (not persisted to DB)
-    freshness_contribution: float = 0.0  # Freshness bonus component of composite score (not persisted to DB)
+    tag_weight_contribution: float = (
+        0.0  # Tag weight component of composite score (not persisted to DB)
+    )
+    resume_match_contribution: float = (
+        0.0  # Resume match component of composite score (not persisted to DB)
+    )
+    freshness_contribution: float = (
+        0.0  # Freshness bonus component of composite score (not persisted to DB)
+    )
     status: DiscoveryStatus = DiscoveryStatus.NEW
     imported_application_id: Optional[int] = None
     discovered_at: Optional[datetime] = None

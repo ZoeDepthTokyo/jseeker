@@ -63,11 +63,11 @@ except NameError:
 if _model_choice != _prev_model:
     st.session_state["_prev_model_choice"] = _model_choice
     if _model_map[_model_choice] == "opus":
-        st.sidebar.warning(f"Model: **Opus** — Premium pricing ($15/$75 per M tokens)")
+        st.sidebar.warning("Model: **Opus** — Premium pricing ($15/$75 per M tokens)")
     elif _model_map[_model_choice] == "sonnet":
-        st.sidebar.info(f"Model changed to **Sonnet** — Quality mode")
+        st.sidebar.info("Model changed to **Sonnet** — Quality mode")
     else:
-        st.sidebar.success(f"Model changed to **Haiku** — Fast/Cheap mode")
+        st.sidebar.success("Model changed to **Haiku** — Fast/Cheap mode")
 else:
     st.session_state["_prev_model_choice"] = _model_choice
 

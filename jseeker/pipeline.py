@@ -66,6 +66,7 @@ def run_pipeline(
     pdf_output = outputs.get("pdf")
     if pdf_output and pdf_output.stat().st_size > 1.5 * 1024 * 1024:
         import logging
+
         logging.getLogger(__name__).info("PDF size >1.5MB, compressing...")
         compress_pdf(pdf_output, quality="medium")
 

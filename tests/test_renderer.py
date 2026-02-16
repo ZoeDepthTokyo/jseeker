@@ -3,7 +3,13 @@
 import pytest
 from unittest.mock import patch, MagicMock
 import subprocess
-from jseeker.renderer import _sanitize, _get_next_version, SECTION_LABELS, _html_to_pdf_sync, generate_output
+from jseeker.renderer import (
+    _sanitize,
+    _get_next_version,
+    SECTION_LABELS,
+    _html_to_pdf_sync,
+    generate_output,
+)
 
 
 class TestSanitize:
@@ -600,5 +606,9 @@ class TestOutputNaming:
                         )
 
             pdf_path = outputs["pdf"]
-            assert "Not_specified" not in str(pdf_path), f"Placeholder '{placeholder}' produced Not_specified in path"
-            assert "Unknown_Company" in str(pdf_path), f"Placeholder '{placeholder}' should fallback to Unknown_Company"
+            assert "Not_specified" not in str(
+                pdf_path
+            ), f"Placeholder '{placeholder}' produced Not_specified in path"
+            assert "Unknown_Company" in str(
+                pdf_path
+            ), f"Placeholder '{placeholder}' should fallback to Unknown_Company"

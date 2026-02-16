@@ -13,12 +13,11 @@ Usage:
 
 # Forward to standalone jSeeker launcher
 if __name__ == "__main__":
-    import sys
     from pathlib import Path
 
     # Import and execute launch_jseeker
     launch_jseeker_path = Path(__file__).parent / "launch_jseeker.py"
 
     with open(launch_jseeker_path) as f:
-        code = compile(f.read(), str(launch_jseeker_path), 'exec')
+        code = compile(f.read(), str(launch_jseeker_path), "exec")
         exec(code)

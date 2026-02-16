@@ -3,8 +3,13 @@
 import json
 from jseeker.pipeline import _write_metadata
 from jseeker.models import (
-    ParsedJD, MatchResult, ATSScore, TemplateType,
-    PipelineResult, AdaptedResume, PDFValidationResult,
+    ParsedJD,
+    MatchResult,
+    ATSScore,
+    TemplateType,
+    PipelineResult,
+    AdaptedResume,
+    PDFValidationResult,
 )
 
 

@@ -1,4 +1,5 @@
 """PDF validation for ATS compliance."""
+
 import logging
 from pathlib import Path
 
@@ -50,9 +51,7 @@ def validate_pdf_ats_compliance(pdf_path: Path) -> PDFValidationResult:
         # Check 3: Metadata
         metadata = doc.metadata
         if not metadata or not metadata.get("title"):
-            warnings.append(
-                "No PDF metadata - add title/author for better ATS recognition"
-            )
+            warnings.append("No PDF metadata - add title/author for better ATS recognition")
 
         # Check 4: File size
         file_size_mb = pdf_path.stat().st_size / (1024 * 1024)
@@ -64,9 +63,7 @@ def validate_pdf_ats_compliance(pdf_path: Path) -> PDFValidationResult:
         # Check 5: Page count
         page_count = doc.page_count
         if page_count > 3:
-            warnings.append(
-                f"Resume is {page_count} pages - target 2 pages for ATS"
-            )
+            warnings.append(f"Resume is {page_count} pages - target 2 pages for ATS")
 
         doc.close()
 

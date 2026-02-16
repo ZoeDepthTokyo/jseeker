@@ -58,6 +58,7 @@ def _clear_pycache():
     for cache_dir in JSEEKER_DIR.rglob("__pycache__"):
         if cache_dir.is_dir():
             import shutil
+
             shutil.rmtree(cache_dir, ignore_errors=True)
             count += 1
     if count:

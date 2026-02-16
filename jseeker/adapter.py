@@ -113,7 +113,9 @@ def get_address_for_location(location: str, market: str) -> str:
     location_lower = location.lower().strip()
     for city_pattern, address in CITY_TO_ADDRESS.items():
         if city_pattern in location_lower:
-            logger.info(f"get_address_for_location | matched city pattern: {city_pattern} -> {address}")
+            logger.info(
+                f"get_address_for_location | matched city pattern: {city_pattern} -> {address}"
+            )
             return address
 
     # Fallback to market-based address

@@ -83,11 +83,20 @@ if jd_url.strip() and not st.session_state.get("jd_text_input", "").strip():
                 if fetched_jd and len(fetched_jd.strip()) > 100:
                     # Store in intermediate key to avoid widget key conflict
                     st.session_state["fetched_jd_text"] = fetched_jd
+                    if meta.get("linkedin_fallback_used"):
+                        alt_src = meta.get("alternate_source_url", "alternate source")
+                        st.session_state["_jd_fetch_info"] = (
+                            f"LinkedIn JD was incomplete. Full content fetched from: {alt_src}"
+                        )
                     st.rerun()
                 else:
                     st.warning("Could not extract enough text from URL. Paste the JD manually.")
             except Exception as e:
                 st.error(f"Extraction failed: {e}")
+
+# Show info if LinkedIn fallback was used
+if st.session_state.get("_jd_fetch_info"):
+    st.info(st.session_state.pop("_jd_fetch_info"))
 
 jd_text = st.text_area(
     "Paste the full job description here:",
@@ -166,6 +175,9 @@ if generate_button:
                     error_parts.append(f"Method: {extraction_meta.get('method', 'unknown')}")
                     error_parts.append("Please paste the JD text and try again.")
                     raise ValueError(" | ".join(error_parts))
+                if extraction_meta.get("linkedin_fallback_used"):
+                    alt_src = extraction_meta.get("alternate_source_url", "")
+                    st.caption(f"LinkedIn JD was incomplete. Full content from: {alt_src}")
                 progress.progress(12, text="Step 1/5: Job description extracted from URL.")
             else:
                 progress.progress(12, text="Step 1/5: Using pasted job description.")
@@ -182,7 +194,11 @@ if generate_button:
             )
 
             # Auto-select Spanish template if language is Spanish or location is Mexico
-            if parsed_jd.language == "es" or "mexico" in parsed_jd.location.lower() or "méxico" in parsed_jd.location.lower():
+            if (
+                parsed_jd.language == "es"
+                or "mexico" in parsed_jd.location.lower()
+                or "méxico" in parsed_jd.location.lower()
+            ):
                 # Find ESP template in available styles
                 available_styles_temp = get_available_template_styles()
                 for style in available_styles_temp:

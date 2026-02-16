@@ -7,7 +7,6 @@ import json
 import logging
 import time
 from functools import wraps
-from pathlib import Path
 from typing import Callable, Optional, TypeVar
 
 import anthropic
@@ -104,6 +103,7 @@ MODEL_PRICING = {
 
 class BudgetExceededError(Exception):
     """Raised when monthly API budget is exceeded."""
+
     pass
 
 
@@ -122,9 +122,7 @@ class JseekerLLM:
         if self._client is None:
             api_key = settings.anthropic_api_key
             if not api_key:
-                raise ValueError(
-                    "ANTHROPIC_API_KEY not set. Add it to .env or environment."
-                )
+                raise ValueError("ANTHROPIC_API_KEY not set. Add it to .env or environment.")
             self._client = anthropic.Anthropic(api_key=api_key)
         return self._client
 
@@ -160,9 +158,7 @@ class JseekerLLM:
         elif self.model_override == "sonnet":
             model_id = settings.sonnet_model
         else:
-            model_id = (
-                settings.sonnet_model if model == "sonnet" else settings.haiku_model
-            )
+            model_id = settings.sonnet_model if model == "sonnet" else settings.haiku_model
 
         # Local cache check
         if use_local_cache and settings.enable_local_cache:
@@ -185,6 +181,7 @@ class JseekerLLM:
         # Budget enforcement
         try:
             from jseeker.tracker import tracker_db
+
             monthly_cost = tracker_db.get_monthly_cost()
             if monthly_cost >= settings.max_monthly_budget_usd:
                 raise BudgetExceededError(
@@ -242,6 +239,7 @@ class JseekerLLM:
         # Auto-persist to DB
         try:
             from jseeker.tracker import tracker_db
+
             tracker_db.log_cost(self._session_costs[-1])
         except Exception:
             pass  # DB not available or error — don't break the pipeline

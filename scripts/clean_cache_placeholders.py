@@ -20,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from config import settings
 from jseeker.tracker import tracker_db
 
-logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -53,7 +53,7 @@ def clean_cache(dry_run: bool = False):
 
     for cache_file in cache_files:
         try:
-            with open(cache_file, 'r', encoding='utf-8') as f:
+            with open(cache_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
             # Extract JSON from LLM response
@@ -78,10 +78,14 @@ def clean_cache(dry_run: bool = False):
 
             if company in PLACEHOLDER_COMPANIES:
                 if dry_run:
-                    logger.info(f"[DRY RUN] Would remove: {cache_file.name} (company: '{parsed.get('company', '')}')")
+                    logger.info(
+                        f"[DRY RUN] Would remove: {cache_file.name} (company: '{parsed.get('company', '')}')"
+                    )
                 else:
                     cache_file.unlink()
-                    logger.info(f"✓ Removed: {cache_file.name} (company: '{parsed.get('company', '')}')")
+                    logger.info(
+                        f"✓ Removed: {cache_file.name} (company: '{parsed.get('company', '')}')"
+                    )
                 removed_count += 1
 
         except Exception as e:
@@ -111,10 +115,14 @@ def clean_cache(dry_run: bool = False):
 
                     if parsed_company in PLACEHOLDER_COMPANIES:
                         if dry_run:
-                            logger.info(f"[DRY RUN] Would remove DB cache entry #{cache_id} (company: '{parsed.get('company', '')}')")
+                            logger.info(
+                                f"[DRY RUN] Would remove DB cache entry #{cache_id} (company: '{parsed.get('company', '')}')"
+                            )
                         else:
                             c.execute("DELETE FROM jd_cache WHERE id = ?", (cache_id,))
-                            logger.info(f"✓ Removed DB cache entry #{cache_id} (company: '{parsed.get('company', '')}')")
+                            logger.info(
+                                f"✓ Removed DB cache entry #{cache_id} (company: '{parsed.get('company', '')}')"
+                            )
                         db_removed += 1
                 except json.JSONDecodeError:
                     pass
@@ -128,17 +136,21 @@ def clean_cache(dry_run: bool = False):
         logger.error(f"Error cleaning database cache: {e}")
 
     total_removed = removed_count + db_removed
-    logger.info(f"\nCache cleanup complete: {removed_count} file cache + {db_removed} DB cache = {total_removed} total")
+    logger.info(
+        f"\nCache cleanup complete: {removed_count} file cache + {db_removed} DB cache = {total_removed} total"
+    )
 
     return total_removed
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Clean cache entries with placeholder company names")
+    parser = argparse.ArgumentParser(
+        description="Clean cache entries with placeholder company names"
+    )
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Show what would be removed without actually deleting"
+        help="Show what would be removed without actually deleting",
     )
     args = parser.parse_args()
 

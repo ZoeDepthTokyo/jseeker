@@ -12,7 +12,6 @@ import streamlit as st
 from jseeker.models import ApplicationStatus, JobStatus, ResumeStatus
 from jseeker.tracker import tracker_db
 
-
 st.title("Application Tracker")
 
 # --- Filters ---
@@ -50,16 +49,13 @@ if apps:
     df_all = pd.DataFrame(apps)
 
     # Only show salary chart if salary data exists
-    df_with_salary = df_all[
-        (df_all["salary_min"].notna()) | (df_all["salary_max"].notna())
-    ].copy()
+    df_with_salary = df_all[(df_all["salary_min"].notna()) | (df_all["salary_max"].notna())].copy()
 
     if not df_with_salary.empty:
         with st.expander("Salary Analytics", expanded=False):
             # Calculate average salary
             df_with_salary["salary_avg"] = (
-                df_with_salary["salary_min"].fillna(0) +
-                df_with_salary["salary_max"].fillna(0)
+                df_with_salary["salary_min"].fillna(0) + df_with_salary["salary_max"].fillna(0)
             ) / 2
             df_with_salary["salary_avg"] = df_with_salary["salary_avg"].replace(0, pd.NA)
             df_with_salary = df_with_salary[df_with_salary["salary_avg"].notna()]
@@ -67,12 +63,15 @@ if apps:
             if not df_with_salary.empty:
                 # Format hover data
                 df_with_salary["hover_text"] = (
-                    df_with_salary["role_title"] +
-                    "<br>" + df_with_salary["company_name"] +
-                    "<br>Salary: " + df_with_salary["salary_currency"].fillna("USD") + " " +
-                    df_with_salary["salary_min"].fillna(0).astype(int).astype(str) +
-                    " - " +
-                    df_with_salary["salary_max"].fillna(0).astype(int).astype(str)
+                    df_with_salary["role_title"]
+                    + "<br>"
+                    + df_with_salary["company_name"]
+                    + "<br>Salary: "
+                    + df_with_salary["salary_currency"].fillna("USD")
+                    + " "
+                    + df_with_salary["salary_min"].fillna(0).astype(int).astype(str)
+                    + " - "
+                    + df_with_salary["salary_max"].fillna(0).astype(int).astype(str)
                 )
 
                 # Create scatter plot
@@ -86,9 +85,9 @@ if apps:
                     labels={
                         "created_at": "Application Date",
                         "salary_avg": "Average Salary",
-                        "application_status": "Status"
+                        "application_status": "Status",
                     },
-                    title="Salary Distribution Over Time"
+                    title="Salary Distribution Over Time",
                 )
 
                 fig.update_traces(
@@ -145,8 +144,11 @@ if apps:
 
     # Add emoji indicators for status (visual cue since we can't color cells)
     status_emojis = {
-        "rejected": "❌", "applied": "✅", "not_applied": "⏳",
-        "interviewing": "🗣️", "offer": "🎉"
+        "rejected": "❌",
+        "applied": "✅",
+        "not_applied": "⏳",
+        "interviewing": "🗣️",
+        "offer": "🎉",
     }
     job_emojis = {"closed": "❌", "active": "✅", "paused": "⏸️"}
 
@@ -173,50 +175,39 @@ if apps:
     column_config = {
         "id": st.column_config.NumberColumn("ID", disabled=True),
         "company_name": st.column_config.TextColumn(
-            "Company",
-            help="Edit if parser didn't extract correctly",
-            disabled=False
+            "Company", help="Edit if parser didn't extract correctly", disabled=False
         ),
         "role_title": st.column_config.TextColumn(
-            "Role",
-            help="Job title (editable)",
-            disabled=False,
-            width="large"
+            "Role", help="Job title (editable)", disabled=False, width="large"
         ),
         "jd_url": st.column_config.LinkColumn(
             "🔗",
             help="Click to open job posting in new tab",
             max_chars=500,
             disabled=True,
-            width="small"
+            width="small",
         ),
         "salary_min": st.column_config.NumberColumn(
-            "Min Salary",
-            help="Minimum salary (optional)",
-            format="%d"
+            "Min Salary", help="Minimum salary (optional)", format="%d"
         ),
         "salary_max": st.column_config.NumberColumn(
-            "Max Salary",
-            help="Maximum salary (optional)",
-            format="%d"
+            "Max Salary", help="Maximum salary (optional)", format="%d"
         ),
         "salary_currency": st.column_config.SelectboxColumn(
-            "Currency",
-            options=["USD", "EUR", "GBP", "MXN"],
-            default="USD"
+            "Currency", options=["USD", "EUR", "GBP", "MXN"], default="USD"
         ),
         "relevance_score": st.column_config.NumberColumn(
             "Relevance",
             format="%.0f%%",
             disabled=False,
-            help="0-25: Low fit | 26-50: Medium fit | 51-75: Good fit | 76-100: Excellent fit. Used for prioritization and success rate analysis."
+            help="0-25: Low fit | 26-50: Medium fit | 51-75: Good fit | 76-100: Excellent fit. Used for prioritization and success rate analysis.",
         ),
         "ats_score": st.column_config.NumberColumn("ATS Score", disabled=False),
         "application_status": st.column_config.SelectboxColumn(
             "App Status",
             options=[s.value for s in ApplicationStatus],
             required=True,
-            help="❌ rejected | ✅ applied | ⏳ not_applied | 🗣️ interviewing | 🎉 offer"
+            help="❌ rejected | ✅ applied | ⏳ not_applied | 🗣️ interviewing | 🎉 offer",
         ),
         "resume_status": st.column_config.SelectboxColumn(
             "Resume Status", options=[s.value for s in ResumeStatus], required=True
@@ -225,7 +216,7 @@ if apps:
             "Job Status",
             options=[s.value for s in JobStatus],
             required=True,
-            help="❌ closed | ✅ active | ⏸️ paused"
+            help="❌ closed | ✅ active | ⏸️ paused",
         ),
         "location": st.column_config.TextColumn("Location"),
         "created_at": st.column_config.DatetimeColumn("Created", disabled=True),
@@ -255,7 +246,10 @@ if apps:
                 if "company_name" in edited_df.columns and "company_name" in original:
                     new_company = row.get("company_name")
                     old_company = original.get("company_name")
-                    if not (pd.isna(new_company) and pd.isna(old_company)) and new_company != old_company:
+                    if (
+                        not (pd.isna(new_company) and pd.isna(old_company))
+                        and new_company != old_company
+                    ):
                         # Create a new company and reassign the application to it
                         # This prevents accidentally updating other applications sharing the same company
                         new_company_id = tracker_db.get_or_create_company(new_company)
@@ -263,7 +257,10 @@ if apps:
                         # Update the application to point to the new company
                         conn = tracker_db._conn()
                         c = conn.cursor()
-                        c.execute("UPDATE applications SET company_id = ? WHERE id = ?", (new_company_id, app_id))
+                        c.execute(
+                            "UPDATE applications SET company_id = ? WHERE id = ?",
+                            (new_company_id, app_id),
+                        )
                         conn.commit()
                         conn.close()
                         changed_count += 1
@@ -299,7 +296,9 @@ if apps:
                     new_ats = row.get("ats_score")
                     old_ats = original.get("ats_score")
                     if not (pd.isna(new_ats) and pd.isna(old_ats)) and new_ats != old_ats:
-                        tracker_db.update_latest_resume_ats(app_id, None if pd.isna(new_ats) else int(new_ats))
+                        tracker_db.update_latest_resume_ats(
+                            app_id, None if pd.isna(new_ats) else int(new_ats)
+                        )
                         changed_count += 1
 
                 if changes:
@@ -313,13 +312,15 @@ if apps:
     # --- Delete Row ---
     st.markdown("---")
     with st.expander("🗑️ Delete Application", expanded=False):
-        st.warning("⚠️ Warning: This will permanently delete the application and all associated resumes and files.")
+        st.warning(
+            "⚠️ Warning: This will permanently delete the application and all associated resumes and files."
+        )
 
         delete_id = st.number_input(
             "Application ID to delete",
             min_value=1,
             step=1,
-            help="Enter the ID from the leftmost column"
+            help="Enter the ID from the leftmost column",
         )
 
         if delete_id:
@@ -344,7 +345,9 @@ if apps:
             else:
                 st.error(f"Application ID {delete_id} not found in current filtered view.")
 
-        st.caption("Note: IDs are permanent and never reuse after deletion (standard database behavior).")
+        st.caption(
+            "Note: IDs are permanent and never reuse after deletion (standard database behavior)."
+        )
 else:
     st.info("No applications match your filters.")
 
@@ -363,7 +366,9 @@ with st.expander("Import / Export", expanded=False):
 
             if csv_path.exists():
                 with open(csv_path, "rb") as handle:
-                    st.download_button("Download CSV", data=handle.read(), file_name="tracker_export.csv")
+                    st.download_button(
+                        "Download CSV", data=handle.read(), file_name="tracker_export.csv"
+                    )
 
     with col_b:
         uploaded = st.file_uploader("Import CSV", type=["csv"])
@@ -380,17 +385,17 @@ with st.expander("Import / Export", expanded=False):
 # --- Job Monitor ---
 st.markdown("---")
 with st.expander("Job Status Monitor", expanded=False):
-    st.markdown(
-        """
+    st.markdown("""
 How it works:
 1. Checks all applications currently marked as `active` that have a job URL.
 2. If URL returns HTTP 404 or closure language, status changes to `closed`.
 3. If closure language indicates expiry, status changes to `expired`.
 4. If URL is reachable and no closure signal is found, status stays `active`.
-        """
-    )
+        """)
 
-    active_with_url = [a for a in tracker_db.list_applications(job_status="active") if a.get("jd_url")]
+    active_with_url = [
+        a for a in tracker_db.list_applications(job_status="active") if a.get("jd_url")
+    ]
     st.caption(f"Active jobs with URLs ready to check: {len(active_with_url)}")
 
     if st.button("Check All Active Job URLs"):

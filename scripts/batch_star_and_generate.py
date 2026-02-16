@@ -19,13 +19,13 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import logging
-from datetime import datetime
 
 from jseeker.tracker import tracker_db
 from jseeker.job_discovery import generate_resume_from_discovery
-from jseeker.batch_processor import BatchProcessor
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 
@@ -55,33 +55,30 @@ def parse_args():
     parser.add_argument(
         "--search",
         required=True,
-        help="Name of saved search to load (e.g., 'Director of UX - Worldwide')"
+        help="Name of saved search to load (e.g., 'Director of UX - Worldwide')",
     )
     parser.add_argument(
         "--location",
         required=True,
-        help="Location to filter by (e.g., 'New York', 'NY', 'San Francisco')"
+        help="Location to filter by (e.g., 'New York', 'NY', 'San Francisco')",
     )
     parser.add_argument(
-        "--top",
-        type=int,
-        default=5,
-        help="Number of top jobs to process (default: 5)"
+        "--top", type=int, default=5, help="Number of top jobs to process (default: 5)"
     )
     parser.add_argument(
         "--generate",
         action="store_true",
-        help="Auto-generate resumes for starred jobs (default: False, just star)"
+        help="Auto-generate resumes for starred jobs (default: False, just star)",
     )
     parser.add_argument(
         "--output-folder",
         default=None,
-        help="Output folder name (default: auto-detect from company/role)"
+        help="Output folder name (default: auto-detect from company/role)",
     )
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Dry run: show what would be done without making changes"
+        help="Dry run: show what would be done without making changes",
     )
 
     return parser.parse_args()
@@ -112,8 +109,8 @@ def load_saved_search(search_name: str) -> dict:
     # If not found, show available searches
     available = [s["name"] for s in saved_searches]
     raise ValueError(
-        f"Search '{search_name}' not found. Available searches:\n" +
-        "\n".join(f"  - {name}" for name in available)
+        f"Search '{search_name}' not found. Available searches:\n"
+        + "\n".join(f"  - {name}" for name in available)
     )
 
 
@@ -155,9 +152,7 @@ def get_top_n_by_relevance(discoveries: list[dict], n: int = 5) -> list[dict]:
     """
     # Sort by relevance_score descending
     sorted_discoveries = sorted(
-        discoveries,
-        key=lambda d: d.get("relevance_score", 0),
-        reverse=True
+        discoveries, key=lambda d: d.get("relevance_score", 0), reverse=True
     )
 
     top_n = sorted_discoveries[:n]
@@ -198,7 +193,9 @@ def star_jobs(job_ids: list[int], dry_run: bool = False) -> int:
     return starred_count
 
 
-def generate_resumes_batch(discoveries: list[dict], output_folder: str = None, dry_run: bool = False) -> int:
+def generate_resumes_batch(
+    discoveries: list[dict], output_folder: str = None, dry_run: bool = False
+) -> int:
     """Generate resumes for multiple discoveries.
 
     Args:
@@ -219,7 +216,7 @@ def generate_resumes_batch(discoveries: list[dict], output_folder: str = None, d
     for i, disc in enumerate(discoveries, 1):
         company = disc.get("company", "Unknown")
         title = disc.get("title", "Untitled")
-        url = disc.get("url", "")
+        disc.get("url", "")
 
         logger.info(f"[{i}/{len(discoveries)}] Generating resume for {company} - {title}...")
 
@@ -230,7 +227,7 @@ def generate_resumes_batch(discoveries: list[dict], output_folder: str = None, d
                 logger.info(f"  ✅ Generated: {result['pdf_path']}")
                 generated_count += 1
             else:
-                logger.warning(f"  ⚠️ Generation returned no PDF path")
+                logger.warning("  ⚠️ Generation returned no PDF path")
 
         except Exception as e:
             logger.error(f"  ❌ Failed: {e}")
@@ -255,7 +252,7 @@ def main():
 
     # Step 1: Load saved search
     try:
-        search_config = load_saved_search(args.search)
+        load_saved_search(args.search)
     except ValueError as e:
         logger.error(str(e))
         return 1
@@ -272,7 +269,9 @@ def main():
     logger.info(f"📦 Found {len(active_discoveries)} active discoveries in database")
 
     if not active_discoveries:
-        logger.error("No active discoveries found. Run the search in UI first to populate discoveries.")
+        logger.error(
+            "No active discoveries found. Run the search in UI first to populate discoveries."
+        )
         return 1
 
     # Step 3: Filter by location
@@ -296,9 +295,7 @@ def main():
     # Step 6: Generate resumes (if requested)
     if args.generate:
         generated_count = generate_resumes_batch(
-            top_jobs,
-            output_folder=args.output_folder,
-            dry_run=args.dry_run
+            top_jobs, output_folder=args.output_folder, dry_run=args.dry_run
         )
 
         logger.info("=" * 60)

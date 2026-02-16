@@ -1,0 +1,411 @@
+2026-02-15 19:39:47,023 - __main__ - INFO - ============================================================
+2026-02-15 19:39:47,023 - __main__ - INFO - BATCH WORKFLOW: Star + Generate Resumes
+2026-02-15 19:39:47,023 - __main__ - INFO - ============================================================
+2026-02-15 19:39:47,023 - __main__ - INFO - Search: Director of UX - Worldwide
+2026-02-15 19:39:47,023 - __main__ - INFO - Location: NY
+2026-02-15 19:39:47,023 - __main__ - INFO - Top N: 5
+2026-02-15 19:39:47,023 - __main__ - INFO - Generate: True
+2026-02-15 19:39:47,023 - __main__ - INFO - Dry Run: False
+2026-02-15 19:39:47,023 - __main__ - INFO - ============================================================
+2026-02-15 19:39:47,024 - __main__ - INFO - \u2705 Loaded saved search: Director of UX - Worldwide
+2026-02-15 19:39:47,064 - __main__ - INFO - \U0001f4e6 Found 4213 active discoveries in database
+2026-02-15 19:39:47,067 - __main__ - INFO - \U0001f4cd Filtered to 196 jobs in NY
+2026-02-15 19:39:47,067 - __main__ - INFO - \U0001f4ca Selected top 5 jobs by relevance:
+2026-02-15 19:39:47,067 - __main__ - INFO -   1. Arcesium - Vice President - Product Management (UBOR) (0% match)
+2026-02-15 19:39:47,067 - __main__ - INFO -   2. Thomson Reuters - Senior Director, UX Design and Research (0% match)
+2026-02-15 19:39:47,067 - __main__ - INFO -   3. Simply - Director of Product Innovation (0% match)
+2026-02-15 19:39:47,067 - __main__ - INFO -   4. PayPal - Director, Experience Design (0% match)
+2026-02-15 19:39:47,067 - __main__ - INFO -   5. Paramount+ - Product Designer (0% match)
+2026-02-15 19:39:47,104 - __main__ - INFO - \u2b50 Starred 5/5 jobs
+2026-02-15 19:39:47,104 - __main__ - INFO - \U0001f680 Starting batch resume generation for 5 jobs...
+2026-02-15 19:39:47,104 - __main__ - INFO - [1/5] Generating resume for Arcesium - Vice President - Product Management (UBOR)...
+2026-02-15 19:39:47,179 - jseeker.jd_parser - INFO - extract_jd_from_url | url=https://www.linkedin.com/jobs/view/vice-president-product-management-ubor-at-arcesium-4305776161?pos...
+2026-02-15 19:39:49,835 - jseeker.jd_parser - INFO - extract_jd_from_url | status=200 | content_length=289163
+2026-02-15 19:39:50,020 - jseeker.jd_parser - INFO - prune_jd | input_length=11689
+2026-02-15 19:40:00,064 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-02-15 19:40:00,090 - jseeker.llm - INFO - API call completed | model=claude-haiku-4-5-20251001 | task=jd_prune | input_tokens=2919 | output_tokens=617 | cache_tokens=0 | cost_usd=$0.004803 | duration_ms=10067
+2026-02-15 19:40:00,101 - jseeker.jd_parser - INFO - prune_jd | output_length=2956 | reduction=8733
+2026-02-15 19:40:00,106 - jseeker.jd_parser - INFO - _get_cached_jd | cache MISS | hash=d7b5adf872d2361c...
+2026-02-15 19:40:00,107 - jseeker.jd_parser - INFO - process_jd | detected_language=en
+2026-02-15 19:40:03,612 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-02-15 19:40:03,615 - jseeker.llm - INFO - API call completed | model=claude-haiku-4-5-20251001 | task=jd_parse | input_tokens=1137 | output_tokens=636 | cache_tokens=0 | cost_usd=$0.003454 | duration_ms=3502
+2026-02-15 19:40:03,626 - jseeker.jd_parser - INFO - parse_jd | JSON parse succeeded | keys=['title', 'company', 'seniority', 'location', 'remote_policy', 'salary_range', 'role_exp', 'management_exp', 'hard_requirements', 'soft_requirements', 'ats_keywords', 'culture_signals']
+2026-02-15 19:40:03,638 - jseeker.jd_parser - INFO - process_jd | title=Vice President - Product Management (UBOR) | company=Arcesium | keywords_count=20 | language=en
+2026-02-15 19:40:03,642 - jseeker.jd_parser - INFO - process_jd | salary_extraction | min=240000 | max=290000 | currency=USD
+2026-02-15 19:40:03,643 - jseeker.jd_parser - INFO - process_jd | final: language=en market=us
+2026-02-15 19:40:03,643 - jseeker.matcher - INFO - match_templates | ats_keywords_count=20 | title=Vice President - Product Management (UBOR) | company=Arcesium
+2026-02-15 19:40:03,652 - jseeker.block_manager - INFO - Loaded contact.yaml
+2026-02-15 19:40:03,659 - jseeker.block_manager - INFO - Loaded summaries.yaml | count=6
+2026-02-15 19:40:03,691 - jseeker.block_manager - INFO - Loaded experience.yaml | count=9
+2026-02-15 19:40:03,714 - jseeker.block_manager - INFO - Loaded skills.yaml | categories=5
+2026-02-15 19:40:03,716 - jseeker.block_manager - INFO - Loaded awards.yaml | count=6
+2026-02-15 19:40:03,718 - jseeker.block_manager - INFO - Loaded education.yaml | count=4
+2026-02-15 19:40:03,719 - jseeker.block_manager - INFO - Loaded certifications.yaml | count=4
+2026-02-15 19:40:03,720 - jseeker.block_manager - INFO - Loaded early_career.yaml | count=6
+2026-02-15 19:40:03,720 - jseeker.block_manager - INFO - ResumeCorpus loaded successfully
+2026-02-15 19:40:31,859 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-02-15 19:40:31,861 - jseeker.llm - INFO - API call completed | model=claude-sonnet-4-5-20250929 | task=block_scoring | input_tokens=1296 | output_tokens=1421 | cache_tokens=0 | cost_usd=$0.025203 | duration_ms=28135
+2026-02-15 19:40:31,872 - jseeker.matcher - INFO - llm_relevance_score | raw_response_length=6204
+2026-02-15 19:40:31,872 - jseeker.matcher - INFO - llm_relevance_score | JSON parse succeeded | rankings_count=3
+2026-02-15 19:40:31,873 - jseeker.matcher - INFO - match_templates | LLM returned 3 match results
+2026-02-15 19:40:31,873 - jseeker.block_manager - INFO - get_experience_for_template | template=ai_product | matched=4
+2026-02-15 19:40:31,873 - jseeker.matcher - INFO - local_keyword_score | template=ai_product | matched=3 | missing=17 | total=20 | score=0.15
+2026-02-15 19:40:31,873 - jseeker.block_manager - INFO - get_experience_for_template | template=hybrid | matched=5
+2026-02-15 19:40:31,874 - jseeker.matcher - INFO - local_keyword_score | template=hybrid | matched=2 | missing=18 | total=20 | score=0.10
+2026-02-15 19:40:31,874 - jseeker.block_manager - INFO - get_experience_for_template | template=ai_ux | matched=5
+2026-02-15 19:40:31,874 - jseeker.matcher - INFO - local_keyword_score | template=ai_ux | matched=1 | missing=19 | total=20 | score=0.05
+2026-02-15 19:40:31,874 - jseeker.matcher - INFO - match_templates | returning 3 final results
+2026-02-15 19:40:31,874 - jseeker.adapter - INFO - adapt_resume | starting adaptation | template=ai_product | jd_title=Vice President - Product Management (UBOR)
+2026-02-15 19:40:31,874 - jseeker.adapter - INFO - adapt_resume | step 1: adapting summary
+2026-02-15 19:40:31,918 - jseeker.adapter - INFO - adapt_summary | pattern cache MISS | calling LLM
+2026-02-15 19:40:35,413 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-02-15 19:40:35,415 - jseeker.llm - INFO - API call completed | model=claude-sonnet-4-5-20250929 | task=summary_adapt | input_tokens=466 | output_tokens=109 | cache_tokens=0 | cost_usd=$0.003033 | duration_ms=3490
+2026-02-15 19:40:35,426 - jseeker.adapter - INFO - adapt_summary | adapted_length=605 | language=en
+2026-02-15 19:40:35,436 - jseeker.pattern_learner - INFO - learn_pattern | type=summary_adaptation | pattern_id=110 | source_len=470 | target_len=605
+2026-02-15 19:40:35,436 - jseeker.adapter - INFO - adapt_summary | pattern learned from LLM adaptation
+2026-02-15 19:40:35,436 - jseeker.adapter - INFO - adapt_resume | step 2: getting tagged experiences
+2026-02-15 19:40:35,437 - jseeker.block_manager - INFO - get_experience_for_template | template=ai_product | matched=4
+2026-02-15 19:40:35,437 - jseeker.adapter - INFO - adapt_resume | step 2: adapting 4 experience blocks in batch
+2026-02-15 19:40:35,437 - jseeker.adapter - INFO - adapt_bullets_batch | total_blocks=4
+2026-02-15 19:40:35,445 - jseeker.adapter - INFO - adapt_bullets_batch | block 0 | pattern cache MISS
+2026-02-15 19:40:35,451 - jseeker.adapter - INFO - adapt_bullets_batch | block 1 | pattern cache MISS
+2026-02-15 19:40:35,456 - jseeker.adapter - INFO - adapt_bullets_batch | block 2 | pattern cache MISS
+2026-02-15 19:40:35,461 - jseeker.adapter - INFO - adapt_bullets_batch | block 3 | pattern cache MISS
+2026-02-15 19:40:35,461 - jseeker.adapter - INFO - adapt_bullets_batch | 4 blocks need LLM call
+2026-02-15 19:40:47,118 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-02-15 19:40:47,120 - jseeker.llm - INFO - API call completed | model=claude-sonnet-4-5-20250929 | task=bullet_adapt_batch | input_tokens=687 | output_tokens=504 | cache_tokens=0 | cost_usd=$0.009621 | duration_ms=11654
+2026-02-15 19:40:47,131 - jseeker.adapter - INFO - adapt_bullets_batch | LLM returned 4 bullet sets
+2026-02-15 19:40:47,141 - jseeker.pattern_learner - INFO - learn_pattern | type=bullet_adaptation | pattern_id=111 | source_len=313 | target_len=551
+2026-02-15 19:40:47,153 - jseeker.pattern_learner - INFO - learn_pattern | type=bullet_adaptation | pattern_id=112 | source_len=432 | target_len=699
+2026-02-15 19:40:47,163 - jseeker.pattern_learner - INFO - learn_pattern | type=bullet_adaptation | pattern_id=113 | source_len=301 | target_len=470
+2026-02-15 19:40:47,174 - jseeker.pattern_learner - INFO - learn_pattern | type=bullet_adaptation | pattern_id=114 | source_len=363 | target_len=595
+2026-02-15 19:40:47,175 - jseeker.adapter - INFO - adapt_bullets_batch | learned 4 bullet patterns from LLM
+2026-02-15 19:40:47,175 - jseeker.adapter - INFO - adapt_bullets_batch | merged pattern cache + LLM results
+2026-02-15 19:40:47,175 - jseeker.adapter - INFO - adapt_resume | step 3: reordering skills
+2026-02-15 19:40:47,175 - jseeker.adapter - INFO - adapt_resume | matched skill categories: 1
+2026-02-15 19:40:47,176 - jseeker.adapter - INFO - adapt_resume | step 4: adapting contact address for job location
+2026-02-15 19:40:47,176 - jseeker.adapter - INFO - get_address_for_location | using market fallback: us -> San Diego, CA, USA
+2026-02-15 19:40:47,176 - jseeker.adapter - INFO - adapt_resume | address adapted for job_location='New York, United States' market=us -> San Diego, CA, USA
+2026-02-15 19:40:47,176 - jseeker.adapter - INFO - adapt_resume | completed | total_experience_blocks=9 | skill_categories=5
+2026-02-15 19:41:04,659 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-02-15 19:41:04,667 - jseeker.llm - INFO - API call completed | model=claude-haiku-4-5-20251001 | task=ats_score | input_tokens=1639 | output_tokens=1717 | cache_tokens=0 | cost_usd=$0.008179 | duration_ms=17480
+2026-02-15 19:41:05,514 - jseeker.renderer - ERROR - _html_to_pdf_weasyprint | failed: cannot load library 'libgobject-2.0-0': error 0x7e.  Additionally, ctypes.util.find_library() did not manage to locate a library called 'libgobject-2.0-0', falling back to Playwright
+2026-02-15 19:41:08,634 - __main__ - INFO -   \u2705 Generated: X:\projects\jSeeker\output\Arcesium\Fede_Ponce_Vice_President_-_Product_Manag_Arcesium_v1.pdf
+2026-02-15 19:41:08,634 - __main__ - INFO - [2/5] Generating resume for Thomson Reuters - Senior Director, UX Design and Research...
+2026-02-15 19:41:08,702 - jseeker.jd_parser - INFO - extract_jd_from_url | url=https://www.linkedin.com/jobs/view/senior-director-ux-design-and-research-at-thomson-reuters-4372009...
+2026-02-15 19:41:11,253 - jseeker.jd_parser - INFO - extract_jd_from_url | status=200 | content_length=385849
+2026-02-15 19:41:11,467 - jseeker.jd_parser - INFO - prune_jd | input_length=20541
+2026-02-15 19:41:28,191 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-02-15 19:41:28,197 - jseeker.llm - INFO - API call completed | model=claude-haiku-4-5-20251001 | task=jd_prune | input_tokens=4536 | output_tokens=1112 | cache_tokens=0 | cost_usd=$0.008077 | duration_ms=16728
+2026-02-15 19:41:28,208 - jseeker.jd_parser - INFO - prune_jd | output_length=6122 | reduction=14419
+2026-02-15 19:41:28,213 - jseeker.jd_parser - INFO - _get_cached_jd | cache MISS | hash=ed686f49ec24d19f...
+2026-02-15 19:41:28,215 - jseeker.jd_parser - INFO - process_jd | detected_language=en
+2026-02-15 19:41:34,175 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-02-15 19:41:34,177 - jseeker.llm - INFO - API call completed | model=claude-haiku-4-5-20251001 | task=jd_parse | input_tokens=1632 | output_tokens=897 | cache_tokens=0 | cost_usd=$0.004894 | duration_ms=5957
+2026-02-15 19:41:34,188 - jseeker.jd_parser - INFO - parse_jd | JSON parse succeeded | keys=['title', 'company', 'seniority', 'location', 'remote_policy', 'salary_range', 'role_exp', 'management_exp', 'hard_requirements', 'soft_requirements', 'ats_keywords', 'culture_signals']
+2026-02-15 19:41:34,198 - jseeker.jd_parser - INFO - process_jd | title=Senior Director, UX Design and Research | company=Thomson Reuters | keywords_count=20 | language=en
+2026-02-15 19:41:34,201 - jseeker.jd_parser - INFO - process_jd | salary_extraction | min=158900 | max=295100 | currency=USD
+2026-02-15 19:41:34,201 - jseeker.jd_parser - INFO - process_jd | final: language=en market=us
+2026-02-15 19:41:34,202 - jseeker.matcher - INFO - match_templates | ats_keywords_count=20 | title=Senior Director, UX Design and Research | company=Thomson Reuters
+2026-02-15 19:42:20,121 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-02-15 19:42:20,124 - jseeker.llm - INFO - API call completed | model=claude-sonnet-4-5-20250929 | task=block_scoring | input_tokens=1358 | output_tokens=2122 | cache_tokens=0 | cost_usd=$0.035904 | duration_ms=45913
+2026-02-15 19:42:20,134 - jseeker.matcher - INFO - llm_relevance_score | raw_response_length=9825
+2026-02-15 19:42:20,135 - jseeker.matcher - INFO - llm_relevance_score | JSON parse succeeded | rankings_count=3
+2026-02-15 19:42:20,135 - jseeker.matcher - INFO - match_templates | LLM returned 3 match results
+2026-02-15 19:42:20,135 - jseeker.block_manager - INFO - get_experience_for_template | template=ai_product | matched=4
+2026-02-15 19:42:20,135 - jseeker.matcher - INFO - local_keyword_score | template=ai_product | matched=0 | missing=20 | total=20 | score=0.00
+2026-02-15 19:42:20,136 - jseeker.block_manager - INFO - get_experience_for_template | template=hybrid | matched=5
+2026-02-15 19:42:20,136 - jseeker.matcher - INFO - local_keyword_score | template=hybrid | matched=0 | missing=20 | total=20 | score=0.00
+2026-02-15 19:42:20,136 - jseeker.block_manager - INFO - get_experience_for_template | template=ai_ux | matched=5
+2026-02-15 19:42:20,136 - jseeker.matcher - INFO - local_keyword_score | template=ai_ux | matched=0 | missing=20 | total=20 | score=0.00
+2026-02-15 19:42:20,136 - jseeker.matcher - INFO - match_templates | returning 3 final results
+2026-02-15 19:42:20,136 - jseeker.adapter - INFO - adapt_resume | starting adaptation | template=ai_product | jd_title=Senior Director, UX Design and Research
+2026-02-15 19:42:20,136 - jseeker.adapter - INFO - adapt_resume | step 1: adapting summary
+2026-02-15 19:42:20,142 - jseeker.adapter - INFO - adapt_summary | pattern cache MISS | calling LLM
+2026-02-15 19:42:23,980 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-02-15 19:42:23,982 - jseeker.llm - INFO - API call completed | model=claude-sonnet-4-5-20250929 | task=summary_adapt | input_tokens=501 | output_tokens=116 | cache_tokens=0 | cost_usd=$0.003243 | duration_ms=3834
+2026-02-15 19:42:23,993 - jseeker.adapter - INFO - adapt_summary | adapted_length=659 | language=en
+2026-02-15 19:42:24,004 - jseeker.pattern_learner - INFO - learn_pattern | type=summary_adaptation | pattern_id=115 | source_len=470 | target_len=659
+2026-02-15 19:42:24,004 - jseeker.adapter - INFO - adapt_summary | pattern learned from LLM adaptation
+2026-02-15 19:42:24,005 - jseeker.adapter - INFO - adapt_resume | step 2: getting tagged experiences
+2026-02-15 19:42:24,005 - jseeker.block_manager - INFO - get_experience_for_template | template=ai_product | matched=4
+2026-02-15 19:42:24,005 - jseeker.adapter - INFO - adapt_resume | step 2: adapting 4 experience blocks in batch
+2026-02-15 19:42:24,005 - jseeker.adapter - INFO - adapt_bullets_batch | total_blocks=4
+2026-02-15 19:42:24,013 - jseeker.adapter - INFO - adapt_bullets_batch | block 0 | pattern cache MISS
+2026-02-15 19:42:24,019 - jseeker.adapter - INFO - adapt_bullets_batch | block 1 | pattern cache MISS
+2026-02-15 19:42:24,025 - jseeker.adapter - INFO - adapt_bullets_batch | block 2 | pattern cache MISS
+2026-02-15 19:42:24,029 - jseeker.adapter - INFO - adapt_bullets_batch | block 3 | pattern cache MISS
+2026-02-15 19:42:24,029 - jseeker.adapter - INFO - adapt_bullets_batch | 4 blocks need LLM call
+2026-02-15 19:42:37,170 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-02-15 19:42:37,171 - jseeker.llm - INFO - API call completed | model=claude-sonnet-4-5-20250929 | task=bullet_adapt_batch | input_tokens=722 | output_tokens=616 | cache_tokens=0 | cost_usd=$0.011406 | duration_ms=13137
+2026-02-15 19:42:37,183 - jseeker.adapter - INFO - adapt_bullets_batch | LLM returned 4 bullet sets
+2026-02-15 19:42:37,195 - jseeker.pattern_learner - INFO - learn_pattern | type=bullet_adaptation | pattern_id=116 | source_len=313 | target_len=658
+2026-02-15 19:42:37,205 - jseeker.pattern_learner - INFO - learn_pattern | type=bullet_adaptation | pattern_id=117 | source_len=432 | target_len=917
+2026-02-15 19:42:37,216 - jseeker.pattern_learner - INFO - learn_pattern | type=bullet_adaptation | pattern_id=118 | source_len=301 | target_len=694
+2026-02-15 19:42:37,225 - jseeker.pattern_learner - INFO - learn_pattern | type=bullet_adaptation | pattern_id=119 | source_len=363 | target_len=739
+2026-02-15 19:42:37,226 - jseeker.adapter - INFO - adapt_bullets_batch | learned 4 bullet patterns from LLM
+2026-02-15 19:42:37,226 - jseeker.adapter - INFO - adapt_bullets_batch | merged pattern cache + LLM results
+2026-02-15 19:42:37,226 - jseeker.adapter - INFO - adapt_resume | step 3: reordering skills
+2026-02-15 19:42:37,226 - jseeker.adapter - INFO - adapt_resume | matched skill categories: 3
+2026-02-15 19:42:37,226 - jseeker.adapter - INFO - adapt_resume | step 4: adapting contact address for job location
+2026-02-15 19:42:37,226 - jseeker.adapter - INFO - get_address_for_location | using market fallback: us -> San Diego, CA, USA
+2026-02-15 19:42:37,227 - jseeker.adapter - INFO - adapt_resume | address adapted for job_location='New York, NY' market=us -> San Diego, CA, USA
+2026-02-15 19:42:37,227 - jseeker.adapter - INFO - adapt_resume | completed | total_experience_blocks=9 | skill_categories=5
+2026-02-15 19:42:53,391 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-02-15 19:42:53,394 - jseeker.llm - INFO - API call completed | model=claude-haiku-4-5-20251001 | task=ats_score | input_tokens=1711 | output_tokens=1539 | cache_tokens=0 | cost_usd=$0.007525 | duration_ms=16157
+2026-02-15 19:42:53,537 - jseeker.renderer - ERROR - _html_to_pdf_weasyprint | failed: cannot load library 'libgobject-2.0-0': error 0x7e.  Additionally, ctypes.util.find_library() did not manage to locate a library called 'libgobject-2.0-0', falling back to Playwright
+2026-02-15 19:42:56,515 - __main__ - INFO -   \u2705 Generated: X:\projects\jSeeker\output\Thomson_Reuters\Fede_Ponce_Senior_Director_UX_Design_and__Thomson_Reuters_v2.pdf
+2026-02-15 19:42:56,515 - __main__ - INFO - [3/5] Generating resume for Simply - Director of Product Innovation...
+2026-02-15 19:42:56,592 - jseeker.jd_parser - INFO - extract_jd_from_url | url=https://www.linkedin.com/jobs/view/director-of-product-innovation-at-simply-4371197893?position=9&pa...
+2026-02-15 19:42:59,188 - jseeker.jd_parser - INFO - extract_jd_from_url | status=200 | content_length=274474
+2026-02-15 19:42:59,365 - jseeker.jd_parser - INFO - prune_jd | input_length=9538
+2026-02-15 19:43:06,494 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-02-15 19:43:06,497 - jseeker.llm - INFO - API call completed | model=claude-haiku-4-5-20251001 | task=jd_prune | input_tokens=2441 | output_tokens=496 | cache_tokens=0 | cost_usd=$0.003937 | duration_ms=7130
+2026-02-15 19:43:06,512 - jseeker.jd_parser - INFO - prune_jd | output_length=2344 | reduction=7194
+2026-02-15 19:43:06,518 - jseeker.jd_parser - INFO - _get_cached_jd | cache MISS | hash=c9d6049a14425043...
+2026-02-15 19:43:06,522 - jseeker.jd_parser - INFO - process_jd | detected_language=en
+2026-02-15 19:43:10,469 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-02-15 19:43:10,471 - jseeker.llm - INFO - API call completed | model=claude-haiku-4-5-20251001 | task=jd_parse | input_tokens=1016 | output_tokens=753 | cache_tokens=0 | cost_usd=$0.003825 | duration_ms=3942
+2026-02-15 19:43:10,482 - jseeker.jd_parser - INFO - parse_jd | JSON parse succeeded | keys=['title', 'company', 'seniority', 'location', 'remote_policy', 'salary_range', 'role_exp', 'management_exp', 'hard_requirements', 'soft_requirements', 'ats_keywords', 'culture_signals']
+2026-02-15 19:43:10,494 - jseeker.jd_parser - INFO - process_jd | title=Director of Product Innovation | company=Simply | keywords_count=20 | language=en
+2026-02-15 19:43:10,530 - jseeker.jd_parser - INFO - process_jd | salary_extraction | min=None | max=None | currency=USD
+2026-02-15 19:43:10,531 - jseeker.jd_parser - INFO - process_jd | final: language=en market=us
+2026-02-15 19:43:10,531 - jseeker.matcher - INFO - match_templates | ats_keywords_count=20 | title=Director of Product Innovation | company=Simply
+2026-02-15 19:43:31,322 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-02-15 19:43:31,324 - jseeker.llm - INFO - API call completed | model=claude-sonnet-4-5-20250929 | task=block_scoring | input_tokens=1322 | output_tokens=1095 | cache_tokens=0 | cost_usd=$0.020391 | duration_ms=20783
+2026-02-15 19:43:31,338 - jseeker.matcher - INFO - llm_relevance_score | raw_response_length=4587
+2026-02-15 19:43:31,339 - jseeker.matcher - INFO - llm_relevance_score | JSON parse succeeded | rankings_count=3
+2026-02-15 19:43:31,339 - jseeker.matcher - INFO - match_templates | LLM returned 3 match results
+2026-02-15 19:43:31,340 - jseeker.block_manager - INFO - get_experience_for_template | template=ai_product | matched=4
+2026-02-15 19:43:31,340 - jseeker.matcher - INFO - local_keyword_score | template=ai_product | matched=0 | missing=20 | total=20 | score=0.00
+2026-02-15 19:43:31,340 - jseeker.block_manager - INFO - get_experience_for_template | template=hybrid | matched=5
+2026-02-15 19:43:31,341 - jseeker.matcher - INFO - local_keyword_score | template=hybrid | matched=1 | missing=19 | total=20 | score=0.05
+2026-02-15 19:43:31,341 - jseeker.block_manager - INFO - get_experience_for_template | template=ai_ux | matched=5
+2026-02-15 19:43:31,341 - jseeker.matcher - INFO - local_keyword_score | template=ai_ux | matched=1 | missing=19 | total=20 | score=0.05
+2026-02-15 19:43:31,342 - jseeker.matcher - INFO - match_templates | returning 3 final results
+2026-02-15 19:43:31,342 - jseeker.adapter - INFO - adapt_resume | starting adaptation | template=ai_product | jd_title=Director of Product Innovation
+2026-02-15 19:43:31,342 - jseeker.adapter - INFO - adapt_resume | step 1: adapting summary
+2026-02-15 19:43:31,348 - jseeker.adapter - INFO - adapt_summary | pattern cache MISS | calling LLM
+2026-02-15 19:43:34,640 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-02-15 19:43:34,643 - jseeker.llm - INFO - API call completed | model=claude-sonnet-4-5-20250929 | task=summary_adapt | input_tokens=475 | output_tokens=107 | cache_tokens=0 | cost_usd=$0.003030 | duration_ms=3286
+2026-02-15 19:43:34,655 - jseeker.adapter - INFO - adapt_summary | adapted_length=600 | language=en
+2026-02-15 19:43:34,666 - jseeker.pattern_learner - INFO - learn_pattern | type=summary_adaptation | pattern_id=120 | source_len=470 | target_len=600
+2026-02-15 19:43:34,667 - jseeker.adapter - INFO - adapt_summary | pattern learned from LLM adaptation
+2026-02-15 19:43:34,667 - jseeker.adapter - INFO - adapt_resume | step 2: getting tagged experiences
+2026-02-15 19:43:34,667 - jseeker.block_manager - INFO - get_experience_for_template | template=ai_product | matched=4
+2026-02-15 19:43:34,667 - jseeker.adapter - INFO - adapt_resume | step 2: adapting 4 experience blocks in batch
+2026-02-15 19:43:34,667 - jseeker.adapter - INFO - adapt_bullets_batch | total_blocks=4
+2026-02-15 19:43:34,676 - jseeker.adapter - INFO - adapt_bullets_batch | block 0 | pattern cache MISS
+2026-02-15 19:43:34,682 - jseeker.adapter - INFO - adapt_bullets_batch | block 1 | pattern cache MISS
+2026-02-15 19:43:34,688 - jseeker.adapter - INFO - adapt_bullets_batch | block 2 | pattern cache MISS
+2026-02-15 19:43:34,693 - jseeker.adapter - INFO - adapt_bullets_batch | block 3 | pattern cache MISS
+2026-02-15 19:43:34,693 - jseeker.adapter - INFO - adapt_bullets_batch | 4 blocks need LLM call
+2026-02-15 19:43:48,440 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-02-15 19:43:48,443 - jseeker.llm - INFO - API call completed | model=claude-sonnet-4-5-20250929 | task=bullet_adapt_batch | input_tokens=696 | output_tokens=543 | cache_tokens=0 | cost_usd=$0.010233 | duration_ms=13745
+2026-02-15 19:43:48,457 - jseeker.adapter - INFO - adapt_bullets_batch | LLM returned 4 bullet sets
+2026-02-15 19:43:48,471 - jseeker.pattern_learner - INFO - learn_pattern | type=bullet_adaptation | pattern_id=121 | source_len=313 | target_len=565
+2026-02-15 19:43:48,484 - jseeker.pattern_learner - INFO - learn_pattern | type=bullet_adaptation | pattern_id=122 | source_len=432 | target_len=847
+2026-02-15 19:43:48,496 - jseeker.pattern_learner - INFO - learn_pattern | type=bullet_adaptation | pattern_id=123 | source_len=301 | target_len=539
+2026-02-15 19:43:48,508 - jseeker.pattern_learner - INFO - learn_pattern | type=bullet_adaptation | pattern_id=124 | source_len=363 | target_len=725
+2026-02-15 19:43:48,508 - jseeker.adapter - INFO - adapt_bullets_batch | learned 4 bullet patterns from LLM
+2026-02-15 19:43:48,509 - jseeker.adapter - INFO - adapt_bullets_batch | merged pattern cache + LLM results
+2026-02-15 19:43:48,509 - jseeker.adapter - INFO - adapt_resume | step 3: reordering skills
+2026-02-15 19:43:48,509 - jseeker.adapter - INFO - adapt_resume | matched skill categories: 1
+2026-02-15 19:43:48,509 - jseeker.adapter - INFO - adapt_resume | step 4: adapting contact address for job location
+2026-02-15 19:43:48,510 - jseeker.adapter - INFO - get_address_for_location | using market fallback: us -> San Diego, CA, USA
+2026-02-15 19:43:48,510 - jseeker.adapter - INFO - adapt_resume | address adapted for job_location='Brooklyn, NY' market=us -> San Diego, CA, USA
+2026-02-15 19:43:48,510 - jseeker.adapter - INFO - adapt_resume | completed | total_experience_blocks=9 | skill_categories=5
+2026-02-15 19:44:00,135 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-02-15 19:44:00,139 - jseeker.llm - INFO - API call completed | model=claude-haiku-4-5-20251001 | task=ats_score | input_tokens=1675 | output_tokens=1145 | cache_tokens=0 | cost_usd=$0.005920 | duration_ms=11616
+2026-02-15 19:44:00,288 - jseeker.renderer - ERROR - _html_to_pdf_weasyprint | failed: cannot load library 'libgobject-2.0-0': error 0x7e.  Additionally, ctypes.util.find_library() did not manage to locate a library called 'libgobject-2.0-0', falling back to Playwright
+2026-02-15 19:44:03,188 - __main__ - INFO -   \u2705 Generated: X:\projects\jSeeker\output\Simply\Fede_Ponce_Director_of_Product_Innovation_Simply_v1.pdf
+2026-02-15 19:44:03,188 - __main__ - INFO - [4/5] Generating resume for PayPal - Director, Experience Design...
+2026-02-15 19:44:03,277 - jseeker.jd_parser - INFO - extract_jd_from_url | url=https://www.linkedin.com/jobs/view/director-experience-design-at-paypal-4349018173?position=9&pageNu...
+2026-02-15 19:44:06,075 - jseeker.jd_parser - INFO - extract_jd_from_url | status=200 | content_length=351862
+2026-02-15 19:44:06,380 - jseeker.jd_parser - INFO - prune_jd | input_length=16523
+2026-02-15 19:44:15,089 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-02-15 19:44:15,091 - jseeker.llm - INFO - API call completed | model=claude-haiku-4-5-20251001 | task=jd_prune | input_tokens=3925 | output_tokens=554 | cache_tokens=0 | cost_usd=$0.005356 | duration_ms=8709
+2026-02-15 19:44:15,104 - jseeker.jd_parser - INFO - prune_jd | output_length=2881 | reduction=13642
+2026-02-15 19:44:15,109 - jseeker.jd_parser - INFO - _get_cached_jd | cache MISS | hash=3068567ac7838b36...
+2026-02-15 19:44:15,111 - jseeker.jd_parser - INFO - process_jd | detected_language=en
+2026-02-15 19:44:19,795 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-02-15 19:44:19,797 - jseeker.llm - INFO - API call completed | model=claude-haiku-4-5-20251001 | task=jd_parse | input_tokens=1074 | output_tokens=863 | cache_tokens=0 | cost_usd=$0.004311 | duration_ms=4678
+2026-02-15 19:44:19,808 - jseeker.jd_parser - INFO - parse_jd | JSON parse succeeded | keys=['title', 'company', 'seniority', 'location', 'remote_policy', 'salary_range', 'role_exp', 'management_exp', 'hard_requirements', 'soft_requirements', 'ats_keywords', 'culture_signals']
+2026-02-15 19:44:19,820 - jseeker.jd_parser - INFO - process_jd | title=Director, Experience Design | company=Not specified | keywords_count=20 | language=en
+2026-02-15 19:44:19,840 - jseeker.jd_parser - INFO - process_jd | salary_extraction | min=None | max=None | currency=USD
+2026-02-15 19:44:19,840 - jseeker.jd_parser - INFO - process_jd | LLM company extraction failed or returned placeholder 'Not specified', trying fallback chain
+2026-02-15 19:44:19,842 - jseeker.jd_parser - INFO - process_jd | company extracted from text: PayPal has been revolutionizing commerce globally for more than 25 years
+2026-02-15 19:44:19,842 - jseeker.jd_parser - INFO - process_jd | final: language=en market=us
+2026-02-15 19:44:19,842 - jseeker.matcher - INFO - match_templates | ats_keywords_count=20 | title=Director, Experience Design | company=PayPal has been revolutionizing commerce globally for more than 25 years
+2026-02-15 19:44:47,921 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-02-15 19:44:47,923 - jseeker.llm - INFO - API call completed | model=claude-sonnet-4-5-20250929 | task=block_scoring | input_tokens=1373 | output_tokens=1595 | cache_tokens=0 | cost_usd=$0.028044 | duration_ms=28072
+2026-02-15 19:44:47,934 - jseeker.matcher - INFO - llm_relevance_score | raw_response_length=6531
+2026-02-15 19:44:47,935 - jseeker.matcher - INFO - llm_relevance_score | JSON parse succeeded | rankings_count=3
+2026-02-15 19:44:47,935 - jseeker.matcher - INFO - match_templates | LLM returned 3 match results
+2026-02-15 19:44:47,935 - jseeker.block_manager - INFO - get_experience_for_template | template=hybrid | matched=5
+2026-02-15 19:44:47,936 - jseeker.matcher - INFO - local_keyword_score | template=hybrid | matched=2 | missing=18 | total=20 | score=0.10
+2026-02-15 19:44:47,936 - jseeker.block_manager - INFO - get_experience_for_template | template=ai_product | matched=4
+2026-02-15 19:44:47,936 - jseeker.matcher - INFO - local_keyword_score | template=ai_product | matched=2 | missing=18 | total=20 | score=0.10
+2026-02-15 19:44:47,936 - jseeker.block_manager - INFO - get_experience_for_template | template=ai_ux | matched=5
+2026-02-15 19:44:47,936 - jseeker.matcher - INFO - local_keyword_score | template=ai_ux | matched=1 | missing=19 | total=20 | score=0.05
+2026-02-15 19:44:47,937 - jseeker.matcher - INFO - match_templates | returning 3 final results
+2026-02-15 19:44:47,937 - jseeker.adapter - INFO - adapt_resume | starting adaptation | template=hybrid | jd_title=Director, Experience Design
+2026-02-15 19:44:47,937 - jseeker.adapter - INFO - adapt_resume | step 1: adapting summary
+2026-02-15 19:44:47,944 - jseeker.adapter - INFO - adapt_summary | pattern cache MISS | calling LLM
+2026-02-15 19:44:51,740 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-02-15 19:44:51,742 - jseeker.llm - INFO - API call completed | model=claude-sonnet-4-5-20250929 | task=summary_adapt | input_tokens=503 | output_tokens=128 | cache_tokens=0 | cost_usd=$0.003429 | duration_ms=3789
+2026-02-15 19:44:51,752 - jseeker.adapter - INFO - adapt_summary | adapted_length=670 | language=en
+2026-02-15 19:44:51,765 - jseeker.pattern_learner - INFO - learn_pattern | type=summary_adaptation | pattern_id=125 | source_len=459 | target_len=670
+2026-02-15 19:44:51,765 - jseeker.adapter - INFO - adapt_summary | pattern learned from LLM adaptation
+2026-02-15 19:44:51,765 - jseeker.adapter - INFO - adapt_resume | step 2: getting tagged experiences
+2026-02-15 19:44:51,765 - jseeker.block_manager - INFO - get_experience_for_template | template=hybrid | matched=5
+2026-02-15 19:44:51,766 - jseeker.adapter - INFO - adapt_resume | step 2: adapting 5 experience blocks in batch
+2026-02-15 19:44:51,766 - jseeker.adapter - INFO - adapt_bullets_batch | total_blocks=5
+2026-02-15 19:44:51,778 - jseeker.adapter - INFO - adapt_bullets_batch | block 0 | pattern cache MISS
+2026-02-15 19:44:51,787 - jseeker.adapter - INFO - adapt_bullets_batch | block 1 | pattern cache MISS
+2026-02-15 19:44:51,797 - jseeker.adapter - INFO - adapt_bullets_batch | block 2 | pattern cache MISS
+2026-02-15 19:44:51,803 - jseeker.adapter - INFO - adapt_bullets_batch | block 3 | pattern cache MISS
+2026-02-15 19:44:51,808 - jseeker.adapter - INFO - adapt_bullets_batch | block 4 | pattern cache MISS
+2026-02-15 19:44:51,808 - jseeker.adapter - INFO - adapt_bullets_batch | 5 blocks need LLM call
+2026-02-15 19:45:07,287 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-02-15 19:45:07,288 - jseeker.llm - INFO - API call completed | model=claude-sonnet-4-5-20250929 | task=bullet_adapt_batch | input_tokens=805 | output_tokens=710 | cache_tokens=0 | cost_usd=$0.013065 | duration_ms=15475
+2026-02-15 19:45:07,301 - jseeker.adapter - INFO - adapt_bullets_batch | LLM returned 5 bullet sets
+2026-02-15 19:45:07,314 - jseeker.pattern_learner - INFO - learn_pattern | type=bullet_adaptation | pattern_id=126 | source_len=313 | target_len=542
+2026-02-15 19:45:07,328 - jseeker.pattern_learner - INFO - learn_pattern | type=bullet_adaptation | pattern_id=127 | source_len=422 | target_len=782
+2026-02-15 19:45:07,341 - jseeker.pattern_learner - INFO - learn_pattern | type=bullet_adaptation | pattern_id=128 | source_len=301 | target_len=595
+2026-02-15 19:45:07,354 - jseeker.pattern_learner - INFO - learn_pattern | type=bullet_adaptation | pattern_id=129 | source_len=366 | target_len=750
+2026-02-15 19:45:07,366 - jseeker.pattern_learner - INFO - learn_pattern | type=bullet_adaptation | pattern_id=130 | source_len=203 | target_len=575
+2026-02-15 19:45:07,366 - jseeker.adapter - INFO - adapt_bullets_batch | learned 5 bullet patterns from LLM
+2026-02-15 19:45:07,366 - jseeker.adapter - INFO - adapt_bullets_batch | merged pattern cache + LLM results
+2026-02-15 19:45:07,367 - jseeker.adapter - INFO - adapt_resume | step 3: reordering skills
+2026-02-15 19:45:07,367 - jseeker.adapter - INFO - adapt_resume | matched skill categories: 3
+2026-02-15 19:45:07,367 - jseeker.adapter - INFO - adapt_resume | step 4: adapting contact address for job location
+2026-02-15 19:45:07,367 - jseeker.adapter - INFO - get_address_for_location | using market fallback: us -> San Diego, CA, USA
+2026-02-15 19:45:07,367 - jseeker.adapter - INFO - adapt_resume | address adapted for job_location='New York, NY' market=us -> San Diego, CA, USA
+2026-02-15 19:45:07,367 - jseeker.adapter - INFO - adapt_resume | completed | total_experience_blocks=9 | skill_categories=5
+2026-02-15 19:45:19,722 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-02-15 19:45:19,726 - jseeker.llm - INFO - API call completed | model=claude-haiku-4-5-20251001 | task=ats_score | input_tokens=1766 | output_tokens=1180 | cache_tokens=0 | cost_usd=$0.006133 | duration_ms=12347
+2026-02-15 19:45:19,871 - jseeker.renderer - ERROR - _html_to_pdf_weasyprint | failed: cannot load library 'libgobject-2.0-0': error 0x7e.  Additionally, ctypes.util.find_library() did not manage to locate a library called 'libgobject-2.0-0', falling back to Playwright
+2026-02-15 19:45:22,803 - __main__ - INFO -   \u2705 Generated: X:\projects\jSeeker\output\PayPal_has_been_revolutionizin\Fede_Ponce_Director_Experience_Design_PayPal_has_been_revolutionizin_v1.pdf
+2026-02-15 19:45:22,803 - __main__ - INFO - [5/5] Generating resume for Paramount+ - Product Designer...
+2026-02-15 19:45:22,893 - jseeker.jd_parser - INFO - extract_jd_from_url | url=https://www.linkedin.com/jobs/view/product-designer-at-paramount%2B-4369720551?position=4&pageNum=0&...
+2026-02-15 19:45:24,388 - jseeker.jd_parser - INFO - extract_jd_from_url | LinkedIn resolved to: https://careers.paramount.com/job/New-York-Product-Designer-NY-10036/1362565600/?feedId=404800&utm_s
+2026-02-15 19:45:24,388 - jseeker.jd_parser - INFO - extract_jd_from_url | url=https://careers.paramount.com/job/New-York-Product-Designer-NY-10036/1362565600/?feedId=404800&utm_s...
+2026-02-15 19:45:25,622 - jseeker.jd_parser - INFO - extract_jd_from_url | status=200 | content_length=75567
+2026-02-15 19:45:25,763 - jseeker.jd_parser - INFO - prune_jd | input_length=6718
+2026-02-15 19:45:29,577 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-02-15 19:45:29,579 - jseeker.llm - INFO - API call completed | model=claude-haiku-4-5-20251001 | task=jd_prune | input_tokens=1546 | output_tokens=399 | cache_tokens=0 | cost_usd=$0.002833 | duration_ms=3813
+2026-02-15 19:45:29,592 - jseeker.jd_parser - INFO - prune_jd | output_length=1997 | reduction=4721
+2026-02-15 19:45:29,598 - jseeker.jd_parser - INFO - _get_cached_jd | cache MISS | hash=dc9bf1e855b2dc49...
+2026-02-15 19:45:29,599 - jseeker.jd_parser - INFO - process_jd | detected_language=en
+2026-02-15 19:45:33,879 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-02-15 19:45:33,882 - jseeker.llm - INFO - API call completed | model=claude-haiku-4-5-20251001 | task=jd_parse | input_tokens=919 | output_tokens=793 | cache_tokens=0 | cost_usd=$0.003907 | duration_ms=4275
+2026-02-15 19:45:33,893 - jseeker.jd_parser - INFO - parse_jd | JSON parse succeeded | keys=['title', 'company', 'seniority', 'location', 'remote_policy', 'salary_range', 'role_exp', 'management_exp', 'hard_requirements', 'soft_requirements', 'ats_keywords', 'culture_signals']
+2026-02-15 19:45:33,905 - jseeker.jd_parser - INFO - process_jd | title=Product Designer | company=Not specified | keywords_count=20 | language=en
+2026-02-15 19:45:33,907 - jseeker.jd_parser - INFO - process_jd | salary_extraction | min=86000 | max=120000 | currency=USD
+2026-02-15 19:45:33,907 - jseeker.jd_parser - INFO - process_jd | LLM company extraction failed or returned placeholder 'Not specified', trying fallback chain
+2026-02-15 19:45:33,908 - jseeker.jd_parser - INFO - process_jd | company extracted from text: revenue
+2026-02-15 19:45:33,908 - jseeker.jd_parser - INFO - process_jd | final: language=en market=us
+2026-02-15 19:45:33,908 - jseeker.matcher - INFO - match_templates | ats_keywords_count=20 | title=Product Designer | company=revenue
+2026-02-15 19:46:12,072 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-02-15 19:46:12,074 - jseeker.llm - INFO - API call completed | model=claude-sonnet-4-5-20250929 | task=block_scoring | input_tokens=1342 | output_tokens=1805 | cache_tokens=0 | cost_usd=$0.031101 | duration_ms=38155
+2026-02-15 19:46:12,085 - jseeker.matcher - INFO - llm_relevance_score | raw_response_length=7091
+2026-02-15 19:46:12,086 - jseeker.matcher - INFO - llm_relevance_score | JSON parse succeeded | rankings_count=3
+2026-02-15 19:46:12,086 - jseeker.matcher - INFO - match_templates | LLM returned 3 match results
+2026-02-15 19:46:12,086 - jseeker.block_manager - INFO - get_experience_for_template | template=ai_ux | matched=5
+2026-02-15 19:46:12,087 - jseeker.matcher - INFO - local_keyword_score | template=ai_ux | matched=1 | missing=19 | total=20 | score=0.05
+2026-02-15 19:46:12,087 - jseeker.block_manager - INFO - get_experience_for_template | template=hybrid | matched=5
+2026-02-15 19:46:12,087 - jseeker.matcher - INFO - local_keyword_score | template=hybrid | matched=1 | missing=19 | total=20 | score=0.05
+2026-02-15 19:46:12,087 - jseeker.block_manager - INFO - get_experience_for_template | template=ai_product | matched=4
+2026-02-15 19:46:12,088 - jseeker.matcher - INFO - local_keyword_score | template=ai_product | matched=1 | missing=19 | total=20 | score=0.05
+2026-02-15 19:46:12,088 - jseeker.matcher - INFO - match_templates | returning 3 final results
+2026-02-15 19:46:12,088 - jseeker.adapter - INFO - adapt_resume | starting adaptation | template=ai_ux | jd_title=Product Designer
+2026-02-15 19:46:12,089 - jseeker.adapter - INFO - adapt_resume | step 1: adapting summary
+2026-02-15 19:46:12,095 - jseeker.adapter - INFO - adapt_summary | pattern cache MISS | calling LLM
+2026-02-15 19:46:15,720 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-02-15 19:46:15,722 - jseeker.llm - INFO - API call completed | model=claude-sonnet-4-5-20250929 | task=summary_adapt | input_tokens=491 | output_tokens=100 | cache_tokens=0 | cost_usd=$0.002973 | duration_ms=3619
+2026-02-15 19:46:15,734 - jseeker.adapter - INFO - adapt_summary | adapted_length=543 | language=en
+2026-02-15 19:46:15,747 - jseeker.pattern_learner - INFO - learn_pattern | type=summary_adaptation | pattern_id=131 | source_len=530 | target_len=543
+2026-02-15 19:46:15,748 - jseeker.adapter - INFO - adapt_summary | pattern learned from LLM adaptation
+2026-02-15 19:46:15,748 - jseeker.adapter - INFO - adapt_resume | step 2: getting tagged experiences
+2026-02-15 19:46:15,748 - jseeker.block_manager - INFO - get_experience_for_template | template=ai_ux | matched=5
+2026-02-15 19:46:15,748 - jseeker.adapter - INFO - adapt_resume | step 2: adapting 5 experience blocks in batch
+2026-02-15 19:46:15,749 - jseeker.adapter - INFO - adapt_bullets_batch | total_blocks=5
+2026-02-15 19:46:15,761 - jseeker.adapter - INFO - adapt_bullets_batch | block 0 | pattern cache MISS
+2026-02-15 19:46:15,771 - jseeker.adapter - INFO - adapt_bullets_batch | block 1 | pattern cache MISS
+2026-02-15 19:46:15,781 - jseeker.adapter - INFO - adapt_bullets_batch | block 2 | pattern cache MISS
+2026-02-15 19:46:15,790 - jseeker.adapter - INFO - adapt_bullets_batch | block 3 | pattern cache MISS
+2026-02-15 19:46:15,799 - jseeker.adapter - INFO - adapt_bullets_batch | block 4 | pattern cache MISS
+2026-02-15 19:46:15,799 - jseeker.adapter - INFO - adapt_bullets_batch | 5 blocks need LLM call
+2026-02-15 19:46:32,349 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-02-15 19:46:32,352 - jseeker.llm - INFO - API call completed | model=claude-sonnet-4-5-20250929 | task=bullet_adapt_batch | input_tokens=781 | output_tokens=706 | cache_tokens=0 | cost_usd=$0.012933 | duration_ms=16546
+2026-02-15 19:46:32,365 - jseeker.adapter - INFO - adapt_bullets_batch | LLM returned 5 bullet sets
+2026-02-15 19:46:32,378 - jseeker.pattern_learner - INFO - learn_pattern | type=bullet_adaptation | pattern_id=132 | source_len=313 | target_len=604
+2026-02-15 19:46:32,391 - jseeker.pattern_learner - INFO - learn_pattern | type=bullet_adaptation | pattern_id=133 | source_len=422 | target_len=792
+2026-02-15 19:46:32,403 - jseeker.pattern_learner - INFO - learn_pattern | type=bullet_adaptation | pattern_id=134 | source_len=301 | target_len=607
+2026-02-15 19:46:32,414 - jseeker.pattern_learner - INFO - learn_pattern | type=bullet_adaptation | pattern_id=135 | source_len=366 | target_len=755
+2026-02-15 19:46:32,425 - jseeker.pattern_learner - INFO - learn_pattern | type=bullet_adaptation | pattern_id=136 | source_len=203 | target_len=561
+2026-02-15 19:46:32,425 - jseeker.adapter - INFO - adapt_bullets_batch | learned 5 bullet patterns from LLM
+2026-02-15 19:46:32,425 - jseeker.adapter - INFO - adapt_bullets_batch | merged pattern cache + LLM results
+2026-02-15 19:46:32,426 - jseeker.adapter - INFO - adapt_resume | step 3: reordering skills
+2026-02-15 19:46:32,426 - jseeker.adapter - INFO - adapt_resume | matched skill categories: 3
+2026-02-15 19:46:32,426 - jseeker.adapter - INFO - adapt_resume | step 4: adapting contact address for job location
+2026-02-15 19:46:32,426 - jseeker.adapter - INFO - get_address_for_location | using market fallback: us -> San Diego, CA, USA
+2026-02-15 19:46:32,426 - jseeker.adapter - INFO - adapt_resume | address adapted for job_location='New York, NY or Burbank, CA' market=us -> San Diego, CA, USA
+2026-02-15 19:46:32,426 - jseeker.adapter - INFO - adapt_resume | completed | total_experience_blocks=9 | skill_categories=5
+2026-02-15 19:46:51,020 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-02-15 19:46:51,022 - jseeker.llm - INFO - API call completed | model=claude-haiku-4-5-20251001 | task=ats_score | input_tokens=1730 | output_tokens=1721 | cache_tokens=0 | cost_usd=$0.008268 | duration_ms=18588
+2026-02-15 19:46:51,200 - jseeker.renderer - ERROR - _html_to_pdf_weasyprint | failed: cannot load library 'libgobject-2.0-0': error 0x7e.  Additionally, ctypes.util.find_library() did not manage to locate a library called 'libgobject-2.0-0', falling back to Playwright
+2026-02-15 19:46:53,897 - __main__ - INFO -   \u2705 Generated: X:\projects\jSeeker\output\revenue\Fede_Ponce_Product_Designer_revenue_v1.pdf
+2026-02-15 19:46:53,897 - __main__ - INFO - \u2705 Generated 5/5 resumes
+2026-02-15 19:46:53,897 - __main__ - INFO - ============================================================
+2026-02-15 19:46:53,897 - __main__ - INFO - SUMMARY
+2026-02-15 19:46:53,898 - __main__ - INFO - ============================================================
+2026-02-15 19:46:53,898 - __main__ - INFO - \u2705 Starred: 5 jobs
+2026-02-15 19:46:53,898 - __main__ - INFO - \u2705 Generated: 5 resumes
+2026-02-15 19:46:53,898 - __main__ - INFO - ============================================================
+
+-----
+
+WeasyPrint could not import some external libraries. Please carefully follow the installation steps before reporting an issue:
+https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#installation
+https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#troubleshooting 
+
+-----
+
+
+-----
+
+WeasyPrint could not import some external libraries. Please carefully follow the installation steps before reporting an issue:
+https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#installation
+https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#troubleshooting 
+
+-----
+
+
+-----
+
+WeasyPrint could not import some external libraries. Please carefully follow the installation steps before reporting an issue:
+https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#installation
+https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#troubleshooting 
+
+-----
+
+
+-----
+
+WeasyPrint could not import some external libraries. Please carefully follow the installation steps before reporting an issue:
+https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#installation
+https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#troubleshooting 
+
+-----
+
+
+-----
+
+WeasyPrint could not import some external libraries. Please carefully follow the installation steps before reporting an issue:
+https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#installation
+https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#troubleshooting 
+
+-----
+

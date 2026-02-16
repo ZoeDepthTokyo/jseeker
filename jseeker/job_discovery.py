@@ -12,7 +12,7 @@ from urllib.parse import quote_plus
 import requests
 from bs4 import BeautifulSoup
 
-from jseeker.models import DiscoveryStatus, JobDiscovery
+from jseeker.models import JobDiscovery
 from jseeker.tracker import tracker_db
 
 logger = logging.getLogger(__name__)
@@ -117,7 +117,13 @@ def search_jobs(
                     # Use market-specific location default
                     market_location = MARKET_CONFIG.get(market, {}).get("location", "")
                     results = _search_source(tag, market_location, source, market)
-                    logger.info("Found %d results for tag=%s market=%s source=%s", len(results), tag, market, source)
+                    logger.info(
+                        "Found %d results for tag=%s market=%s source=%s",
+                        len(results),
+                        tag,
+                        market,
+                        source,
+                    )
                     for result in results:
                         result.search_tags = tag
                         discoveries.append(result)
@@ -177,7 +183,9 @@ def _search_source(
     # Use market-specific Indeed URL
     if source == "indeed":
         # Extract Indeed base URL for proper international link construction
-        indeed_base = market_config["indeed_url"].split("/jobs")[0]  # e.g. "https://www.indeed.com.mx"
+        indeed_base = market_config["indeed_url"].split("/jobs")[
+            0
+        ]  # e.g. "https://www.indeed.com.mx"
         url = market_config["indeed_url"].format(
             query=quote_plus(search_query),
             location=quote_plus(location or ""),
@@ -204,8 +212,10 @@ def _search_source(
     try:
         response = requests.get(url, headers=HEADERS, timeout=15)
         response.raise_for_status()
-        logger.info("Response status: %d, content length: %d", response.status_code, len(response.text))
-    except requests.HTTPError as e:
+        logger.info(
+            "Response status: %d, content length: %d", response.status_code, len(response.text)
+        )
+    except requests.HTTPError:
         # Gracefully handle 403 Forbidden (anti-bot protection)
         if response.status_code == 403:
             logger.debug("403 blocked by %s (anti-bot) for market=%s", source, market)
@@ -236,7 +246,9 @@ def _search_source(
     return results
 
 
-def _parse_indeed(soup: BeautifulSoup, source: str, indeed_base: str = "https://www.indeed.com") -> list[JobDiscovery]:
+def _parse_indeed(
+    soup: BeautifulSoup, source: str, indeed_base: str = "https://www.indeed.com"
+) -> list[JobDiscovery]:
     """Parse Indeed search results.
 
     Args:
@@ -294,7 +306,9 @@ def _parse_indeed(soup: BeautifulSoup, source: str, indeed_base: str = "https://
         title = title_elem.get_text(strip=True) if title_elem else ""
         company = company_elem.get_text(strip=True) if company_elem else ""
         location = location_elem.get_text(strip=True) if location_elem else ""
-        posting_date = _parse_relative_date(date_elem.get_text(strip=True)) if date_elem else date.today()
+        posting_date = (
+            _parse_relative_date(date_elem.get_text(strip=True)) if date_elem else date.today()
+        )
         url = ""
         if link_elem and link_elem.get("href"):
             href = link_elem["href"]
@@ -304,14 +318,16 @@ def _parse_indeed(soup: BeautifulSoup, source: str, indeed_base: str = "https://
                 url = href
 
         if title:
-            results.append(JobDiscovery(
-                title=title,
-                company=company,
-                location=location,
-                url=url,
-                source=source,
-                posting_date=posting_date,
-            ))
+            results.append(
+                JobDiscovery(
+                    title=title,
+                    company=company,
+                    location=location,
+                    url=url,
+                    source=source,
+                    posting_date=posting_date,
+                )
+            )
 
     # Fallback parser for markup changes.
     if not results:
@@ -399,17 +415,21 @@ def _parse_linkedin(soup: BeautifulSoup, source: str) -> list[JobDiscovery]:
         company = company_elem.get_text(strip=True) if company_elem else ""
         location = location_elem.get_text(strip=True) if location_elem else ""
         url = link_elem["href"] if link_elem and link_elem.get("href") else ""
-        posting_date = _parse_relative_date(date_elem.get_text(strip=True)) if date_elem else date.today()
+        posting_date = (
+            _parse_relative_date(date_elem.get_text(strip=True)) if date_elem else date.today()
+        )
 
         if title:
-            results.append(JobDiscovery(
-                title=title,
-                company=company,
-                location=location,
-                url=url,
-                source=source,
-                posting_date=posting_date,
-            ))
+            results.append(
+                JobDiscovery(
+                    title=title,
+                    company=company,
+                    location=location,
+                    url=url,
+                    source=source,
+                    posting_date=posting_date,
+                )
+            )
 
     return results
 
@@ -529,6 +549,7 @@ def format_freshness(posting_date: date | str | None) -> str:
     if isinstance(posting_date, str):
         try:
             from datetime import datetime
+
             posting_date = datetime.fromisoformat(posting_date.split()[0]).date()
         except (ValueError, AttributeError):
             return "Posted recently"
@@ -571,38 +592,72 @@ def _get_resume_keywords() -> set[str]:
         # Extract from summaries (all templates)
         for summary_text in corpus.summaries.values():
             # Split on whitespace and common delimiters, extract meaningful words
-            words = re.findall(r'\b[a-zA-Z]{3,}\b', summary_text.lower())
+            words = re.findall(r"\b[a-zA-Z]{3,}\b", summary_text.lower())
             keywords.update(words)
 
         # Extract from experience blocks
         for exp in corpus.experience:
             # Company and role names
-            words = re.findall(r'\b[a-zA-Z]{3,}\b', f"{exp.company} {exp.role}".lower())
+            words = re.findall(r"\b[a-zA-Z]{3,}\b", f"{exp.company} {exp.role}".lower())
             keywords.update(words)
 
             # All bullet points across templates
             for bullets in exp.bullets.values():
                 for bullet in bullets:
-                    words = re.findall(r'\b[a-zA-Z]{3,}\b', bullet.lower())
+                    words = re.findall(r"\b[a-zA-Z]{3,}\b", bullet.lower())
                     keywords.update(words)
 
         # Extract from skills
         for category in corpus.skills.values():
             for skill_item in category.items:
-                words = re.findall(r'\b[a-zA-Z]{3,}\b', skill_item.name.lower())
+                words = re.findall(r"\b[a-zA-Z]{3,}\b", skill_item.name.lower())
                 keywords.update(words)
 
         # Remove common stop words that add no value
         stop_words = {
-            'the', 'and', 'for', 'with', 'from', 'into', 'that', 'this',
-            'have', 'has', 'had', 'was', 'were', 'are', 'been', 'being',
-            'can', 'will', 'would', 'should', 'could', 'may', 'might',
-            'such', 'than', 'then', 'there', 'their', 'what', 'when',
-            'where', 'which', 'who', 'whom', 'whose', 'why', 'how'
+            "the",
+            "and",
+            "for",
+            "with",
+            "from",
+            "into",
+            "that",
+            "this",
+            "have",
+            "has",
+            "had",
+            "was",
+            "were",
+            "are",
+            "been",
+            "being",
+            "can",
+            "will",
+            "would",
+            "should",
+            "could",
+            "may",
+            "might",
+            "such",
+            "than",
+            "then",
+            "there",
+            "their",
+            "what",
+            "when",
+            "where",
+            "which",
+            "who",
+            "whom",
+            "whose",
+            "why",
+            "how",
         }
         keywords = keywords - stop_words
 
-        logger.info(f"_get_resume_keywords | extracted {len(keywords)} keywords from resume library")
+        logger.info(
+            f"_get_resume_keywords | extracted {len(keywords)} keywords from resume library"
+        )
         return keywords
 
     except Exception as e:
@@ -610,7 +665,9 @@ def _get_resume_keywords() -> set[str]:
         return set()
 
 
-def _calculate_resume_match_score(job_title: str, search_tags: str, resume_keywords: set[str]) -> float:
+def _calculate_resume_match_score(
+    job_title: str, search_tags: str, resume_keywords: set[str]
+) -> float:
     """Calculate how well a job matches the resume library content.
 
     Args:
@@ -626,7 +683,7 @@ def _calculate_resume_match_score(job_title: str, search_tags: str, resume_keywo
 
     # Extract job keywords from title and tags
     job_text = f"{job_title} {search_tags}".lower()
-    job_words = set(re.findall(r'\b[a-zA-Z]{3,}\b', job_text))
+    job_words = set(re.findall(r"\b[a-zA-Z]{3,}\b", job_text))
 
     if not job_words:
         return 0.0
@@ -638,7 +695,9 @@ def _calculate_resume_match_score(job_title: str, search_tags: str, resume_keywo
     return min(match_score, 1.0)  # Cap at 1.0
 
 
-def rank_discoveries_by_tag_weight(discoveries: list[JobDiscovery | dict], max_per_country: int = None) -> list[JobDiscovery | dict]:
+def rank_discoveries_by_tag_weight(
+    discoveries: list[JobDiscovery | dict], max_per_country: int = None
+) -> list[JobDiscovery | dict]:
     """Rank discoveries by tag weight, resume library match, and freshness.
 
     Applies per-country limits if specified, keeping only the top N results per country
@@ -672,9 +731,7 @@ def rank_discoveries_by_tag_weight(discoveries: list[JobDiscovery | dict], max_p
         # Calculate resume match score
         job_title = disc.get("title") if isinstance(disc, dict) else disc.title
         resume_match_score = _calculate_resume_match_score(
-            job_title or "",
-            search_tags or "",
-            resume_keywords
+            job_title or "", search_tags or "", resume_keywords
         )
 
         if isinstance(disc, dict):
@@ -688,30 +745,33 @@ def rank_discoveries_by_tag_weight(discoveries: list[JobDiscovery | dict], max_p
     def _get_sort_key(d):
         """Extract composite sort key combining tag weight, resume match, and freshness."""
         total_weight = sum(
-            d.get("search_tag_weights", {}).values() if isinstance(d, dict) else d.search_tag_weights.values()
+            d.get("search_tag_weights", {}).values()
+            if isinstance(d, dict)
+            else d.search_tag_weights.values()
         )
 
         # Get resume match score (0.0 to 1.0)
-        resume_match = d.get("resume_match_score", 0.0) if isinstance(d, dict) else getattr(d, "resume_match_score", 0.0)
+        resume_match = (
+            d.get("resume_match_score", 0.0)
+            if isinstance(d, dict)
+            else getattr(d, "resume_match_score", 0.0)
+        )
 
         # Get posting_date and calculate freshness bonus
         posting_date = d.get("posting_date") if isinstance(d, dict) else d.posting_date
 
         if posting_date is None:
             posting_date_obj = date.min
-            freshness_bonus = 0.0
         elif isinstance(posting_date, str):
             # Parse string date from database (format: YYYY-MM-DD)
             try:
                 posting_date_obj = datetime.strptime(posting_date, "%Y-%m-%d").date()
             except (ValueError, AttributeError):
                 posting_date_obj = date.min
-                freshness_bonus = 0.0
         elif isinstance(posting_date, date):
             posting_date_obj = posting_date
         else:
             posting_date_obj = date.min
-            freshness_bonus = 0.0
 
         # Calculate freshness bonus (0 to 1.0 scale, then weighted by 5%)
         if posting_date_obj != date.min:
@@ -732,7 +792,9 @@ def rank_discoveries_by_tag_weight(discoveries: list[JobDiscovery | dict], max_p
         # Composite score: tag_weight (35%) + resume_match (65%) + freshness_bonus (5%)
         # Normalize tag_weight to 0-1 scale by dividing by 100 (tag weights range 0-100)
         normalized_tag_weight = min(total_weight / 100.0, 1.0)
-        composite_score = (normalized_tag_weight * 0.35) + (resume_match * 0.65) + (freshness_raw * 0.05)
+        composite_score = (
+            (normalized_tag_weight * 0.35) + (resume_match * 0.65) + (freshness_raw * 0.05)
+        )
 
         # Store composite score and breakdown in discovery for UI display
         if isinstance(d, dict):
@@ -787,7 +849,7 @@ def search_jobs_async(
     pause_check: callable = None,
     progress_callback: callable = None,
     max_results: int = 250,
-    max_results_per_country: int = 100
+    max_results_per_country: int = 100,
 ) -> list[JobDiscovery]:
     """Search jobs with pause/resume support and result limits.
 
@@ -827,7 +889,9 @@ def search_jobs_async(
 
                 # Check per-market limit
                 if market_counts[market] >= max_results_per_country:
-                    logger.debug("Market %s limit reached: %d results", market, market_counts[market])
+                    logger.debug(
+                        "Market %s limit reached: %d results", market, market_counts[market]
+                    )
                     current += 1
                     continue
 
@@ -852,7 +916,11 @@ def search_jobs_async(
 
                 logger.debug(
                     "Search progress: %d/%d combinations, %d total results (%s: %d)",
-                    current, total_combinations, len(all_discoveries), market, market_counts[market]
+                    current,
+                    total_combinations,
+                    len(all_discoveries),
+                    market,
+                    market_counts[market],
                 )
 
                 # Check limits again after adding results
@@ -860,8 +928,12 @@ def search_jobs_async(
                     logger.info("Search limit reached: %d results", len(all_discoveries))
                     return all_discoveries
 
-    logger.info("Search completed: %d total results from %d combinations (per-country: %s)",
-                len(all_discoveries), total_combinations, market_counts)
+    logger.info(
+        "Search completed: %d total results from %d combinations (per-country: %s)",
+        len(all_discoveries),
+        total_combinations,
+        market_counts,
+    )
     return all_discoveries
 
 
@@ -917,14 +989,12 @@ def import_discovery_to_application(discovery_id: int) -> Optional[int]:
     if disc.get("url"):
         try:
             from jseeker.jd_parser import extract_jd_from_url
+
             jd_text, metadata = extract_jd_from_url(disc["url"])
 
             if jd_text:
                 # Parse JD to extract salary, skills, etc.
-                jd_data = process_jd(
-                    raw_text=jd_text,
-                    jd_url=disc["url"]
-                )
+                jd_data = process_jd(raw_text=jd_text, jd_url=disc["url"])
         except Exception as e:
             logger.warning(f"Could not fetch/parse JD for import: {e}")
 
@@ -975,7 +1045,9 @@ def generate_resume_from_discovery(discovery_id: int) -> Optional[dict]:
             break
 
     if not disc or not disc.get("url"):
-        logger.warning("generate_resume_from_discovery: discovery %s not found or has no URL", discovery_id)
+        logger.warning(
+            "generate_resume_from_discovery: discovery %s not found or has no URL", discovery_id
+        )
         return None
 
     # Extract JD text from URL
@@ -986,7 +1058,9 @@ def generate_resume_from_discovery(discovery_id: int) -> Optional[dict]:
         return None
 
     if not jd_text or len(jd_text.strip()) < 100:
-        logger.warning("JD text too short for discovery %s (%d chars)", discovery_id, len(jd_text or ""))
+        logger.warning(
+            "JD text too short for discovery %s (%d chars)", discovery_id, len(jd_text or "")
+        )
         return None
 
     # Run full pipeline

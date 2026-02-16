@@ -1,6 +1,5 @@
 """Tests for JD parser module."""
 
-import pytest
 import requests
 from jseeker.jd_parser import (
     detect_ats_platform,
@@ -8,9 +7,13 @@ from jseeker.jd_parser import (
     detect_language_from_location,
     detect_market_from_location,
     extract_jd_from_url,
+    sanitize_company_name,
     _extract_salary,
     _extract_company_from_url,
     _extract_company_fallback,
+    _is_incomplete_jd,
+    _search_company_career_site,
+    _linkedin_fallback_search,
 )
 from jseeker.models import ATSPlatform
 
@@ -19,10 +22,15 @@ class TestATSDetection:
     """Test ATS platform detection from URLs."""
 
     def test_greenhouse_detection(self):
-        assert detect_ats_platform("https://boards.greenhouse.io/company/jobs/123") == ATSPlatform.GREENHOUSE
+        assert (
+            detect_ats_platform("https://boards.greenhouse.io/company/jobs/123")
+            == ATSPlatform.GREENHOUSE
+        )
 
     def test_workday_detection(self):
-        assert detect_ats_platform("https://company.wd5.myworkdayjobs.com/jobs") == ATSPlatform.WORKDAY
+        assert (
+            detect_ats_platform("https://company.wd5.myworkdayjobs.com/jobs") == ATSPlatform.WORKDAY
+        )
 
     def test_lever_detection(self):
         assert detect_ats_platform("https://jobs.lever.co/company/123") == ATSPlatform.LEVER
@@ -117,7 +125,9 @@ class TestExtractJDFromURL:
             def raise_for_status():
                 return None
 
-        monkeypatch.setattr("jseeker.jd_parser.requests.get", lambda *args, **kwargs: FakeResponse())
+        monkeypatch.setattr(
+            "jseeker.jd_parser.requests.get", lambda *args, **kwargs: FakeResponse()
+        )
         extracted, metadata = extract_jd_from_url("https://example.com/job")
         assert "Director of Product Design" in extracted
         assert "Site Header" not in extracted
@@ -212,7 +222,9 @@ class TestCompanyExtraction:
 
     def test_extract_company_from_santander_careers_url(self):
         """Santander careers URL should extract 'Santander'."""
-        result = _extract_company_from_url("https://careers.santander.com/job/123/design-strategist")
+        result = _extract_company_from_url(
+            "https://careers.santander.com/job/123/design-strategist"
+        )
         assert result is not None
         assert result.lower() == "santander"
 
@@ -233,7 +245,9 @@ class TestCompanyExtraction:
 
     def test_extract_company_from_viterbit_url(self):
         """Viterbit URL should extract company name from subdomain."""
-        result = _extract_company_from_url("https://aviva.viterbit.site/head-of-product-oeCHOj1uiH5H/")
+        result = _extract_company_from_url(
+            "https://aviva.viterbit.site/head-of-product-oeCHOj1uiH5H/"
+        )
         assert result == "Aviva"
 
     def test_extract_company_fallback_at_pattern(self):
@@ -269,6 +283,84 @@ class TestCompanyExtraction:
         """Empty text should return None."""
         assert _extract_company_fallback("") is None
         assert _extract_company_fallback(None) is None
+
+
+class TestSanitizeCompanyName:
+    """Test company name sanitization to prevent corrupted names."""
+
+    def test_clean_name_passes_through(self):
+        """Valid company names should pass through unchanged."""
+        assert sanitize_company_name("PayPal") == "PayPal"
+        assert sanitize_company_name("Paramount") == "Paramount"
+        assert sanitize_company_name("Stay 22") == "Stay 22"
+        assert sanitize_company_name("JPMorgan Chase & Co") == "JPMorgan Chase & Co"
+
+    def test_sentence_fragment_truncated(self):
+        """Sentence fragments after company name should be removed."""
+        assert sanitize_company_name("PayPal has been revolutionizing payments") == "PayPal"
+        assert sanitize_company_name("Paramount drives revenue growth") == "Paramount"
+        assert sanitize_company_name("Aviva is a leading insurance company") == "Aviva"
+
+    def test_false_positive_rejected(self):
+        """Common false-positive words should be rejected."""
+        assert sanitize_company_name("revenue") == ""
+        assert sanitize_company_name("position") == ""
+        assert sanitize_company_name("team") == ""
+        assert sanitize_company_name("Remote") == ""
+
+    def test_empty_and_none(self):
+        """Empty/None inputs should return empty string."""
+        assert sanitize_company_name("") == ""
+        assert sanitize_company_name(None) == ""
+        assert sanitize_company_name("   ") == ""
+
+    def test_underscore_slugs_cleaned(self):
+        """URL-style underscores should become spaces."""
+        assert sanitize_company_name("Acme_Corp") == "Acme Corp"
+
+    def test_placeholder_values_rejected(self):
+        """Placeholder strings should be rejected."""
+        assert sanitize_company_name("Not Specified") == ""
+        assert sanitize_company_name("unknown") == ""
+        assert sanitize_company_name("N/A") == ""
+        assert sanitize_company_name("TBD") == ""
+
+    def test_too_long_rejected(self):
+        """Excessively long strings (sentence fragments) should be rejected."""
+        long_name = (
+            "This is a very long string that is clearly not a company name and should be rejected"
+        )
+        assert sanitize_company_name(long_name) == ""
+
+    def test_single_char_rejected(self):
+        """Single character names should be rejected."""
+        assert sanitize_company_name("A") == ""
+
+    def test_real_company_names(self):
+        """Real company names from bug reports should work correctly."""
+        assert sanitize_company_name("Paramount") == "Paramount"
+        assert sanitize_company_name("PayPal") == "PayPal"
+        assert sanitize_company_name("Aviva") == "Aviva"
+        assert sanitize_company_name("Stay 22") == "Stay 22"
+        assert sanitize_company_name("Santander") == "Santander"
+        assert sanitize_company_name("Google") == "Google"
+        assert sanitize_company_name("McKinsey & Company") == "McKinsey & Company"
+
+    def test_leading_articles_removed(self):
+        """Leading articles should be stripped."""
+        assert sanitize_company_name("The Acme Corp") == "Acme Corp"
+        assert sanitize_company_name("A Big Company") == "Big Company"
+
+    def test_trailing_punctuation_removed(self):
+        """Trailing punctuation and conjunctions should be stripped."""
+        assert sanitize_company_name("Acme Corp,") == "Acme Corp"
+        assert sanitize_company_name("Acme Corp -") == "Acme Corp"
+        assert sanitize_company_name("Acme Corp and") == "Acme Corp"
+
+    def test_provides_verb_truncation(self):
+        """Company names followed by verbs like 'provides' should be truncated."""
+        assert sanitize_company_name("Acme Corp provides solutions") == "Acme Corp"
+        assert sanitize_company_name("TechCo offers great benefits") == "TechCo"
 
 
 class TestMarketDetection:
@@ -381,3 +473,350 @@ class TestLanguageFromLocation:
     def test_guadalajara_returns_es(self):
         """Guadalajara should return 'es'."""
         assert detect_language_from_location("Guadalajara") == "es"
+
+
+class TestIncompleteJDDetection:
+    """Test _is_incomplete_jd detection logic."""
+
+    def test_empty_text_is_incomplete(self):
+        assert _is_incomplete_jd("") is True
+
+    def test_none_text_is_incomplete(self):
+        assert _is_incomplete_jd(None) is True
+
+    def test_short_text_is_incomplete(self):
+        assert _is_incomplete_jd("Apply now for this exciting role.") is True
+
+    def test_short_text_under_200_chars_is_incomplete(self):
+        assert _is_incomplete_jd("a" * 150) is True
+
+    def test_medium_text_without_sections_is_incomplete(self):
+        """Text under 500 chars with no JD section keywords is incomplete."""
+        text = "We are looking for a software engineer to join our team. " * 5
+        assert len(text) < 500
+        assert _is_incomplete_jd(text) is True
+
+    def test_medium_text_with_sections_is_complete(self):
+        """Text between 200-500 chars with JD section keywords is complete."""
+        text = (
+            "Software Engineer at Acme Corp. "
+            "We are looking for a talented engineer to join our growing team. "
+            "Responsibilities: Build and maintain scalable web applications. "
+            "Requirements: 3+ years Python experience with cloud platforms. "
+            "Qualifications: BS in Computer Science preferred. "
+        )
+        assert 200 < len(text) < 500
+        assert _is_incomplete_jd(text) is False
+
+    def test_long_text_is_complete(self):
+        """Text over 500 chars is always complete regardless of sections."""
+        text = "We are hiring a great engineer. " * 20
+        assert len(text) > 500
+        assert _is_incomplete_jd(text) is False
+
+    def test_full_jd_is_complete(self):
+        """A realistic full JD should be detected as complete."""
+        text = (
+            "Senior Software Engineer\n\n"
+            "About the Role\n"
+            "We are looking for a senior engineer to lead our platform team.\n\n"
+            "Responsibilities:\n"
+            "- Design and build scalable microservices\n"
+            "- Mentor junior engineers\n"
+            "- Drive technical decisions\n\n"
+            "Requirements:\n"
+            "- 5+ years of Python experience\n"
+            "- Experience with cloud platforms (AWS/GCP)\n"
+            "- Strong communication skills\n"
+        )
+        assert _is_incomplete_jd(text) is False
+
+
+class TestLinkedInFallbackSearch:
+    """Test LinkedIn JD fallback search chain."""
+
+    def test_fallback_with_no_company_returns_empty(self, monkeypatch):
+        """Fallback with no company info should return empty."""
+        # Mock _extract_company_from_url to return None (no company from URL)
+        monkeypatch.setattr("jseeker.jd_parser._extract_company_from_url", lambda url: None)
+        metadata = {"company": "", "method": "failed"}
+        text, meta = _linkedin_fallback_search("https://linkedin.com/jobs/view/123", "", metadata)
+        assert text == ""
+
+    def test_fallback_tries_career_site(self, monkeypatch):
+        """Fallback should try company career site when company is known."""
+        full_jd = (
+            "Software Engineer - Full JD with responsibilities and requirements. "
+            "Responsibilities: Build software. Requirements: Python. " * 10
+        )
+
+        def mock_career_site(company, title="", timeout=15):
+            return "https://careers.acme.com/jobs/123"
+
+        def mock_extract(url, timeout=20):
+            if "careers.acme" in url:
+                return full_jd, {"success": True, "method": "selector", "company": "Acme"}
+            return "", {"success": False, "method": "failed", "company": ""}
+
+        monkeypatch.setattr("jseeker.jd_parser._search_company_career_site", mock_career_site)
+        monkeypatch.setattr("jseeker.jd_parser.extract_jd_from_url", mock_extract)
+
+        metadata = {"company": "Acme", "method": "failed"}
+        text, meta = _linkedin_fallback_search("https://linkedin.com/jobs/view/123", "", metadata)
+        assert text == full_jd
+        assert meta.get("linkedin_fallback_used") is True
+        assert meta.get("alternate_source_url") == "https://careers.acme.com/jobs/123"
+
+    def test_fallback_tries_web_search_when_career_site_fails(self, monkeypatch):
+        """Fallback should try web search when career site fails."""
+        full_jd = (
+            "Data Scientist at BigCo. Responsibilities: Analyze data. "
+            "Requirements: ML experience. Qualifications: PhD preferred. " * 8
+        )
+
+        def mock_career_site(company, title="", timeout=15):
+            return None  # Career site not found
+
+        def mock_search(title, company):
+            return "https://boards.greenhouse.io/bigco/jobs/456"
+
+        call_count = {"n": 0}
+
+        def mock_extract(url, timeout=20):
+            call_count["n"] += 1
+            if "greenhouse" in url:
+                return full_jd, {"success": True, "method": "selector", "company": "BigCo"}
+            return "", {"success": False, "method": "failed", "company": ""}
+
+        monkeypatch.setattr("jseeker.jd_parser._search_company_career_site", mock_career_site)
+        monkeypatch.setattr("jseeker.jd_parser._search_alternate_posting", mock_search)
+        monkeypatch.setattr("jseeker.jd_parser.extract_jd_from_url", mock_extract)
+
+        metadata = {"company": "BigCo", "method": "failed"}
+        text, meta = _linkedin_fallback_search("https://linkedin.com/jobs/view/789", "", metadata)
+        assert text == full_jd
+        assert meta.get("linkedin_fallback_used") is True
+        assert meta.get("method") == "linkedin_fallback_web_search"
+
+
+class TestSearchCompanyCareerSite:
+    """Test _search_company_career_site function."""
+
+    def test_returns_none_for_empty_company(self):
+        assert _search_company_career_site("") is None
+        assert _search_company_career_site(None) is None
+
+    def test_tries_career_patterns(self, monkeypatch):
+        """Should try common career site URL patterns."""
+        tried_urls = []
+
+        def mock_get(url, timeout=15, headers=None, allow_redirects=True):
+            tried_urls.append(url)
+            raise requests.RequestException("mock")
+
+        monkeypatch.setattr(requests, "get", mock_get)
+        result = _search_company_career_site("Acme")
+        assert result is None
+        assert any("careers.acme.com" in u for u in tried_urls)
+        assert any("acme.com/careers" in u for u in tried_urls)
+
+    def test_returns_career_url_on_success(self, monkeypatch):
+        """Should return career site URL when it responds successfully."""
+
+        class MockResponse:
+            status_code = 200
+            text = "<html><body>" + "x" * 600 + "</body></html>"
+
+        def mock_get(url, timeout=15, headers=None, allow_redirects=True):
+            if "careers.paramount" in url:
+                return MockResponse()
+            raise requests.RequestException("not found")
+
+        monkeypatch.setattr(requests, "get", mock_get)
+        result = _search_company_career_site("Paramount")
+        assert result == "https://careers.paramount.com"
+
+
+class TestExtractLinkedInFallbackIntegration:
+    """Integration tests for LinkedIn fallback in extract_jd_from_url."""
+
+    def test_linkedin_url_triggers_fallback_on_incomplete(self, monkeypatch):
+        """When LinkedIn scraping returns incomplete JD, fallback should trigger."""
+        incomplete_html = (
+            "<html><body><div class='description'>Apply for this job</div></body></html>"
+        )
+        full_jd = (
+            "Senior Engineer at Paramount. "
+            "Responsibilities: Lead engineering team. "
+            "Requirements: 5+ years experience. " * 10
+        )
+
+        def mock_get(url, **kwargs):
+            resp = requests.models.Response()
+            resp.status_code = 200
+            resp._content = incomplete_html.encode()
+            return resp
+
+        def mock_resolve(url, timeout=15):
+            return None  # No ATS link found on LinkedIn page
+
+        def mock_playwright(url, selectors, platform="generic-fallback", wait_ms=4000):
+            return ""  # Playwright also returns nothing
+
+        fallback_called = {"called": False}
+
+        def mock_fallback(original_url, partial_text, metadata, timeout=20):
+            fallback_called["called"] = True
+            return full_jd, {
+                "success": True,
+                "method": "linkedin_fallback_career_site",
+                "alternate_source_url": "https://careers.paramount.com/jobs/123",
+                "linkedin_fallback_used": True,
+                "company": "Paramount",
+            }
+
+        monkeypatch.setattr(requests, "get", mock_get)
+        monkeypatch.setattr("jseeker.jd_parser._resolve_linkedin_url", mock_resolve)
+        monkeypatch.setattr("jseeker.jd_parser._extract_with_playwright", mock_playwright)
+        monkeypatch.setattr("jseeker.jd_parser._linkedin_fallback_search", mock_fallback)
+
+        text, meta = extract_jd_from_url("https://www.linkedin.com/jobs/view/12345")
+        assert fallback_called["called"] is True
+        assert text == full_jd
+        assert meta.get("linkedin_fallback_used") is True
+        assert meta.get("alternate_source_url") == "https://careers.paramount.com/jobs/123"
+
+    def test_non_linkedin_url_does_not_trigger_fallback(self, monkeypatch):
+        """Non-LinkedIn URLs should not trigger LinkedIn fallback."""
+        short_html = "<html><body><div class='description'>Short text.</div></body></html>"
+
+        def mock_get(url, **kwargs):
+            resp = requests.models.Response()
+            resp.status_code = 200
+            resp._content = short_html.encode()
+            return resp
+
+        def mock_playwright(url, selectors, platform="generic-fallback", wait_ms=4000):
+            return ""
+
+        monkeypatch.setattr(requests, "get", mock_get)
+        monkeypatch.setattr("jseeker.jd_parser._extract_with_playwright", mock_playwright)
+
+        text, meta = extract_jd_from_url("https://example.com/jobs/123")
+        assert meta.get("linkedin_fallback_used", False) is False
+
+
+class TestCompanyExtractionBugReports:
+    """Test company extraction for specific bug report URLs (Feb 16 sprint).
+
+    These tests verify that problematic URLs from real user sessions
+    correctly extract the company name instead of returning garbage
+    like 'Myworkdayjobs', 'Linkedin', or sentence fragments.
+    """
+
+    def test_paramount_greenhouse_url(self):
+        """Paramount on Greenhouse should extract 'Paramount'."""
+        result = _extract_company_from_url("https://boards.greenhouse.io/paramount/jobs/7654321")
+        assert result is not None
+        assert result.lower() == "paramount"
+
+    def test_paypal_workday_url(self):
+        """PayPal on Workday should extract 'Paypal'."""
+        result = _extract_company_from_url(
+            "https://paypal.wd1.myworkdayjobs.com/jobs/job/Mexico-City/Senior-UX-Designer_R12345"
+        )
+        assert result is not None
+        assert result.lower() == "paypal"
+
+    def test_stay22_lever_url(self):
+        """Stay 22 on Lever should extract 'Stay 22'."""
+        result = _extract_company_from_url("https://jobs.lever.co/stay-22/abc123-def456")
+        assert result is not None
+        assert result.lower() == "stay 22"
+
+    def test_aviva_viterbit_url(self):
+        """Aviva on Viterbit should extract 'Aviva'."""
+        result = _extract_company_from_url(
+            "https://aviva.viterbit.site/head-of-product-oeCHOj1uiH5H/"
+        )
+        assert result is not None
+        assert result.lower() == "aviva"
+
+    def test_paramount_fallback_from_jd_text(self):
+        """When URL extraction fails, JD text should extract Paramount."""
+        text = """
+        Senior UX Designer
+
+        At Paramount, we create premium content and experiences for a global audience.
+        Join our design team to shape the future of streaming entertainment.
+
+        Responsibilities:
+        - Lead UX design for Paramount+ streaming platform
+        - Collaborate with product and engineering teams
+
+        Requirements:
+        - 8+ years of UX design experience
+        - Portfolio demonstrating streaming or media projects
+        """
+        result = _extract_company_fallback(text)
+        assert result is not None
+        assert result.lower() == "paramount"
+
+    def test_paypal_fallback_from_jd_text(self):
+        """When URL extraction fails, JD text should extract PayPal."""
+        text = """
+        Director of Product Design
+
+        About PayPal
+        PayPal is the global leader in digital payments.
+
+        Responsibilities:
+        - Lead design strategy for checkout experiences
+        - Manage a team of 15+ designers
+        """
+        result = _extract_company_fallback(text)
+        assert result is not None
+        assert result.lower() == "paypal"
+
+    def test_company_name_not_corrupted_by_url_slug(self):
+        """Company name should not include URL path segments like job IDs."""
+        # Workday URL with complex path
+        result = _extract_company_from_url(
+            "https://acme.wd5.myworkdayjobs.com/en-US/External/job/Mexico-City/Director-UX_R0012345"
+        )
+        assert result is not None
+        assert "External" not in result
+        assert "Mexico" not in result
+        assert "Director" not in result
+
+    def test_santander_careers_domain(self):
+        """Santander with careers subdomain should extract correctly."""
+        result = _extract_company_from_url(
+            "https://careers.santander.com/job/mexico-city/design-strategist/123"
+        )
+        assert result is not None
+        assert result.lower() == "santander"
+
+    def test_sanitize_prevents_sentence_as_company(self):
+        """Sanitize should prevent sentence fragments from being used as company names."""
+        # These are real examples from corrupted extractions
+        assert sanitize_company_name("Paramount drives revenue growth") == "Paramount"
+        assert sanitize_company_name("PayPal is the global leader") == "PayPal"
+        assert sanitize_company_name("") == ""
+        assert sanitize_company_name(None) == ""
+
+
+class TestParsedJDAlternateSource:
+    """Test ParsedJD model includes alternate_source_url field."""
+
+    def test_alternate_source_url_default_empty(self):
+        from jseeker.models import ParsedJD
+
+        jd = ParsedJD(raw_text="test")
+        assert jd.alternate_source_url == ""
+
+    def test_alternate_source_url_can_be_set(self):
+        from jseeker.models import ParsedJD
+
+        jd = ParsedJD(raw_text="test", alternate_source_url="https://careers.example.com/job/123")
+        assert jd.alternate_source_url == "https://careers.example.com/job/123"

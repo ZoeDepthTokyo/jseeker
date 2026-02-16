@@ -423,11 +423,11 @@ class TestDOCXStructure:
 
         assert len(date_lines) >= 2, "Should find at least 2 date lines"
 
-        # Check format: "Month YYYY – Month YYYY" or "Month YYYY – Present"
-        date_pattern = r"[A-Z][a-z]+ \d{4} – ([A-Z][a-z]+ \d{4}|Present)"
+        # Check format: "MM/YYYY – MM/YYYY" or "MM/YYYY – Present" (Workday ATS compliant)
+        date_pattern = r"\d{2}/\d{4} – (\d{2}/\d{4}|Present)"
         for date_line in date_lines:
-            # Extract date portion (before "|" if location exists)
-            date_text = date_line.split("|")[0].strip()
+            # Date is now on its own line (location separate for better ATS parsing)
+            date_text = date_line.strip()
             assert re.search(date_pattern, date_text), f"Date format invalid: {date_text}"
 
     def test_no_tables_in_experience(self, tmp_path):

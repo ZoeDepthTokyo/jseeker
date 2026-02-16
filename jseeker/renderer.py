@@ -188,13 +188,13 @@ def _render_html(
 
 
 def _format_date(date_str: str) -> str:
-    """Convert date string to Month YYYY format for ATS compliance.
+    """Convert date string to MM/YYYY format for maximum ATS compliance.
 
     Accepts: YYYY-MM, YYYY-MM-DD, or YYYY.
-    Returns: Month YYYY (e.g., "January 2023").
+    Returns: MM/YYYY (e.g., "01/2023").
 
-    ATS systems expect consistent date formatting. Month YYYY format
-    is widely recognized across all platforms.
+    Workday ATS and other major ATS platforms parse MM/YYYY format most reliably.
+    This format is recommended by Workday ATS best practices (2026).
     """
     if not date_str:
         return ""
@@ -208,8 +208,7 @@ def _format_date(date_str: str) -> str:
         try:
             year = int(parts[0])
             month = int(parts[1])
-            date_obj = datetime(year, month, 1)
-            return date_obj.strftime("%B %Y")  # "January 2023"
+            return f"{month:02d}/{year}"  # "01/2023"
         except (ValueError, IndexError):
             pass
 
@@ -549,7 +548,7 @@ def render_docx(adapted: AdaptedResume, output_path: Path, language: str = "en")
         # Check if this is a condensed entry
         is_condensed = exp.get("condensed", False)
 
-        # Role title (bold)
+        # Role title (bold) - Line 1: Clear job title for ATS parsing
         role_para = doc.add_paragraph()
         role_para.paragraph_format.space_before = Pt(0)
         role_para.paragraph_format.space_after = Pt(0)
@@ -558,7 +557,7 @@ def render_docx(adapted: AdaptedResume, output_path: Path, language: str = "en")
         if is_condensed:
             role_run.font.size = Pt(9.5)
 
-        # Company name (separate line, regular weight)
+        # Company name (separate line, regular weight) - Line 2: Clear company for ATS
         company_para = doc.add_paragraph()
         company_para.paragraph_format.space_before = Pt(0)
         company_para.paragraph_format.space_after = Pt(0)
@@ -566,15 +565,22 @@ def render_docx(adapted: AdaptedResume, output_path: Path, language: str = "en")
         if is_condensed:
             company_run.font.size = Pt(9.5)
 
+        # Date range - Line 3: Dates only (Workday ATS prefers dates separate from location)
         date_para = doc.add_paragraph()
         date_para.paragraph_format.space_before = Pt(0)
-        date_para.paragraph_format.space_after = Pt(1)
-        date_para.add_run(f"{start_display} – {end_display}")
-        if exp.get("location"):
-            date_para.add_run(f" | {exp['location']}")
+        date_para.paragraph_format.space_after = Pt(0)
+        date_run = date_para.add_run(f"{start_display} – {end_display}")
         if is_condensed:
-            for run in date_para.runs:
-                run.font.size = Pt(9.5)
+            date_run.font.size = Pt(9.5)
+
+        # Location (separate line for clear ATS parsing) - Line 4: Location only
+        if exp.get("location"):
+            location_para = doc.add_paragraph()
+            location_para.paragraph_format.space_before = Pt(0)
+            location_para.paragraph_format.space_after = Pt(1)
+            location_run = location_para.add_run(exp["location"])
+            if is_condensed:
+                location_run.font.size = Pt(9.5)
 
         # Limit bullets for condensed entries
         bullets = exp.get("bullets", [])

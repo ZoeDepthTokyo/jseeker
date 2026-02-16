@@ -797,3 +797,25 @@ Upon plan approval:
 | `X:\Projects\_GAIA\_PROTEUS\ui\pages\5_job_discovery.py` | ux-design-lead | 3 |
 | `X:\Projects\_GAIA\_PROTEUS\tests\*` | tdd-guide | 3 |
 | `X:\Projects\_GAIA\_PROTEUS\docs\*` | doc-updater | 3 |
+
+---
+
+## Version History
+
+### v0.3.8 (Feb 15, 2026) — User Feedback Round (6 fixes)
+**High Priority Fixes:**
+1. **Company name extraction** (Santander) — Added "At Company, we..." pattern fallback + 9 test cases
+2. **Location detection** (Mexico City) — 60-city location-to-market mapping, Spanish language auto-switch for Mexico/LATAM jobs
+3. **Output folder/file naming** — Placeholder detection ("Not specified" → "Unknown_Company"), real company names flow through correctly
+
+**Medium Priority:**
+4. **Learning Insights pattern context** — Domain classification (UX/Design, Product, Engineering, Data/ML, Leadership, General) replaces confusing role-only display
+
+**Low Priority:**
+5. **Salary Analytics visualization** — Job Market Distribution by region (bar + radar charts) for US, MEX, CA, UK, EU, LATAM, ASIA
+6. **Pattern Schema UI** — Real pattern data with expandable details (top 20), documented schema, field explanations
+
+**Team approach:** 6 parallel agents with file ownership to avoid conflicts, TDD methodology (tests first), CI/CD validation
+**Test results:** 435/437 passing (99.5%), 2 pre-existing known failures (French lang detection, perf boundary)
+**Files modified:** 11 files (jd_parser, renderer, pattern_learner, 7_learning_insights, test files)
+**New tests added:** 26 tests (14 market detection, 12 language detection, 2 company extraction, 2 output naming)

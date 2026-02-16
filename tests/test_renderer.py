@@ -4,7 +4,7 @@ import pytest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 import subprocess
-from jseeker.renderer import _sanitize, _get_next_version, SECTION_LABELS, _html_to_pdf_sync
+from jseeker.renderer import _sanitize, _get_next_version, SECTION_LABELS, _html_to_pdf_sync, generate_output
 
 
 class TestSanitize:
@@ -493,3 +493,97 @@ class TestDOCXStructure:
         assert "MY JOURNEY" not in all_text.upper()
         assert "TOOLBOX" not in all_text.upper()
         assert "WHAT I'VE BUILT" not in all_text.upper()
+
+
+class TestOutputNaming:
+    """Test output folder and file naming uses company name."""
+
+    def test_output_naming_with_company(self, tmp_path):
+        """Test that output folder and file name contain company name."""
+        from jseeker.models import AdaptedResume, ContactInfo
+
+        adapted = AdaptedResume(
+            contact=ContactInfo(
+                full_name="Test User",
+                email="test@example.com",
+                phone="555-1234",
+                locations=["Remote"],
+            ),
+            target_title="Design Strategist",
+            summary="Test summary",
+            experience_blocks=[],
+            skills_ordered=[],
+            education=[],
+            languages=[],
+            certifications=[],
+            awards=[],
+            template="A",
+        )
+
+        with patch("jseeker.renderer._get_display_name", return_value="Test_User"):
+            with patch("jseeker.renderer.render_pdf") as mock_pdf:
+                with patch("jseeker.renderer.render_docx") as mock_docx:
+                    mock_pdf.return_value = tmp_path / "test.pdf"
+                    mock_docx.return_value = tmp_path / "test.docx"
+
+                    outputs = generate_output(
+                        adapted,
+                        company="Santander",
+                        role="Design Strategist",
+                        output_dir=tmp_path,
+                        formats=["pdf", "docx"],
+                    )
+
+        # Verify folder contains company name
+        pdf_path = outputs["pdf"]
+        assert "Santander" in str(pdf_path)
+        assert "Not_specified" not in str(pdf_path)
+
+        docx_path = outputs["docx"]
+        assert "Santander" in str(docx_path)
+        assert "Not_specified" not in str(docx_path)
+
+        # Verify file name contains company name
+        assert "Santander" in pdf_path.name
+        assert "Santander" in docx_path.name
+
+    def test_output_naming_placeholder_rejected(self, tmp_path):
+        """Test that placeholder company names are replaced with fallback."""
+        from jseeker.models import AdaptedResume, ContactInfo
+
+        adapted = AdaptedResume(
+            contact=ContactInfo(
+                full_name="Test User",
+                email="test@example.com",
+            ),
+            target_title="Engineer",
+            summary="Test",
+            experience_blocks=[],
+            skills_ordered=[],
+            education=[],
+            languages=[],
+            certifications=[],
+            awards=[],
+            template="A",
+        )
+
+        placeholders = ["Not specified", "Unknown", "N/A", "not available", "TBD", ""]
+
+        for placeholder in placeholders:
+            with patch("jseeker.renderer._get_display_name", return_value="Test_User"):
+                with patch("jseeker.renderer.render_pdf") as mock_pdf:
+                    with patch("jseeker.renderer.render_docx") as mock_docx:
+                        mock_pdf.return_value = tmp_path / "test.pdf"
+                        mock_docx.return_value = tmp_path / "test.docx"
+
+                        outputs = generate_output(
+                            adapted,
+                            company=placeholder,
+                            role="Engineer",
+                            output_dir=tmp_path,
+                            formats=["pdf"],
+                        )
+
+            pdf_path = outputs["pdf"]
+            assert "Not_specified" not in str(pdf_path), f"Placeholder '{placeholder}' produced Not_specified in path"
+            assert "Unknown_Company" in str(pdf_path), f"Placeholder '{placeholder}' should fallback to Unknown_Company"

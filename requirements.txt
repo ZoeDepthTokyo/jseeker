@@ -18,6 +18,9 @@ pydantic-settings>=2.1.0
 # PDF processing for preview
 PyMuPDF>=1.23.0  # fitz for PDF preview rendering
 
+# PDF rendering (WeasyPrint as fast alternative to Playwright)
+weasyprint>=60.0
+
 # Analytics and visualization
 statsmodels>=0.14.0  # for performance trend analysis
 plotly>=5.18.0  # for interactive charts

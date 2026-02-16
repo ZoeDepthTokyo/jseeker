@@ -10,9 +10,10 @@ from jseeker.jd_parser import process_jd
 from jseeker.matcher import match_templates
 from jseeker.adapter import adapt_resume
 from jseeker.ats_scorer import score_resume
-from jseeker.renderer import generate_output
+from jseeker.renderer import compress_pdf, generate_output
 from jseeker.llm import llm
 from jseeker.models import PipelineResult
+from jseeker.pdf_validator import validate_pdf_ats_compliance
 
 
 def run_pipeline(
@@ -61,10 +62,17 @@ def run_pipeline(
         adapted, company, role, output_dir=output_dir, language=parsed_jd.language
     )
 
-    # Step 6: Calculate total pipeline cost
+    # Step 6: Auto-compress large PDFs
+    pdf_output = outputs.get("pdf")
+    if pdf_output and pdf_output.stat().st_size > 1.5 * 1024 * 1024:
+        import logging
+        logging.getLogger(__name__).info("PDF size >1.5MB, compressing...")
+        compress_pdf(pdf_output, quality="medium")
+
+    # Step 7: Calculate total pipeline cost
     total_cost = llm.get_total_session_cost() - cost_before
 
-    # Step 7: Write metadata
+    # Step 8: Write metadata
     pdf_path = str(outputs.get("pdf", ""))
     docx_path = str(outputs.get("docx", ""))
 
@@ -73,6 +81,11 @@ def run_pipeline(
             Path(pdf_path).parent,
             parsed_jd, match_result, ats_score, total_cost,
         )
+
+    # Step 9: Validate PDF for ATS compliance
+    pdf_validation = None
+    if pdf_path:
+        pdf_validation = validate_pdf_ats_compliance(Path(pdf_path))
 
     return PipelineResult(
         parsed_jd=parsed_jd,
@@ -87,6 +100,7 @@ def run_pipeline(
         market=parsed_jd.market,
         total_cost=total_cost,
         generation_timestamp=datetime.now(),
+        pdf_validation=pdf_validation,
     )
 
 

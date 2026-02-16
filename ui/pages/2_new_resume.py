@@ -380,6 +380,27 @@ if "pipeline_result" in st.session_state:
                         width="stretch",
                     )
 
+    # PDF ATS Validation
+    if result.pdf_validation:
+        v = result.pdf_validation
+        if v.is_valid:
+            st.success("PDF passes ATS validation checks")
+        else:
+            st.warning("PDF has ATS compliance issues")
+        if v.issues:
+            for issue in v.issues:
+                st.error(f"Issue: {issue}")
+        if v.warnings:
+            for warn in v.warnings:
+                st.warning(f"Warning: {warn}")
+        if v.metadata:
+            meta = v.metadata
+            st.caption(
+                f"Pages: {meta.get('page_count', '?')} | "
+                f"Text: {meta.get('text_length', '?')} chars | "
+                f"Size: {meta.get('file_size_mb', '?')}MB"
+            )
+
     with st.expander("Job Description", expanded=False):
         parsed_jd = result.parsed_jd
 

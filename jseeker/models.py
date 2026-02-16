@@ -216,6 +216,18 @@ class PipelineResult(BaseModel):
     market: str = "us"    # "us", "mx", "ca", "uk", "es", "dk", "fr"
     total_cost: float = 0.0
     generation_timestamp: Optional[datetime] = None
+    pdf_validation: Optional[PDFValidationResult] = None
+
+
+# ── PDF Validation ────────────────────────────────────────────────────
+
+class PDFValidationResult(BaseModel):
+    """Result of ATS compliance validation."""
+    is_valid: bool
+    issues: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    error: str = ""
+    metadata: dict = Field(default_factory=dict)
 
 
 # ── ATS Scoring ────────────────────────────────────────────────────────

@@ -208,6 +208,40 @@ def find_matching_pattern(
     return None
 
 
+def _classify_domain(role: str, keywords: list) -> str:
+    """Classify a JD role + keywords into a broad domain category."""
+    text = f"{role} {' '.join(keywords)}".lower()
+
+    domain_signals = {
+        "UX / Design": ["ux", "user experience", "user research", "design system", "ui design",
+                        "interaction design", "usability", "figma", "sketch"],
+        "Product": ["product manager", "product owner", "product lead", "product director",
+                    "product strategy", "roadmap", "stakeholder"],
+        "Engineering": ["software engineer", "developer", "backend", "frontend", "full stack",
+                        "fullstack", "sre", "devops", "infrastructure"],
+        "Data / ML": ["data scientist", "data engineer", "machine learning", "ai engineer",
+                      "deep learning", "nlp", "tensorflow", "pytorch", "analytics"],
+        "Leadership": ["director", "vp", "head of", "chief", "c-level", "executive",
+                       "strategic oversight", "cross-functional leadership"],
+    }
+
+    matches = {}
+    for domain, signals in domain_signals.items():
+        score = sum(1 for s in signals if s in text)
+        if score > 0:
+            matches[domain] = score
+
+    if not matches:
+        return "General"
+
+    # Return top match; if Leadership ties with a specialty, combine them
+    sorted_domains = sorted(matches.items(), key=lambda x: x[1], reverse=True)
+    top = sorted_domains[0][0]
+    if len(sorted_domains) > 1 and top == "Leadership":
+        return f"{sorted_domains[1][0]} / {top}"
+    return top
+
+
 def get_pattern_stats(db_path: Optional[Path] = None) -> dict:
     """Get statistics about learned patterns.
 
@@ -245,6 +279,9 @@ def get_pattern_stats(db_path: Optional[Path] = None) -> dict:
     top_patterns = []
     for row in c.fetchall():
         context = json.loads(row["jd_context"] or "{}")
+        role = context.get("role", "N/A")
+        keywords = context.get("keywords", [])
+        domain = _classify_domain(role, keywords)
         top_patterns.append({
             "id": row["id"],
             "type": row["pattern_type"],
@@ -252,7 +289,8 @@ def get_pattern_stats(db_path: Optional[Path] = None) -> dict:
             "target": row["target_text"][:100],
             "frequency": row["frequency"],
             "confidence": row["confidence"],
-            "context": context.get("role", "N/A"),
+            "context": role,
+            "domain": domain,
         })
 
     # Calculate cache hit rate

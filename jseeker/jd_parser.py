@@ -39,6 +39,98 @@ def _load_prompt(name: str) -> str:
     return path.read_text(encoding="utf-8")
 
 
+# Location-to-market mapping for automatic market detection
+_LOCATION_TO_MARKET = {
+    # Mexico
+    "mexico": "mx", "méxico": "mx", "cdmx": "mx", "ciudad de mexico": "mx",
+    "ciudad de méxico": "mx", "guadalajara": "mx", "monterrey": "mx",
+    "tijuana": "mx", "puebla": "mx", "queretaro": "mx", "querétaro": "mx",
+    "leon": "mx", "cancun": "mx", "merida": "mx", "mérida": "mx",
+    # Canada
+    "toronto": "ca", "vancouver": "ca", "montreal": "ca", "montréal": "ca",
+    "ottawa": "ca", "calgary": "ca", "edmonton": "ca", "winnipeg": "ca",
+    "canada": "ca",
+    # UK
+    "london": "uk", "manchester": "uk", "edinburgh": "uk", "birmingham": "uk",
+    "bristol": "uk", "leeds": "uk", "glasgow": "uk",
+    "united kingdom": "uk", "uk": "uk",
+    # Spain
+    "madrid": "es", "barcelona": "es", "valencia": "es", "seville": "es",
+    "sevilla": "es", "bilbao": "es", "malaga": "es", "málaga": "es",
+    "spain": "es", "españa": "es",
+    # Denmark
+    "copenhagen": "dk", "aarhus": "dk", "odense": "dk",
+    "denmark": "dk", "danmark": "dk",
+    # France
+    "paris": "fr", "lyon": "fr", "marseille": "fr", "toulouse": "fr",
+    "nice": "fr", "nantes": "fr", "strasbourg": "fr",
+    "france": "fr",
+    # US states/cities (common ones)
+    "new york": "us", "san francisco": "us", "los angeles": "us",
+    "chicago": "us", "seattle": "us", "austin": "us", "boston": "us",
+    "denver": "us", "san diego": "us", "miami": "us", "atlanta": "us",
+    "dallas": "us", "houston": "us", "portland": "us", "phoenix": "us",
+    "united states": "us", "usa": "us",
+}
+
+# Market-to-language mapping
+_MARKET_TO_LANGUAGE = {
+    "mx": "es",
+    "es": "es",
+    "fr": "fr",
+    "us": "en",
+    "ca": "en",
+    "uk": "en",
+    "dk": "en",
+}
+
+
+def detect_market_from_location(location: str) -> str:
+    """Detect market code from a location string.
+
+    Args:
+        location: Location string (e.g., "Mexico City", "London", "Remote").
+
+    Returns:
+        Market code: "us", "mx", "ca", "uk", "es", "dk", "fr".
+    """
+    if not location or location.strip().lower() in ("remote", "anywhere", "flexible", ""):
+        return "us"
+
+    location_lower = location.lower().strip()
+
+    # Check for US/CA state/province abbreviations (e.g., "San Diego, CA")
+    state_match = re.search(r',\s*([A-Z]{2})\s*$', location.strip())
+    if state_match:
+        ca_provinces = {"ON", "BC", "QC", "AB", "MB", "SK", "NB", "NS", "PE", "NL", "YT", "NT", "NU"}
+        if state_match.group(1) in ca_provinces:
+            return "ca"
+        return "us"
+
+    # Check each pattern against the location string
+    for pattern, market in _LOCATION_TO_MARKET.items():
+        if pattern in location_lower:
+            return market
+
+    return "us"
+
+
+def detect_language_from_location(location: str) -> str:
+    """Detect the expected resume language from a job location.
+
+    Used to override text-based language detection when the JD is written
+    in English but the job is in a Spanish/French-speaking market.
+
+    Args:
+        location: Location string from parsed JD.
+
+    Returns:
+        Language code: "en", "es", or "fr".
+    """
+    market = detect_market_from_location(location)
+    return _MARKET_TO_LANGUAGE.get(market, "en")
+
+
 def detect_language(text: str) -> str:
     """Detect language of JD text using heuristic word frequency.
 
@@ -328,7 +420,18 @@ def _extract_company_fallback(text: str) -> str | None:
         if len(company) > 3:
             return company
 
-    # Pattern 4: First capitalized name after "We are" at document start
+    # Pattern 4: "At [Company], we..." or "At [Company] we..."
+    at_match = re.search(
+        r'\bAt\s+([A-Z][A-Za-z0-9\s&\'-]{1,40}?)\s*,?\s+we\b',
+        text,
+        re.MULTILINE
+    )
+    if at_match:
+        company = at_match.group(1).strip()
+        if len(company) >= 2 and not any(word in company.lower() for word in ["the", "this", "our"]):
+            return company
+
+    # Pattern 5: First capitalized name after "We are" at document start
     we_are_match = re.search(
         r'(?:^|^\n)([A-Z][A-Za-z0-9\s&.,\'-]{2,40}?)\s+(?:is|are)\s+(?:hiring|looking|seeking)',
         text[:500],  # Only check first 500 chars
@@ -1013,13 +1116,29 @@ def process_jd(raw_text: str, jd_url: str = "", use_semantic_cache: bool = True)
             logger.warning("process_jd | all company extraction strategies failed")
             company_name = ""
 
+    # Step 8: Detect market and override language from location
+    jd_location = parsed_data.get("location", "")
+    detected_market = detect_market_from_location(jd_location)
+    location_language = detect_language_from_location(jd_location)
+
+    # Override language if location implies a non-English market
+    # (handles English JDs posted for Mexico/Spain/France jobs)
+    if location_language != "en" and detected_language == "en":
+        logger.info(
+            f"process_jd | language override: text={detected_language} -> "
+            f"location={location_language} (market={detected_market}, location='{jd_location}')"
+        )
+        detected_language = location_language
+
+    logger.info(f"process_jd | final: language={detected_language} market={detected_market}")
+
     return ParsedJD(
         raw_text=raw_text,
         pruned_text=pruned,
         title=parsed_data.get("title", ""),
         company=company_name,
         seniority=parsed_data.get("seniority", ""),
-        location=parsed_data.get("location", ""),
+        location=jd_location,
         remote_policy=parsed_data.get("remote_policy", ""),
         salary_range=parsed_data.get("salary_range", ""),
         salary_min=salary_min,
@@ -1033,4 +1152,5 @@ def process_jd(raw_text: str, jd_url: str = "", use_semantic_cache: bool = True)
         detected_ats=ats_platform,
         jd_url=jd_url,
         language=detected_language,
+        market=detected_market,
     )

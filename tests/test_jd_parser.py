@@ -2,7 +2,16 @@
 
 import pytest
 import requests
-from jseeker.jd_parser import detect_ats_platform, detect_language, extract_jd_from_url, _extract_salary
+from jseeker.jd_parser import (
+    detect_ats_platform,
+    detect_language,
+    detect_language_from_location,
+    detect_market_from_location,
+    extract_jd_from_url,
+    _extract_salary,
+    _extract_company_from_url,
+    _extract_company_fallback,
+)
 from jseeker.models import ATSPlatform
 
 
@@ -196,3 +205,174 @@ class TestSalaryExtraction:
         assert min_sal is None
         assert max_sal is None
         assert currency == "USD"
+
+
+class TestCompanyExtraction:
+    """Test company name extraction from URLs and JD text."""
+
+    def test_extract_company_from_santander_careers_url(self):
+        """Santander careers URL should extract 'Santander'."""
+        result = _extract_company_from_url("https://careers.santander.com/job/123/design-strategist")
+        assert result is not None
+        assert result.lower() == "santander"
+
+    def test_extract_company_from_lever_url(self):
+        """Lever URL should extract company name."""
+        result = _extract_company_from_url("https://jobs.lever.co/acme-corp/123")
+        assert result == "Acme Corp"
+
+    def test_extract_company_from_greenhouse_url(self):
+        """Greenhouse URL should extract company name."""
+        result = _extract_company_from_url("https://boards.greenhouse.io/techcorp/jobs/123")
+        assert result == "Techcorp"
+
+    def test_extract_company_from_workday_url(self):
+        """Workday URL should extract company name."""
+        result = _extract_company_from_url("https://acme.wd5.myworkdayjobs.com/en-US/jobs")
+        assert result == "Acme"
+
+    def test_extract_company_fallback_at_pattern(self):
+        """'At Santander, we...' pattern should extract Santander."""
+        text = """
+        Design Strategist - Customer Experience (CX)
+        Country: Mexico
+        About the job
+        At Santander, we're driving innovation in financial services.
+        """
+        result = _extract_company_fallback(text)
+        assert result is not None
+        assert result.lower() == "santander"
+
+    def test_extract_company_fallback_about_pattern(self):
+        """'About Company' pattern should extract company name."""
+        text = "About TechCorp\nWe are a leading technology company."
+        result = _extract_company_fallback(text)
+        assert result == "TechCorp"
+
+    def test_extract_company_fallback_company_label(self):
+        """'Company: Name' pattern should extract company name."""
+        text = "Company: Acme Corp\nLocation: NYC"
+        result = _extract_company_fallback(text)
+        assert result == "Acme Corp"
+
+    def test_extract_company_from_url_empty(self):
+        """Empty URL should return None."""
+        assert _extract_company_from_url("") is None
+        assert _extract_company_from_url(None) is None
+
+    def test_extract_company_fallback_empty(self):
+        """Empty text should return None."""
+        assert _extract_company_fallback("") is None
+        assert _extract_company_fallback(None) is None
+
+
+class TestMarketDetection:
+    """Test market detection from location strings."""
+
+    def test_mexico_country_returns_mx(self):
+        """'Country: Mexico' pattern should detect mx market."""
+        assert detect_market_from_location("Mexico") == "mx"
+
+    def test_mexico_city_returns_mx(self):
+        """Mexico City location should detect mx market."""
+        assert detect_market_from_location("Mexico City") == "mx"
+
+    def test_ciudad_de_mexico_returns_mx(self):
+        """Ciudad de Mexico should detect mx market."""
+        assert detect_market_from_location("Ciudad de Mexico") == "mx"
+
+    def test_cdmx_returns_mx(self):
+        """CDMX abbreviation should detect mx market."""
+        assert detect_market_from_location("CDMX") == "mx"
+
+    def test_guadalajara_returns_mx(self):
+        """Guadalajara should detect mx market."""
+        assert detect_market_from_location("Guadalajara, Jalisco") == "mx"
+
+    def test_san_francisco_returns_us(self):
+        """San Francisco should detect us market."""
+        assert detect_market_from_location("San Francisco, CA") == "us"
+
+    def test_london_returns_uk(self):
+        """London should detect uk market."""
+        assert detect_market_from_location("London") == "uk"
+
+    def test_toronto_returns_ca(self):
+        """Toronto should detect ca market."""
+        assert detect_market_from_location("Toronto, ON") == "ca"
+
+    def test_madrid_returns_es(self):
+        """Madrid should detect es market."""
+        assert detect_market_from_location("Madrid") == "es"
+
+    def test_paris_returns_fr(self):
+        """Paris should detect fr market."""
+        assert detect_market_from_location("Paris") == "fr"
+
+    def test_copenhagen_returns_dk(self):
+        """Copenhagen should detect dk market."""
+        assert detect_market_from_location("Copenhagen") == "dk"
+
+    def test_remote_returns_us(self):
+        """Remote location should default to us market."""
+        assert detect_market_from_location("Remote") == "us"
+
+    def test_empty_returns_us(self):
+        """Empty location should default to us market."""
+        assert detect_market_from_location("") == "us"
+
+    def test_monterrey_returns_mx(self):
+        """Monterrey should detect mx market."""
+        assert detect_market_from_location("Monterrey, Mexico") == "mx"
+
+
+class TestLanguageFromLocation:
+    """Test language detection from location strings."""
+
+    def test_mexico_returns_es(self):
+        """Mexico location should return 'es'."""
+        assert detect_language_from_location("Mexico City") == "es"
+
+    def test_mexico_country_returns_es(self):
+        """Country Mexico should return 'es'."""
+        assert detect_language_from_location("Mexico") == "es"
+
+    def test_cdmx_returns_es(self):
+        """CDMX should return 'es'."""
+        assert detect_language_from_location("CDMX") == "es"
+
+    def test_madrid_returns_es(self):
+        """Madrid should return 'es'."""
+        assert detect_language_from_location("Madrid") == "es"
+
+    def test_paris_returns_fr(self):
+        """Paris should return 'fr'."""
+        assert detect_language_from_location("Paris") == "fr"
+
+    def test_london_returns_en(self):
+        """London should return 'en'."""
+        assert detect_language_from_location("London") == "en"
+
+    def test_san_francisco_returns_en(self):
+        """San Francisco should return 'en'."""
+        assert detect_language_from_location("San Francisco, CA") == "en"
+
+    def test_toronto_returns_en(self):
+        """Toronto (English Canada) should return 'en'."""
+        assert detect_language_from_location("Toronto") == "en"
+
+    def test_empty_returns_en(self):
+        """Empty location should return 'en'."""
+        assert detect_language_from_location("") == "en"
+
+    def test_remote_returns_en(self):
+        """Remote should return 'en'."""
+        assert detect_language_from_location("Remote") == "en"
+
+    def test_copenhagen_returns_en(self):
+        """Copenhagen should return 'en' (jobs in Denmark are typically in English)."""
+        assert detect_language_from_location("Copenhagen") == "en"
+
+    def test_guadalajara_returns_es(self):
+        """Guadalajara should return 'es'."""
+        assert detect_language_from_location("Guadalajara") == "es"

@@ -51,6 +51,15 @@ class ExtractedStyle(BaseModel):
     header_transform: str = "uppercase"
     header_letter_spacing: str = "0.5pt"
 
+    # Page margins (extracted from PDF, in pixels)
+    margin_top: float = 36.0
+    margin_left: float = 36.0
+    margin_right: float = 36.0
+    margin_bottom: float = 36.0
+
+    # Typography details
+    line_height: float = 1.2  # Ratio relative to font size
+
     # Metadata
     source_pdf: str = ""
     template_name: str = ""
@@ -97,10 +106,11 @@ def extract_style_from_pdf(pdf_path: Path) -> ExtractedStyle:
         text_dict = first_page.get_text("dict")
         blocks = text_dict.get("blocks", [])
 
-        # Collect font and color samples
+        # Collect font and color samples with detailed formatting
         font_samples = []
         color_samples = []
         size_samples = []
+        line_heights = []  # Track spacing between lines
 
         for block in blocks:
             if block.get("type") == 0:  # Text block
@@ -117,6 +127,41 @@ def extract_style_from_pdf(pdf_path: Path) -> ExtractedStyle:
                         if isinstance(color_tuple, int):
                             hex_color = f"{color_tuple:06x}"
                             color_samples.append(hex_color)
+
+                        # Calculate line height from bounding box
+                        bbox = span.get("bbox", [0, 0, 0, 0])
+                        if bbox and font_size > 0:
+                            span_height = bbox[3] - bbox[1]
+                            line_height_ratio = span_height / font_size
+                            line_heights.append(line_height_ratio)
+
+        # Extract page margins
+        page_rect = first_page.rect
+        page_width = page_rect.width
+        page_height = page_rect.height
+
+        # Calculate content bounds
+        content_bbox = None
+        for block in blocks:
+            if block.get("type") == 0:  # Text block
+                bbox = block.get("bbox", [0, 0, 0, 0])
+                if content_bbox is None:
+                    content_bbox = list(bbox)
+                else:
+                    content_bbox[0] = min(content_bbox[0], bbox[0])
+                    content_bbox[1] = min(content_bbox[1], bbox[1])
+                    content_bbox[2] = max(content_bbox[2], bbox[2])
+                    content_bbox[3] = max(content_bbox[3], bbox[3])
+
+        # Calculate margins
+        if content_bbox:
+            margin_top = content_bbox[1]
+            margin_left = content_bbox[0]
+            margin_right = page_width - content_bbox[2]
+            margin_bottom = page_height - content_bbox[3]
+        else:
+            # Default 0.5in margins
+            margin_top = margin_left = margin_right = margin_bottom = 36.0
 
         doc.close()
 
@@ -153,11 +198,19 @@ def extract_style_from_pdf(pdf_path: Path) -> ExtractedStyle:
                     style.primary_color = color
                     break
 
+        # Set extracted margins
+        style.margin_top = margin_top
+        style.margin_left = margin_left
+        style.margin_right = margin_right
+        style.margin_bottom = margin_bottom
+
+        # Calculate average line height ratio
+        if line_heights:
+            avg_line_height = sum(line_heights) / len(line_heights)
+            style.line_height = round(avg_line_height, 2)
+
         # Detect layout type (rough heuristic: check page width usage)
         try:
-            page_rect = first_page.rect
-            page_width = page_rect.width
-
             # If content is concentrated in left 30% of page, likely two-column
             content_rects = [block.get("bbox", [0, 0, 0, 0]) for block in blocks if block.get("type") == 0]
             if content_rects:
@@ -174,7 +227,9 @@ def extract_style_from_pdf(pdf_path: Path) -> ExtractedStyle:
             f"font={style.primary_font}, "
             f"name_size={style.name_size}pt, "
             f"primary_color=#{style.primary_color}, "
-            f"layout={style.column_layout}"
+            f"layout={style.column_layout}, "
+            f"margins=({margin_top:.0f}, {margin_right:.0f}, {margin_bottom:.0f}, {margin_left:.0f}), "
+            f"line_height={style.line_height}"
         )
 
         return style

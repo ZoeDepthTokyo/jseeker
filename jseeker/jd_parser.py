@@ -1086,8 +1086,8 @@ def extract_jd_from_url(url: str, timeout: int = 20) -> tuple[str, dict]:
             return workday_text, metadata
         # Fall through to regular extraction if Workday extraction fails
 
-    # Ashby sites require JS rendering
-    if "ashbyhq.com" in url.lower():
+    # Ashby sites require JS rendering (both native Ashby URLs and embedded Ashby on company sites)
+    if "ashbyhq.com" in url.lower() or "ashby_jid=" in url.lower():
         ashby_text = _extract_ashby_jd(url)
         if ashby_text:
             metadata["success"] = True

@@ -367,8 +367,20 @@ else:
             for idx, row in edited_df.iterrows():
                 original = df.iloc[idx]
                 resume_id = int(original["id"])
-                application_id = int(original["application_id"])
-                company_id = int(original["company_id"])
+
+                # Handle potential NaN values for foreign keys
+                application_id = (
+                    int(original["application_id"])
+                    if not pd.isna(original.get("application_id"))
+                    else None
+                )
+                company_id = (
+                    int(original["company_id"]) if not pd.isna(original.get("company_id")) else None
+                )
+
+                # Skip editing if no application_id (orphaned resume)
+                if application_id is None:
+                    continue
 
                 # Handle company_name edits
                 if "company_name" in edited_df.columns and "company_name" in original:

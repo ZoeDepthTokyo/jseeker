@@ -119,7 +119,7 @@ if apps:
         "company_name",
         "location",
         "role_title",
-        "application_status",
+        "app_status_display",  # Show emoji version instead of raw application_status
         "jd_url",
         "salary_min",
         "salary_max",
@@ -127,7 +127,7 @@ if apps:
         "relevance_score",
         "ats_score",
         "resume_status",
-        "job_status",
+        "job_status_display",  # Show emoji version instead of raw job_status
         "created_at",
         "notes",
     ]
@@ -203,20 +203,20 @@ if apps:
             help="0-25: Low fit | 26-50: Medium fit | 51-75: Good fit | 76-100: Excellent fit. Used for prioritization and success rate analysis.",
         ),
         "ats_score": st.column_config.NumberColumn("ATS Score", disabled=False),
-        "application_status": st.column_config.SelectboxColumn(
+        "app_status_display": st.column_config.SelectboxColumn(
             "App Status",
-            options=[s.value for s in ApplicationStatus],
+            options=[f"{status_emojis.get(s.value, '')} {s.value}" for s in ApplicationStatus],
             required=True,
-            help="❌ rejected | ✅ applied | ⏳ not_applied | 🗣️ interviewing | 🎉 offer",
+            help="Current application status",
         ),
         "resume_status": st.column_config.SelectboxColumn(
             "Resume Status", options=[s.value for s in ResumeStatus], required=True
         ),
-        "job_status": st.column_config.SelectboxColumn(
+        "job_status_display": st.column_config.SelectboxColumn(
             "Job Status",
-            options=[s.value for s in JobStatus],
+            options=[f"{job_emojis.get(s.value, '')} {s.value}" for s in JobStatus],
             required=True,
-            help="❌ closed | ✅ active | ⏸️ paused",
+            help="Current job posting status",
         ),
         "location": st.column_config.TextColumn("Location"),
         "created_at": st.column_config.DatetimeColumn("Created", disabled=True),
@@ -230,6 +230,29 @@ if apps:
         hide_index=True,
         key="tracker_editor",
     )
+
+    # Extract raw status values from emoji display columns (for saving back to DB)
+    if "app_status_display" in edited_df.columns:
+        # Strip emoji prefix: "✅ applied" → "applied"
+        edited_df["application_status"] = edited_df["app_status_display"].apply(
+            lambda x: x.split(" ", 1)[1] if x and " " in x else x
+        )
+        # Also add to original df for comparison
+        if "app_status_display" in df.columns:
+            df["application_status"] = df["app_status_display"].apply(
+                lambda x: x.split(" ", 1)[1] if x and " " in x else x
+            )
+
+    if "job_status_display" in edited_df.columns:
+        # Strip emoji prefix: "✅ active" → "active"
+        edited_df["job_status"] = edited_df["job_status_display"].apply(
+            lambda x: x.split(" ", 1)[1] if x and " " in x else x
+        )
+        # Also add to original df for comparison
+        if "job_status_display" in df.columns:
+            df["job_status"] = df["job_status_display"].apply(
+                lambda x: x.split(" ", 1)[1] if x and " " in x else x
+            )
 
     # Auto-save changes (no button required per user feedback)
     has_changes = not df[available_cols].equals(edited_df)

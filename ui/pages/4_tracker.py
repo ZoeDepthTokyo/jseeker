@@ -124,14 +124,25 @@ if apps:
         df["salary_max"] = pd.to_numeric(df["salary_max"], errors="coerce")
 
     # Add emoji indicators for status (CREATE DISPLAY COLUMNS BEFORE FILTERING)
+    # IMPORTANT: Must include ALL ApplicationStatus enum values
     status_emojis = {
-        "rejected": "❌",
-        "applied": "✅",
         "not_applied": "⏳",
-        "interviewing": "🗣️",
+        "applied": "✅",
+        "screening": "📋",
+        "phone_screen": "📞",
+        "interview": "🗣️",
         "offer": "🎉",
+        "rejected": "❌",
+        "ghosted": "👻",
+        "withdrawn": "↩️",
     }
-    job_emojis = {"closed": "❌", "active": "✅", "paused": "⏸️"}
+    # IMPORTANT: Must include ALL JobStatus enum values
+    job_emojis = {
+        "active": "✅",
+        "closed": "❌",
+        "expired": "⏰",
+        "reposted": "🔄",
+    }
 
     if "application_status" in df.columns:
         df["app_status_display"] = df["application_status"].apply(

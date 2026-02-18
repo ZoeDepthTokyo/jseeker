@@ -6,7 +6,7 @@ import time
 from unittest.mock import patch, MagicMock
 import pytest
 
-from jseeker.batch_processor import BatchProcessor, JobStatus
+from jseeker.batch_processor import BatchProcessor, BatchJobStatus as JobStatus
 from jseeker.pattern_learner import analyze_batch_patterns
 
 # ── Fixtures ────────────────────────────────────────────────────────────────

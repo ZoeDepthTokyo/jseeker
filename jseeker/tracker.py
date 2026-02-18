@@ -13,6 +13,7 @@ from typing import Optional
 from jseeker.models import (
     APICost,
     Application,
+    AttemptStatus,
     Company,
     DiscoveryStatus,
     JobDiscovery,
@@ -160,9 +161,15 @@ def init_db(db_path: Path = None) -> None:
         UNIQUE(pattern_type, source_text, jd_context)
     )""")
 
-    c.execute("CREATE INDEX IF NOT EXISTS idx_pattern_type ON learned_patterns(pattern_type)")
-    c.execute("CREATE INDEX IF NOT EXISTS idx_frequency ON learned_patterns(frequency DESC)")
-    c.execute("CREATE INDEX IF NOT EXISTS idx_last_used ON learned_patterns(last_used_at DESC)")
+    c.execute(
+        "CREATE INDEX IF NOT EXISTS idx_pattern_type ON learned_patterns(pattern_type)"
+    )
+    c.execute(
+        "CREATE INDEX IF NOT EXISTS idx_frequency ON learned_patterns(frequency DESC)"
+    )
+    c.execute(
+        "CREATE INDEX IF NOT EXISTS idx_last_used ON learned_patterns(last_used_at DESC)"
+    )
 
     c.execute("""CREATE TABLE IF NOT EXISTS jd_cache (
         id INTEGER PRIMARY KEY,
@@ -177,7 +184,20 @@ def init_db(db_path: Path = None) -> None:
     )""")
 
     c.execute("CREATE INDEX IF NOT EXISTS idx_jd_cache_title ON jd_cache(title)")
-    c.execute("CREATE INDEX IF NOT EXISTS idx_jd_cache_hits ON jd_cache(hit_count DESC)")
+    c.execute(
+        "CREATE INDEX IF NOT EXISTS idx_jd_cache_hits ON jd_cache(hit_count DESC)"
+    )
+
+    c.execute("""CREATE TABLE IF NOT EXISTS intelligence_cache (
+        id INTEGER PRIMARY KEY,
+        jd_hash TEXT UNIQUE NOT NULL,
+        ideal_profile TEXT,
+        strengths TEXT,
+        gaps TEXT,
+        salary_angle TEXT,
+        keyword_coverage REAL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )""")
 
     c.execute("""CREATE TABLE IF NOT EXISTS search_sessions (
         id INTEGER PRIMARY KEY,
@@ -225,7 +245,9 @@ def init_db(db_path: Path = None) -> None:
     c.execute(
         "CREATE INDEX IF NOT EXISTS idx_batch_job_items_batch_id ON batch_job_items(batch_id)"
     )
-    c.execute("CREATE INDEX IF NOT EXISTS idx_batch_job_items_status ON batch_job_items(status)")
+    c.execute(
+        "CREATE INDEX IF NOT EXISTS idx_batch_job_items_status ON batch_job_items(status)"
+    )
 
     c.execute("""CREATE TABLE IF NOT EXISTS saved_searches (
         id INTEGER PRIMARY KEY,
@@ -237,6 +259,50 @@ def init_db(db_path: Path = None) -> None:
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )""")
+
+    c.execute("""CREATE TABLE IF NOT EXISTS apply_queue (
+        id INTEGER PRIMARY KEY,
+        application_id INTEGER REFERENCES applications(id),
+        job_url TEXT NOT NULL,
+        resume_path TEXT NOT NULL,
+        ats_platform TEXT NOT NULL,
+        market TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'queued',
+        attempt_count INTEGER DEFAULT 0,
+        cost_usd REAL DEFAULT 0.0,
+        attempt_log_path TEXT,
+        queued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        started_at TIMESTAMP,
+        completed_at TIMESTAMP,
+        UNIQUE(job_url)
+    )""")
+
+    c.execute("""CREATE TABLE IF NOT EXISTS apply_errors (
+        id INTEGER PRIMARY KEY,
+        queue_id INTEGER REFERENCES apply_queue(id),
+        error_type TEXT NOT NULL,
+        error_message TEXT,
+        screenshot_path TEXT,
+        ats_platform TEXT,
+        url_pattern TEXT,
+        resolution TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )""")
+
+    c.execute("""CREATE VIEW IF NOT EXISTS recurring_errors AS
+        SELECT ats_platform, error_type, url_pattern, COUNT(*) as occurrence_count
+        FROM apply_errors
+        WHERE ats_platform IS NOT NULL AND error_type IS NOT NULL
+        GROUP BY ats_platform, error_type, url_pattern
+        HAVING COUNT(*) >= 3
+    """)
+
+    c.execute(
+        "CREATE INDEX IF NOT EXISTS idx_apply_queue_status ON apply_queue(status)"
+    )
+    c.execute(
+        "CREATE INDEX IF NOT EXISTS idx_apply_errors_queue_id ON apply_errors(queue_id)"
+    )
 
     conn.commit()
     conn.close()
@@ -308,7 +374,9 @@ def _run_migrations(db_path: Path) -> None:
 
         if "salary_currency" not in app_columns:
             try:
-                c.execute("ALTER TABLE applications ADD COLUMN salary_currency TEXT DEFAULT 'USD'")
+                c.execute(
+                    "ALTER TABLE applications ADD COLUMN salary_currency TEXT DEFAULT 'USD'"
+                )
                 conn.commit()
                 logger = logging.getLogger(__name__)
                 logger.info("Added salary_currency column to applications table")
@@ -342,6 +410,249 @@ def _run_migrations(db_path: Path) -> None:
         logger.error("Migration failed: %s", e)
 
 
+# ── Auto-Apply Queue Functions ─────────────────────────────────────
+
+
+def queue_application(
+    job_url: str,
+    resume_path: str,
+    ats_platform: str,
+    market: str,
+    application_id: int = None,
+    db_path: Path = None,
+) -> int:
+    """Queue a job for auto-apply.
+
+    Args:
+        job_url: URL of the job posting.
+        resume_path: Path to the resume file.
+        ats_platform: ATS platform identifier.
+        market: Market code (us, mx, etc.).
+        application_id: Optional linked application ID.
+        db_path: Optional database path override.
+
+    Returns:
+        Queue ID of the inserted row.
+
+    Raises:
+        sqlite3.IntegrityError: If job_url already exists in queue.
+    """
+    if db_path is None:
+        db_path = _get_db_path()
+    init_db(db_path)
+    conn = sqlite3.connect(str(db_path), timeout=30.0)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute(
+        """INSERT INTO apply_queue
+        (application_id, job_url, resume_path, ats_platform, market, status)
+        VALUES (?, ?, ?, ?, ?, ?)""",
+        (application_id, job_url, resume_path, ats_platform, market, "queued"),
+    )
+    conn.commit()
+    queue_id = c.lastrowid
+    conn.close()
+    return queue_id
+
+
+def get_queued_applications(limit: int = 10, db_path: Path = None) -> list[dict]:
+    """Get pending queued applications ordered by queued_at.
+
+    Args:
+        limit: Maximum number of results.
+        db_path: Optional database path override.
+
+    Returns:
+        List of queue item dicts.
+    """
+    if db_path is None:
+        db_path = _get_db_path()
+    init_db(db_path)
+    conn = sqlite3.connect(str(db_path), timeout=30.0)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute(
+        "SELECT * FROM apply_queue WHERE status = 'queued' ORDER BY queued_at ASC LIMIT ?",
+        (limit,),
+    )
+    rows = c.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def update_queue_status(
+    queue_id: int,
+    status: str,
+    attempt_log_path: str = None,
+    cost_usd: float = None,
+    db_path: Path = None,
+) -> None:
+    """Update status of a queued application.
+
+    Args:
+        queue_id: Queue item ID to update.
+        status: New status value.
+        attempt_log_path: Optional path to attempt log.
+        cost_usd: Optional cost to set.
+        db_path: Optional database path override.
+    """
+    if db_path is None:
+        db_path = _get_db_path()
+    conn = sqlite3.connect(str(db_path), timeout=30.0)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+
+    updates = ["status = ?"]
+    params: list = [status]
+
+    if attempt_log_path is not None:
+        updates.append("attempt_log_path = ?")
+        params.append(attempt_log_path)
+    if cost_usd is not None:
+        updates.append("cost_usd = ?")
+        params.append(cost_usd)
+
+    # Set timestamps based on status
+    if status == "in_progress":
+        updates.append("started_at = CURRENT_TIMESTAMP")
+    elif status not in ("queued",):
+        updates.append("completed_at = CURRENT_TIMESTAMP")
+
+    params.append(queue_id)
+    c.execute(f"UPDATE apply_queue SET {', '.join(updates)} WHERE id = ?", params)
+    conn.commit()
+    conn.close()
+
+
+def get_queue_stats(db_path: Path = None) -> dict:
+    """Get counts of queue items by status.
+
+    Args:
+        db_path: Optional database path override.
+
+    Returns:
+        Dict mapping status strings to counts.
+    """
+    if db_path is None:
+        db_path = _get_db_path()
+    init_db(db_path)
+    conn = sqlite3.connect(str(db_path), timeout=30.0)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute("SELECT status, COUNT(*) as count FROM apply_queue GROUP BY status")
+    rows = c.fetchall()
+    conn.close()
+    stats = {r["status"]: r["count"] for r in rows}
+    # Ensure common statuses always present
+    for s in (
+        "queued",
+        "in_progress",
+        "applied_verified",
+        "applied_soft",
+        "failed_permanent",
+    ):
+        stats.setdefault(s, 0)
+    return stats
+
+
+def log_apply_error(
+    queue_id: int,
+    error_type: str,
+    message: str,
+    screenshot_path: str = None,
+    platform: str = None,
+    url_pattern: str = None,
+    db_path: Path = None,
+) -> None:
+    """Log an error from an apply attempt.
+
+    Args:
+        queue_id: Queue item ID that failed.
+        error_type: Error classification.
+        message: Error message text.
+        screenshot_path: Optional screenshot path.
+        platform: Optional ATS platform.
+        url_pattern: Optional URL pattern for recurring detection.
+        db_path: Optional database path override.
+    """
+    if db_path is None:
+        db_path = _get_db_path()
+    conn = sqlite3.connect(str(db_path), timeout=30.0)
+    c = conn.cursor()
+    c.execute(
+        """INSERT INTO apply_errors
+        (queue_id, error_type, error_message, screenshot_path, ats_platform, url_pattern)
+        VALUES (?, ?, ?, ?, ?, ?)""",
+        (queue_id, error_type, message, screenshot_path, platform, url_pattern),
+    )
+    conn.commit()
+    conn.close()
+
+
+def check_recurring_errors(
+    platform: str,
+    error_type: str,
+    url_pattern: str,
+    db_path: Path = None,
+) -> int:
+    """Check how many times this error pattern has occurred.
+
+    Args:
+        platform: ATS platform to check.
+        error_type: Error type to check.
+        url_pattern: URL pattern to check.
+        db_path: Optional database path override.
+
+    Returns:
+        Count of matching errors.
+    """
+    if db_path is None:
+        db_path = _get_db_path()
+    conn = sqlite3.connect(str(db_path), timeout=30.0)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute(
+        """SELECT COUNT(*) as cnt FROM apply_errors
+        WHERE ats_platform = ? AND error_type = ? AND url_pattern = ?""",
+        (platform, error_type, url_pattern),
+    )
+    row = c.fetchone()
+    conn.close()
+    return row["cnt"] if row else 0
+
+
+def check_dedup(job_url: str, db_path: Path = None) -> bool:
+    """Check if job_url already exists in apply_queue (non-skipped) or applications table.
+
+    Args:
+        job_url: URL to check for duplicates.
+        db_path: Optional database path override.
+
+    Returns:
+        True if duplicate found, False otherwise.
+    """
+    if not job_url:
+        return False
+    if db_path is None:
+        db_path = _get_db_path()
+    init_db(db_path)
+    conn = sqlite3.connect(str(db_path), timeout=30.0)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    # Check apply_queue for a successfully completed auto-apply attempt.
+    # "queued" and "in_progress" are NOT duplicates — the current item in the
+    # queue IS the one being processed. Only block if already applied/verified.
+    c.execute(
+        """SELECT 1 FROM apply_queue
+           WHERE job_url = ?
+             AND status IN ('applied_verified', 'applied_soft')""",
+        (job_url,),
+    )
+    result = c.fetchone() is not None
+    conn.close()
+    return result
+
+
 class TrackerDB:
     """CRUD operations for the jSeeker application tracker."""
 
@@ -372,7 +683,9 @@ class TrackerDB:
         except sqlite3.Error:
             conn.close()
             # Retry once if health check fails
-            conn = sqlite3.connect(str(self.db_path), timeout=30.0, check_same_thread=False)
+            conn = sqlite3.connect(
+                str(self.db_path), timeout=30.0, check_same_thread=False
+            )
             conn.row_factory = sqlite3.Row
 
         return conn
@@ -491,7 +804,10 @@ class TrackerDB:
                 continue  # Skip if sanitization returns empty
             if new_name != old_name:
                 # Check if the sanitized name already exists
-                c.execute("SELECT id FROM companies WHERE name = ? AND id != ?", (new_name, cid))
+                c.execute(
+                    "SELECT id FROM companies WHERE name = ? AND id != ?",
+                    (new_name, cid),
+                )
                 existing = c.fetchone()
                 if existing:
                     # Merge: update applications to point to existing company, delete duplicate
@@ -505,7 +821,9 @@ class TrackerDB:
                         f"'{old_name}' -> existing {existing['id']} '{new_name}'"
                     )
                 else:
-                    c.execute("UPDATE companies SET name = ? WHERE id = ?", (new_name, cid))
+                    c.execute(
+                        "UPDATE companies SET name = ? WHERE id = ?", (new_name, cid)
+                    )
                     _logger.info(
                         f"sanitize_existing_companies | renamed {cid}: '{old_name}' -> '{new_name}'"
                     )
@@ -710,7 +1028,9 @@ class TrackerDB:
         conn.close()
 
         logger = logging.getLogger(__name__)
-        logger.info(f"Deleted application {app_id} and {len(resume_ids)} associated resume(s)")
+        logger.info(
+            f"Deleted application {app_id} and {len(resume_ids)} associated resume(s)"
+        )
         return True
 
     # ── Resumes ────────────────────────────────────────────────────
@@ -744,7 +1064,10 @@ class TrackerDB:
     def get_resumes_for_application(self, app_id: int) -> list[dict]:
         conn = self._conn()
         c = conn.cursor()
-        c.execute("SELECT * FROM resumes WHERE application_id = ? ORDER BY version DESC", (app_id,))
+        c.execute(
+            "SELECT * FROM resumes WHERE application_id = ? ORDER BY version DESC",
+            (app_id,),
+        )
         rows = c.fetchall()
         conn.close()
         return [dict(r) for r in rows]
@@ -877,7 +1200,10 @@ class TrackerDB:
         normalized = _normalize_discovery_status(status)
         conn = self._conn()
         c = conn.cursor()
-        c.execute("UPDATE job_discoveries SET status = ? WHERE id = ?", (normalized, discovery_id))
+        c.execute(
+            "UPDATE job_discoveries SET status = ? WHERE id = ?",
+            (normalized, discovery_id),
+        )
         conn.commit()
         conn.close()
 
@@ -891,13 +1217,17 @@ class TrackerDB:
         conn = self._conn()
         c = conn.cursor()
 
-        c.execute("SELECT id FROM search_tags WHERE LOWER(tag) = LOWER(?)", (normalized_tag,))
+        c.execute(
+            "SELECT id FROM search_tags WHERE LOWER(tag) = LOWER(?)", (normalized_tag,)
+        )
         if c.fetchone():
             conn.close()
             return None
 
         try:
-            c.execute("INSERT INTO search_tags (tag, active) VALUES (?, 1)", (normalized_tag,))
+            c.execute(
+                "INSERT INTO search_tags (tag, active) VALUES (?, 1)", (normalized_tag,)
+            )
             conn.commit()
             row_id = c.lastrowid
         except sqlite3.IntegrityError:
@@ -926,7 +1256,10 @@ class TrackerDB:
     def toggle_search_tag(self, tag_id: int, active: bool) -> None:
         conn = self._conn()
         c = conn.cursor()
-        c.execute("UPDATE search_tags SET active = ? WHERE id = ?", (1 if active else 0, tag_id))
+        c.execute(
+            "UPDATE search_tags SET active = ? WHERE id = ?",
+            (1 if active else 0, tag_id),
+        )
         conn.commit()
         conn.close()
 
@@ -987,7 +1320,9 @@ class TrackerDB:
 
     # ── Search Sessions ────────────────────────────────────────────
 
-    def create_search_session(self, tags: list[str], markets: list[str], sources: list[str]) -> int:
+    def create_search_session(
+        self, tags: list[str], markets: list[str], sources: list[str]
+    ) -> int:
         """Create a new search session."""
         conn = self._conn()
         c = conn.cursor()
@@ -1065,7 +1400,13 @@ class TrackerDB:
             Dict with company_id, application_id, resume_id
         """
         import json
-        from jseeker.models import Application, Resume, ResumeStatus, ApplicationStatus, JobStatus
+        from jseeker.models import (
+            Application,
+            Resume,
+            ResumeStatus,
+            ApplicationStatus,
+            JobStatus,
+        )
 
         # Get or create company
         company_id = self.get_or_create_company(result.company or "Unknown")
@@ -1102,7 +1443,11 @@ class TrackerDB:
         )
         resume_id = self.add_resume(resume)
 
-        return {"company_id": company_id, "application_id": app_id, "resume_id": resume_id}
+        return {
+            "company_id": company_id,
+            "application_id": app_id,
+            "resume_id": resume_id,
+        }
 
     def list_all_resumes(self) -> list[dict]:
         """List all resumes with application and company info.
@@ -1112,11 +1457,13 @@ class TrackerDB:
         """
         conn = self._conn()
         c = conn.cursor()
-        c.execute("""SELECT r.*, a.role_title, a.jd_url, a.company_id, c.name as company_name
+        c.execute(
+            """SELECT r.*, a.role_title, a.jd_url, a.company_id, c.name as company_name
             FROM resumes r
             LEFT JOIN applications a ON r.application_id = a.id
             LEFT JOIN companies c ON a.company_id = c.id
-            ORDER BY r.created_at DESC""")
+            ORDER BY r.created_at DESC"""
+        )
         rows = c.fetchall()
         conn.close()
         return [dict(r) for r in rows]
@@ -1133,7 +1480,8 @@ class TrackerDB:
         conn = self._conn()
         c = conn.cursor()
         c.execute(
-            "SELECT MAX(version) as max_v FROM resumes WHERE application_id = ?", (application_id,)
+            "SELECT MAX(version) as max_v FROM resumes WHERE application_id = ?",
+            (application_id,),
         )
         row = c.fetchone()
         conn.close()
@@ -1270,7 +1618,9 @@ class TrackerDB:
         )
         active = c.fetchone()["active"]
 
-        c.execute("SELECT AVG(r.ats_score) as avg_score FROM resumes r WHERE r.ats_score > 0")
+        c.execute(
+            "SELECT AVG(r.ats_score) as avg_score FROM resumes r WHERE r.ats_score > 0"
+        )
         row = c.fetchone()
         avg_score = round(row["avg_score"], 1) if row and row["avg_score"] else 0
 
@@ -1434,7 +1784,16 @@ class TrackerDB:
             """INSERT INTO batch_job_items
             (batch_id, url, status, error, resume_id, application_id, started_at, completed_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-            (batch_id, url, status, error, resume_id, application_id, started_at, completed_at),
+            (
+                batch_id,
+                url,
+                status,
+                error,
+                resume_id,
+                application_id,
+                started_at,
+                completed_at,
+            ),
         )
         conn.commit()
         item_id = c.lastrowid
@@ -1652,6 +2011,51 @@ class TrackerDB:
         conn.close()
         return updated
 
+    # ── JD Intelligence Cache ──────────────────────────────────────
+
+    def get_intelligence(self, jd_hash: str) -> dict | None:
+        """Retrieve cached intelligence report for a JD hash.
+
+        Args:
+            jd_hash: Hash identifier for the JD.
+
+        Returns:
+            Dict with cached report data or None if not found.
+        """
+        conn = self._conn()
+        c = conn.cursor()
+        c.execute("SELECT * FROM intelligence_cache WHERE jd_hash = ?", (jd_hash,))
+        row = c.fetchone()
+        conn.close()
+        if row is None:
+            return None
+        return dict(row)
+
+    def save_intelligence(self, jd_hash: str, data: dict) -> None:
+        """Store intelligence report in cache.
+
+        Args:
+            jd_hash: Hash identifier for the JD.
+            data: Dict containing ideal_profile, strengths, gaps,
+                  salary_angle, keyword_coverage.
+        """
+        conn = self._conn()
+        conn.execute(
+            """INSERT OR REPLACE INTO intelligence_cache
+               (jd_hash, ideal_profile, strengths, gaps, salary_angle, keyword_coverage)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (
+                jd_hash,
+                data.get("ideal_profile", ""),
+                json.dumps(data.get("strengths", [])),
+                json.dumps(data.get("gaps", [])),
+                data.get("salary_angle", ""),
+                data.get("keyword_coverage", 0.0),
+            ),
+        )
+        conn.commit()
+        conn.close()
+
     # ── CSV Export/Import ──────────────────────────────────────────
 
     def export_csv(self, output_path: Path) -> Path:
@@ -1677,7 +2081,9 @@ class TrackerDB:
         with open(csv_path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
-                company_id = self.get_or_create_company(row.get("company_name", "Unknown"))
+                company_id = self.get_or_create_company(
+                    row.get("company_name", "Unknown")
+                )
                 app = Application(
                     company_id=company_id,
                     role_title=row.get("role_title", "Unknown"),

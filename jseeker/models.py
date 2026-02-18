@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from enum import Enum
+from pathlib import Path
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -76,6 +77,42 @@ class DiscoveryStatus(str, Enum):
     IMPORTED = "imported"
 
 
+class AttemptStatus(str, Enum):
+    """Status of an auto-apply attempt."""
+
+    # Active states
+    QUEUED = "queued"
+    IN_PROGRESS = "in_progress"
+    # Terminal success states
+    APPLIED_VERIFIED = "applied_verified"
+    APPLIED_SOFT = "applied_soft"
+    # Terminal failure states
+    FAILED_PERMANENT = "failed_permanent"
+    # Skip states
+    SKIPPED_UNSUPPORTED_ATS = "skipped_unsupported_ats"
+    SKIPPED_LINKEDIN = "skipped_linkedin"
+    SKIPPED_DUPLICATE = "skipped_duplicate"
+    SKIPPED_ERROR_PATTERN = "skipped_error_pattern"
+    # Pause states (non-terminal, awaiting user)
+    PAUSED_CAPTCHA = "paused_captcha"
+    PAUSED_2FA = "paused_2fa"
+    PAUSED_VERIFICATION_REQUIRED = "paused_verification_required"
+    PAUSED_ADDITIONAL_DOCS_REQUIRED = "paused_additional_docs_required"
+    PAUSED_UNKNOWN_QUESTION = "paused_unknown_question"
+    PAUSED_SALARY_QUESTION = "paused_salary_question"
+    PAUSED_UNKNOWN_FIELD = "paused_unknown_field"
+    PAUSED_LOGIN_FAILED = "paused_login_failed"
+    PAUSED_AMBIGUOUS_RESULT = "paused_ambiguous_result"
+    PAUSED_MAX_RETRIES = "paused_max_retries"
+    PAUSED_COST_CAP = "paused_cost_cap"
+    PAUSED_STUCK = "paused_stuck"
+    PAUSED_TIMEOUT = "paused_timeout"
+    PAUSED_SELECTOR_FAILED = "paused_selector_failed"
+    PAUSED_POPUP_BLOCKING = "paused_popup_blocking"
+    PAUSED_PARTIAL = "paused_partial"
+    PAUSED_MAX_STEPS = "paused_max_steps"
+
+
 # ── JD Models ──────────────────────────────────────────────────────────
 
 
@@ -109,7 +146,9 @@ class ParsedJD(BaseModel):
     culture_signals: list[str] = Field(default_factory=list)
     detected_ats: ATSPlatform = ATSPlatform.UNKNOWN
     jd_url: str = ""
-    alternate_source_url: str = ""  # URL where full JD was fetched (if different from jd_url)
+    alternate_source_url: str = (
+        ""  # URL where full JD was fetched (if different from jd_url)
+    )
     language: str = "en"  # "en" or "es" — auto-detected from JD
     market: str = "us"  # "us", "mx", "ca", "uk", "es", "dk", "fr"
 
@@ -278,6 +317,19 @@ class OutreachMessage(BaseModel):
     channel: str = "email"  # "email" or "linkedin"
 
 
+class IntelligenceReport(BaseModel):
+    """JD corpus intelligence analysis result."""
+
+    jd_hash: str = ""
+    ideal_profile: str = ""
+    strengths: list[str] = Field(default_factory=list)
+    gaps: list[str] = Field(default_factory=list)
+    salary_angle: str = ""
+    keyword_coverage: float = 0.0
+    salary_insight: dict = Field(default_factory=dict)
+    created_at: Optional[datetime] = None
+
+
 # ── Tracker ────────────────────────────────────────────────────────────
 
 
@@ -357,12 +409,18 @@ class JobDiscovery(BaseModel):
     location: str = ""
     salary_range: str = ""
     url: str = ""
-    source: str = ""  # Clean source: "indeed", "linkedin", "wellfound" (no market suffix)
+    source: str = (
+        ""  # Clean source: "indeed", "linkedin", "wellfound" (no market suffix)
+    )
     market: str = ""  # Separate market field: "us", "mx", "ca", "uk", "es", "de"
     posting_date: Optional[date] = None
     search_tags: str = ""
-    search_tag_weights: dict[str, int] = {}  # Tag weights for ranking (not persisted to DB)
-    resume_match_score: float = 0.0  # Resume library content match score (not persisted to DB)
+    search_tag_weights: dict[str, int] = (
+        {}
+    )  # Tag weights for ranking (not persisted to DB)
+    resume_match_score: float = (
+        0.0  # Resume library content match score (not persisted to DB)
+    )
     composite_score: float = 0.0  # Composite relevance score (not persisted to DB)
     tag_weight_contribution: float = (
         0.0  # Tag weight component of composite score (not persisted to DB)
@@ -383,3 +441,74 @@ class SearchTag(BaseModel):
     tag: str
     active: bool = True
     created_at: Optional[datetime] = None
+
+
+# ── Auto-Apply Models ──────────────────────────────────────────────
+
+
+class VerificationResult(BaseModel):
+    """Result of post-submission verification."""
+
+    is_verified: bool
+    signal_matched: Optional[str] = None
+    confidence: str  # "hard" | "soft" | "none"
+    confirmation_text: Optional[str] = None
+    confirmation_url: Optional[str] = None
+    error_banners: list[str] = Field(default_factory=list)
+    form_still_visible: bool = False
+    screenshot_path: Optional[Path] = None
+    reason: str = ""
+
+
+class AttemptResult(BaseModel):
+    """Result of a single auto-apply attempt."""
+
+    status: AttemptStatus = AttemptStatus.QUEUED
+    screenshots: list[str] = Field(default_factory=list)
+    confirmation_text: Optional[str] = None
+    confirmation_url: Optional[str] = None
+    errors: list[str] = Field(default_factory=list)
+    steps_taken: int = 0
+    duration_seconds: float = 0.0
+    fields_filled: dict[str, str] = Field(default_factory=dict)
+    cost_usd: float = 0.0
+
+
+class RateLimitConfig(BaseModel):
+    """Rate limiting configuration for auto-apply."""
+
+    max_per_hour: int = 10
+    max_per_day: int = 50
+    per_employer_per_day: int = 3
+    cooldown_seconds: int = 120
+    max_cost_per_day_usd: float = 5.0
+    page_load_timeout_ms: int = 30000
+    page_load_retry_timeout_ms: int = 60000
+
+
+class BatchSummary(BaseModel):
+    """Summary of a batch auto-apply run."""
+
+    total: int = 0
+    verified: int = 0
+    soft: int = 0
+    paused: int = 0
+    failed: int = 0
+    skipped: int = 0
+    stopped_early: bool = False
+    stop_reason: Optional[str] = None
+    hitl_required: bool = False
+    paused_items: list[int] = Field(default_factory=list)
+
+
+class MonitorDecision(BaseModel):
+    """Health check result from ApplyMonitor circuit breaker."""
+
+    should_continue: bool
+    pause_reason: Optional[str] = None
+    platform_disabled: list[str] = Field(default_factory=list)
+    consecutive_failures: int = 0
+    daily_count: int = 0
+    hourly_count: int = 0
+    daily_cost_usd: float = 0.0
+    alert_message: Optional[str] = None

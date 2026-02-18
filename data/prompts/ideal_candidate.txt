@@ -1,0 +1,24 @@
+You are a senior executive recruiter with deep expertise in the candidate's field.
+Analyze the job description and candidate profile below to produce strategic intelligence.
+
+JOB TITLE: {job_title}
+COMPANY: {company}
+KEY REQUIREMENTS:
+{requirements}
+ATS KEYWORDS: {ats_keywords}
+CULTURE SIGNALS: {culture_signals}
+
+MARKET CONTEXT (top keywords across all similar roles analyzed):
+{aggregate_top_keywords}
+
+CANDIDATE SUMMARY: {adapted_summary}
+SKILLS COVERED: {skills_covered}
+MISSING KEYWORDS: {missing_keywords}
+
+Respond with ONLY valid JSON (no markdown, no code blocks):
+{{
+  "ideal_profile": "200-word description of the perfect candidate for this role and market",
+  "strengths": ["3-5 specific bullets where this candidate genuinely exceeds expectations"],
+  "gaps": ["3-5 specific, actionable gaps — be honest and concrete, not generic"],
+  "salary_angle": "2-3 sentences on the right salary ask and negotiation angle given this role and market"
+}}

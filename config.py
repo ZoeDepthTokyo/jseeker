@@ -29,7 +29,7 @@ class JseekerSettings(_BaseSettings):
 
     # --- Identity ---
     app_name: str = "JSEEKER"
-    app_version: str = "0.3.10"
+    app_version: str = "0.3.12"
 
     # --- Paths (computed from project root) ---
     jseeker_root: Path = _PROJECT_ROOT
@@ -52,6 +52,14 @@ class JseekerSettings(_BaseSettings):
     # --- Caching ---
     enable_prompt_cache: bool = True
     enable_local_cache: bool = True
+
+    # --- Auto-Apply Credentials ---
+    workday_email: Optional[str] = Field(default=None, alias="WORKDAY_EMAIL")
+    workday_password: Optional[str] = Field(default=None, alias="WORKDAY_PASSWORD")
+    greenhouse_email: Optional[str] = Field(default=None, alias="GREENHOUSE_EMAIL")
+    greenhouse_password: Optional[str] = Field(
+        default=None, alias="GREENHOUSE_PASSWORD"
+    )
 
     # --- GAIA Integration ---
     gaia_root: Path = Path("X:/Projects/_GAIA")
@@ -87,6 +95,14 @@ class JseekerSettings(_BaseSettings):
     @property
     def ats_profiles_dir(self) -> Path:
         return self.data_dir / "ats_profiles"
+
+    @property
+    def apply_logs_dir(self) -> Path:
+        return self.data_dir / "apply_logs"
+
+    @property
+    def ats_runners_dir(self) -> Path:
+        return self.data_dir / "ats_runners"
 
 
 # Singleton

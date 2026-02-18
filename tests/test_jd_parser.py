@@ -29,17 +29,27 @@ class TestATSDetection:
 
     def test_workday_detection(self):
         assert (
-            detect_ats_platform("https://company.wd5.myworkdayjobs.com/jobs") == ATSPlatform.WORKDAY
+            detect_ats_platform("https://company.wd5.myworkdayjobs.com/jobs")
+            == ATSPlatform.WORKDAY
         )
 
     def test_lever_detection(self):
-        assert detect_ats_platform("https://jobs.lever.co/company/123") == ATSPlatform.LEVER
+        assert (
+            detect_ats_platform("https://jobs.lever.co/company/123")
+            == ATSPlatform.LEVER
+        )
 
     def test_ashby_detection(self):
-        assert detect_ats_platform("https://jobs.ashbyhq.com/company/123") == ATSPlatform.ASHBY
+        assert (
+            detect_ats_platform("https://jobs.ashbyhq.com/company/123")
+            == ATSPlatform.ASHBY
+        )
 
     def test_taleo_detection(self):
-        assert detect_ats_platform("https://company.taleo.net/careersection") == ATSPlatform.TALEO
+        assert (
+            detect_ats_platform("https://company.taleo.net/careersection")
+            == ATSPlatform.TALEO
+        )
 
     def test_unknown_url(self):
         assert detect_ats_platform("https://example.com/jobs") == ATSPlatform.UNKNOWN
@@ -48,7 +58,10 @@ class TestATSDetection:
         assert detect_ats_platform("") == ATSPlatform.UNKNOWN
 
     def test_icims_detection(self):
-        assert detect_ats_platform("https://careers-company.icims.com/jobs") == ATSPlatform.ICIMS
+        assert (
+            detect_ats_platform("https://careers-company.icims.com/jobs")
+            == ATSPlatform.ICIMS
+        )
 
 
 class TestLanguageDetection:
@@ -169,7 +182,9 @@ class TestSalaryExtraction:
 
     def test_extract_comma_separated(self):
         """Extract salary with comma separators."""
-        min_sal, max_sal, currency = _extract_salary("Salary range: $120,000 - $150,000")
+        min_sal, max_sal, currency = _extract_salary(
+            "Salary range: $120,000 - $150,000"
+        )
         assert min_sal == 120000
         assert max_sal == 150000
         assert currency == "USD"
@@ -235,12 +250,16 @@ class TestCompanyExtraction:
 
     def test_extract_company_from_greenhouse_url(self):
         """Greenhouse URL should extract company name."""
-        result = _extract_company_from_url("https://boards.greenhouse.io/techcorp/jobs/123")
+        result = _extract_company_from_url(
+            "https://boards.greenhouse.io/techcorp/jobs/123"
+        )
         assert result == "Techcorp"
 
     def test_extract_company_from_workday_url(self):
         """Workday URL should extract company name."""
-        result = _extract_company_from_url("https://acme.wd5.myworkdayjobs.com/en-US/jobs")
+        result = _extract_company_from_url(
+            "https://acme.wd5.myworkdayjobs.com/en-US/jobs"
+        )
         assert result == "Acme"
 
     def test_extract_company_from_viterbit_url(self):
@@ -297,7 +316,10 @@ class TestSanitizeCompanyName:
 
     def test_sentence_fragment_truncated(self):
         """Sentence fragments after company name should be removed."""
-        assert sanitize_company_name("PayPal has been revolutionizing payments") == "PayPal"
+        assert (
+            sanitize_company_name("PayPal has been revolutionizing payments")
+            == "PayPal"
+        )
         assert sanitize_company_name("Paramount drives revenue growth") == "Paramount"
         assert sanitize_company_name("Aviva is a leading insurance company") == "Aviva"
 
@@ -327,9 +349,7 @@ class TestSanitizeCompanyName:
 
     def test_too_long_rejected(self):
         """Excessively long strings (sentence fragments) should be rejected."""
-        long_name = (
-            "This is a very long string that is clearly not a company name and should be rejected"
-        )
+        long_name = "This is a very long string that is clearly not a company name and should be rejected"
         assert sanitize_company_name(long_name) == ""
 
     def test_single_char_rejected(self):
@@ -538,9 +558,13 @@ class TestLinkedInFallbackSearch:
     def test_fallback_with_no_company_returns_empty(self, monkeypatch):
         """Fallback with no company info should return empty."""
         # Mock _extract_company_from_url to return None (no company from URL)
-        monkeypatch.setattr("jseeker.jd_parser._extract_company_from_url", lambda url: None)
+        monkeypatch.setattr(
+            "jseeker.jd_parser._extract_company_from_url", lambda url: None
+        )
         metadata = {"company": "", "method": "failed"}
-        text, meta = _linkedin_fallback_search("https://linkedin.com/jobs/view/123", "", metadata)
+        text, meta = _linkedin_fallback_search(
+            "https://linkedin.com/jobs/view/123", "", metadata
+        )
         assert text == ""
 
     def test_fallback_tries_career_site(self, monkeypatch):
@@ -555,14 +579,22 @@ class TestLinkedInFallbackSearch:
 
         def mock_extract(url, timeout=20):
             if "careers.acme" in url:
-                return full_jd, {"success": True, "method": "selector", "company": "Acme"}
+                return full_jd, {
+                    "success": True,
+                    "method": "selector",
+                    "company": "Acme",
+                }
             return "", {"success": False, "method": "failed", "company": ""}
 
-        monkeypatch.setattr("jseeker.jd_parser._search_company_career_site", mock_career_site)
+        monkeypatch.setattr(
+            "jseeker.jd_parser._search_company_career_site", mock_career_site
+        )
         monkeypatch.setattr("jseeker.jd_parser.extract_jd_from_url", mock_extract)
 
         metadata = {"company": "Acme", "method": "failed"}
-        text, meta = _linkedin_fallback_search("https://linkedin.com/jobs/view/123", "", metadata)
+        text, meta = _linkedin_fallback_search(
+            "https://linkedin.com/jobs/view/123", "", metadata
+        )
         assert text == full_jd
         assert meta.get("linkedin_fallback_used") is True
         assert meta.get("alternate_source_url") == "https://careers.acme.com/jobs/123"
@@ -585,15 +617,23 @@ class TestLinkedInFallbackSearch:
         def mock_extract(url, timeout=20):
             call_count["n"] += 1
             if "greenhouse" in url:
-                return full_jd, {"success": True, "method": "selector", "company": "BigCo"}
+                return full_jd, {
+                    "success": True,
+                    "method": "selector",
+                    "company": "BigCo",
+                }
             return "", {"success": False, "method": "failed", "company": ""}
 
-        monkeypatch.setattr("jseeker.jd_parser._search_company_career_site", mock_career_site)
+        monkeypatch.setattr(
+            "jseeker.jd_parser._search_company_career_site", mock_career_site
+        )
         monkeypatch.setattr("jseeker.jd_parser._search_alternate_posting", mock_search)
         monkeypatch.setattr("jseeker.jd_parser.extract_jd_from_url", mock_extract)
 
         metadata = {"company": "BigCo", "method": "failed"}
-        text, meta = _linkedin_fallback_search("https://linkedin.com/jobs/view/789", "", metadata)
+        text, meta = _linkedin_fallback_search(
+            "https://linkedin.com/jobs/view/789", "", metadata
+        )
         assert text == full_jd
         assert meta.get("linkedin_fallback_used") is True
         assert meta.get("method") == "linkedin_fallback_web_search"
@@ -642,9 +682,7 @@ class TestExtractLinkedInFallbackIntegration:
 
     def test_linkedin_url_triggers_fallback_on_incomplete(self, monkeypatch):
         """When LinkedIn scraping returns incomplete JD, fallback should trigger."""
-        incomplete_html = (
-            "<html><body><div class='description'>Apply for this job</div></body></html>"
-        )
+        incomplete_html = "<html><body><div class='description'>Apply for this job</div></body></html>"
         full_jd = (
             "Senior Engineer at Paramount. "
             "Responsibilities: Lead engineering team. "
@@ -677,18 +715,26 @@ class TestExtractLinkedInFallbackIntegration:
 
         monkeypatch.setattr(requests, "get", mock_get)
         monkeypatch.setattr("jseeker.jd_parser._resolve_linkedin_url", mock_resolve)
-        monkeypatch.setattr("jseeker.jd_parser._extract_with_playwright", mock_playwright)
-        monkeypatch.setattr("jseeker.jd_parser._linkedin_fallback_search", mock_fallback)
+        monkeypatch.setattr(
+            "jseeker.jd_parser._extract_with_playwright", mock_playwright
+        )
+        monkeypatch.setattr(
+            "jseeker.jd_parser._linkedin_fallback_search", mock_fallback
+        )
 
         text, meta = extract_jd_from_url("https://www.linkedin.com/jobs/view/12345")
         assert fallback_called["called"] is True
         assert text == full_jd
         assert meta.get("linkedin_fallback_used") is True
-        assert meta.get("alternate_source_url") == "https://careers.paramount.com/jobs/123"
+        assert (
+            meta.get("alternate_source_url") == "https://careers.paramount.com/jobs/123"
+        )
 
     def test_non_linkedin_url_does_not_trigger_fallback(self, monkeypatch):
         """Non-LinkedIn URLs should not trigger LinkedIn fallback."""
-        short_html = "<html><body><div class='description'>Short text.</div></body></html>"
+        short_html = (
+            "<html><body><div class='description'>Short text.</div></body></html>"
+        )
 
         def mock_get(url, **kwargs):
             resp = requests.models.Response()
@@ -700,7 +746,9 @@ class TestExtractLinkedInFallbackIntegration:
             return ""
 
         monkeypatch.setattr(requests, "get", mock_get)
-        monkeypatch.setattr("jseeker.jd_parser._extract_with_playwright", mock_playwright)
+        monkeypatch.setattr(
+            "jseeker.jd_parser._extract_with_playwright", mock_playwright
+        )
 
         text, meta = extract_jd_from_url("https://example.com/jobs/123")
         assert meta.get("linkedin_fallback_used", False) is False
@@ -716,7 +764,9 @@ class TestCompanyExtractionBugReports:
 
     def test_paramount_greenhouse_url(self):
         """Paramount on Greenhouse should extract 'Paramount'."""
-        result = _extract_company_from_url("https://boards.greenhouse.io/paramount/jobs/7654321")
+        result = _extract_company_from_url(
+            "https://boards.greenhouse.io/paramount/jobs/7654321"
+        )
         assert result is not None
         assert result.lower() == "paramount"
 
@@ -730,7 +780,9 @@ class TestCompanyExtractionBugReports:
 
     def test_stay22_lever_url(self):
         """Stay 22 on Lever should extract 'Stay 22'."""
-        result = _extract_company_from_url("https://jobs.lever.co/stay-22/abc123-def456")
+        result = _extract_company_from_url(
+            "https://jobs.lever.co/stay-22/abc123-def456"
+        )
         assert result is not None
         assert result.lower() == "stay 22"
 
@@ -818,5 +870,32 @@ class TestParsedJDAlternateSource:
     def test_alternate_source_url_can_be_set(self):
         from jseeker.models import ParsedJD
 
-        jd = ParsedJD(raw_text="test", alternate_source_url="https://careers.example.com/job/123")
+        jd = ParsedJD(
+            raw_text="test", alternate_source_url="https://careers.example.com/job/123"
+        )
         assert jd.alternate_source_url == "https://careers.example.com/job/123"
+
+
+def test_resolve_branded_greenhouse_url_hubspot():
+    from jseeker.jd_parser import _resolve_branded_greenhouse_url
+
+    result = _resolve_branded_greenhouse_url(
+        "https://www.hubspot.com/careers/jobs/7609930?gh_jid=7609930&gh_src=my.greenhouse.search"
+    )
+    assert result == "https://job-boards.greenhouse.io/hubspot/jobs/7609930"
+
+
+def test_resolve_branded_greenhouse_url_navan():
+    from jseeker.jd_parser import _resolve_branded_greenhouse_url
+
+    result = _resolve_branded_greenhouse_url(
+        "https://navan.com/careers/openings/7616887?gh_jid=7616887"
+    )
+    assert result == "https://job-boards.greenhouse.io/navan/jobs/7616887"
+
+
+def test_resolve_branded_greenhouse_url_no_gh_jid():
+    from jseeker.jd_parser import _resolve_branded_greenhouse_url
+
+    result = _resolve_branded_greenhouse_url("https://hubspot.com/careers/jobs/1234")
+    assert result is None

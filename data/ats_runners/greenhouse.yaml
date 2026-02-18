@@ -1,0 +1,61 @@
+version: 1
+platform: greenhouse
+
+url_patterns:
+  - "boards.greenhouse.io"
+  - "job-boards.greenhouse.io"
+  - "greenhouse.io/.*jobs"
+
+selectors:
+  resume_upload:
+    - "#resume_file"
+    - "input[type='file'][name*='resume']"
+    - "input[type='file']"
+  first_name:
+    - "#first_name"
+    - "input[name='job_application[first_name]']"
+    - "input[autocomplete='given-name']"
+  last_name:
+    - "#last_name"
+    - "input[name='job_application[last_name]']"
+    - "input[autocomplete='family-name']"
+  email:
+    - "#email"
+    - "input[name='job_application[email]']"
+    - "input[type='email']"
+  phone:
+    - "#phone"
+    - "input[name='job_application[phone]']"
+    - "input[type='tel']"
+  linkedin:
+    - "input[name*='linkedin']"
+    - "input[aria-label*='LinkedIn']"
+  location:
+    - "input[name*='location']"
+    - "input[aria-label*='Location']"
+  submit_button:
+    - "#submit_app"
+    - "button[type='submit']"
+    - "input[type='submit']"
+
+confirmation_signals:
+  url_patterns:
+    - "/confirmation"
+    - "/thank"
+  dom_text:
+    - "application has been submitted"
+    - "we've received your application"
+    - "thank you for applying"
+    - "your application has been received"
+    - "we have received your application"
+  dom_selectors:
+    - ".application-confirmation"
+    - "[data-testid='confirmation']"
+
+field_mappings:
+  "First Name": "first_name"
+  "Last Name": "last_name"
+  "Email": "email"
+  "Phone": "phone"
+  "LinkedIn Profile": "linkedin_url"
+  "Location": "city"

@@ -1,0 +1,108 @@
+version: 1
+platform: workday
+
+url_patterns:
+  - "myworkdayjobs.com"
+  - "wd\\d+\\.myworkdayjobs"
+  - "workday.com/.*career"
+  - "myworkday.com"
+
+page_load_timeout_ms: 45000
+
+selectors:
+  apply_button:
+    - "[data-automation-id='jobPostingApplyButton']"
+    - "a[href*='/apply']"
+    - "button:has-text('Apply')"
+    - "button:has-text('Apply Now')"
+  login_wall_signals:
+    - "[data-automation-id='signInButton']"
+    - "[data-automation-id='createAccount']"
+    - "input[type='password']"
+    - "form[data-automation-id='signInForm']"
+  guest_apply_button:
+    - "[data-automation-id='continueWithoutSigningIn']"
+    - "[data-automation-id='guestApplyBtn']"
+    - "a:has-text('Apply as Guest')"
+    - "button:has-text('Apply as Guest')"
+    - "a:has-text('Continue as Guest')"
+    - "button:has-text('Continue as Guest')"
+    - "a:has-text('Continue without signing in')"
+    - "button:has-text('Continue without signing in')"
+    - "a:has-text('Don\\'t have an account')"
+    - "[data-automation-id='noAccountLink']"
+  resume_upload:
+    - "[data-automation-id='file-upload-input-ref']"
+    - "input[type='file']"
+  first_name:
+    - "[data-automation-id='legalNameSection_firstName']"
+    - "input[aria-label*='First Name']"
+  last_name:
+    - "[data-automation-id='legalNameSection_lastName']"
+    - "input[aria-label*='Last Name']"
+  email:
+    - "[data-automation-id='email']"
+    - "input[type='email'][name*='email']"
+  phone:
+    - "[data-automation-id='phone-number']"
+    - "input[type='tel']"
+  address:
+    - "[data-automation-id='addressSection_addressLine1']"
+    - "input[aria-label*='Address']"
+  city:
+    - "[data-automation-id='addressSection_city']"
+    - "input[aria-label*='City']"
+  state:
+    - "[data-automation-id='addressSection_countryRegion']"
+    - "select[aria-label*='State']"
+  zip:
+    - "[data-automation-id='addressSection_postalCode']"
+    - "input[aria-label*='Postal']"
+  submit_button:
+    - "[data-automation-id='submitButton']"
+    - "button:has-text('Submit')"
+  next_button:
+    - "[data-automation-id='bottom-navigation-next-button']"
+    - "button:has-text('Next')"
+    - "button:has-text('Continue')"
+  sms_consent:
+    primary: "[data-automation-id='smsConsentCheckbox']"
+    fallback_1: "input[type='checkbox'][name*='sms']"
+    fallback_2: "label:has-text('SMS') input[type='checkbox']"
+  fcra_ack:
+    primary: "[data-automation-id='backgroundCheckCheckbox']"
+    fallback_1: "input[type='checkbox'][id*='fcra']"
+    fallback_2: "input[type='checkbox'][name*='background']"
+    fallback_3: "label:has-text('FCRA') input[type='checkbox']"
+  phone_extension:
+    - "[data-automation-id='phone-extension']"
+    - "input[name*='extension']"
+    - "input[placeholder*='extension']"
+  skills_input:
+    - "[data-automation-id='skillsInput']"
+    - "input[placeholder*='skill' i]"
+    - "input[placeholder*='add skill' i]"
+
+confirmation_signals:
+  url_patterns:
+    - "/thankyou"
+    - "/confirmationpage"
+    - "/myApplications"
+  dom_text:
+    - "application has been submitted"
+    - "thank you for applying"
+    - "successfully submitted"
+    - "your application has been received"
+  dom_selectors:
+    - "[data-automation-id='thankYouMessage']"
+
+field_mappings:
+  "First Name": "first_name"
+  "Last Name": "last_name"
+  "Email": "email"
+  "Phone": "phone"
+  "Address Line 1": "address"
+  "City": "city"
+  "State": "state"
+  "Postal Code": "zip"
+  "Country": "country"

@@ -130,16 +130,15 @@ def test_rank_discoveries_by_tag_weight():
         posting_date=date.today(),
     )
 
-    # Mock tag weights
+    # Mock tag weights (list_tag_weights returns list of dicts; batch-fetched once)
     from unittest.mock import patch
 
-    with patch("jseeker.job_discovery.tracker_db.get_tag_weight") as mock_get_weight:
+    weight_table = {"Product Designer": 80, "Senior": 70, "UX Designer": 60, "Junior": 30}
 
-        def get_weight_side_effect(tag):
-            weights = {"Product Designer": 80, "Senior": 70, "UX Designer": 60, "Junior": 30}
-            return weights.get(tag, 50)
-
-        mock_get_weight.side_effect = get_weight_side_effect
+    with patch("jseeker.job_discovery.tracker_db.list_tag_weights") as mock_list_weights:
+        mock_list_weights.return_value = [
+            {"tag": tag, "weight": w} for tag, w in weight_table.items()
+        ]
 
         # Rank discoveries
         ranked = rank_discoveries_by_tag_weight([disc1, disc2, disc3])
@@ -455,15 +454,14 @@ def test_rank_by_relevance_then_freshness():
 
     from unittest.mock import patch
 
-    with patch("jseeker.job_discovery.tracker_db.get_tag_weight") as mock_get_weight, patch(
+    weight_table = {"Product Designer": 80, "Junior": 30}
+
+    with patch("jseeker.job_discovery.tracker_db.list_tag_weights") as mock_list_weights, patch(
         "jseeker.job_discovery._get_resume_keywords"
     ) as mock_keywords:
-
-        def get_weight_side_effect(tag):
-            weights = {"Product Designer": 80, "Junior": 30}
-            return weights.get(tag, 50)
-
-        mock_get_weight.side_effect = get_weight_side_effect
+        mock_list_weights.return_value = [
+            {"tag": tag, "weight": w} for tag, w in weight_table.items()
+        ]
 
         # Mock resume keywords to return empty set (isolates tag weight + freshness logic)
         mock_keywords.return_value = set()

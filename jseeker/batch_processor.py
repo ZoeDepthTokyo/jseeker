@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 # ── Enums & Data Models ────────────────────────────────────────────────────
 
 
-class JobStatus(str, Enum):
+class BatchJobStatus(str, Enum):
     """Status of individual batch job."""
 
     PENDING = "pending"
@@ -40,7 +40,7 @@ class BatchJob:
 
     id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     url: str = ""
-    status: JobStatus = JobStatus.PENDING
+    status: BatchJobStatus = BatchJobStatus.PENDING
     result: Optional[dict] = None
     error: Optional[str] = None
     worker_id: Optional[int] = None
@@ -375,7 +375,7 @@ class BatchProcessor:
         try:
             # Check for stop signal
             if self._stop_event.is_set():
-                job.status = JobStatus.STOPPED
+                job.status = BatchJobStatus.STOPPED
                 job.completed_at = datetime.now()
                 self._update_progress("stopped")
                 return
@@ -385,19 +385,19 @@ class BatchProcessor:
 
             # Check for stop again after pause
             if self._stop_event.is_set():
-                job.status = JobStatus.STOPPED
+                job.status = BatchJobStatus.STOPPED
                 job.completed_at = datetime.now()
                 self._update_progress("stopped")
                 return
 
             # Mark as running
-            job.status = JobStatus.RUNNING
+            job.status = BatchJobStatus.RUNNING
             self._update_progress("running_increment")
 
             # Check if URL already known
             if tracker_db.is_url_known(job.url):
                 logger.info(f"Job {job_id} skipped (URL already known): {job.url}")
-                job.status = JobStatus.SKIPPED
+                job.status = BatchJobStatus.SKIPPED
                 job.error = "URL already exists in tracker"
                 job.completed_at = datetime.now()
                 tracker_db.create_batch_job_item(
@@ -427,7 +427,7 @@ class BatchProcessor:
 
             # Check for stop before expensive operation
             if self._stop_event.is_set():
-                job.status = JobStatus.STOPPED
+                job.status = BatchJobStatus.STOPPED
                 job.completed_at = datetime.now()
                 self._update_progress("stopped")
                 return
@@ -440,7 +440,7 @@ class BatchProcessor:
 
             # Check for stop before DB write
             if self._stop_event.is_set():
-                job.status = JobStatus.STOPPED
+                job.status = BatchJobStatus.STOPPED
                 job.completed_at = datetime.now()
                 self._update_progress("stopped")
                 return
@@ -457,7 +457,7 @@ class BatchProcessor:
                 "ats_score": result.ats_score.overall_score,
                 "cost_usd": result.total_cost,
             }
-            job.status = JobStatus.COMPLETED
+            job.status = BatchJobStatus.COMPLETED
             job.completed_at = datetime.now()
 
             # Log to batch_job_items
@@ -477,7 +477,7 @@ class BatchProcessor:
 
         except Exception as e:
             logger.error(f"Job {job_id} failed: {e}", exc_info=True)
-            job.status = JobStatus.FAILED
+            job.status = BatchJobStatus.FAILED
             job.error = str(e)
             job.completed_at = datetime.now()
 
@@ -583,7 +583,7 @@ class BatchProcessor:
         """Analyze patterns from completed jobs in current segment."""
         from jseeker.pattern_learner import analyze_batch_patterns
 
-        completed_jobs = [job for job in self.jobs.values() if job.status == JobStatus.COMPLETED]
+        completed_jobs = [job for job in self.jobs.values() if job.status == BatchJobStatus.COMPLETED]
 
         if not completed_jobs:
             logger.info("No completed jobs to analyze patterns")

@@ -716,6 +716,11 @@ def rank_discoveries_by_tag_weight(
     # Load resume keywords once for all discoveries
     resume_keywords = _get_resume_keywords()
 
+    # Pre-fetch ALL tag weights in one query instead of N*M individual DB calls
+    all_weights: dict[str, int] = {
+        tw["tag"]: tw["weight"] for tw in tracker_db.list_tag_weights()
+    }
+
     for disc in discoveries:
         total_weight = 0
         # Handle both dict and object formats
@@ -724,7 +729,8 @@ def rank_discoveries_by_tag_weight(
         tag_weights = {}
 
         for tag in tags:
-            weight = tracker_db.get_tag_weight(tag)
+            normalized = " ".join(tag.strip().split())  # mirrors _normalize_search_tag
+            weight = all_weights.get(normalized, 50)
             tag_weights[tag] = weight
             total_weight += weight
 

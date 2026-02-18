@@ -3,6 +3,23 @@
 ## Role
 jSeeker (formerly PROTEUS) adapts structured resume content to match job descriptions, scores ATS compliance per platform, renders PDF + DOCX, generates recruiter outreach, and tracks applications. It is a GAIA ecosystem product.
 
+## UX Principles (STANDING RULE — applies to all UI work)
+Every UI decision must optimize for:
+- **Progressive cognitive load** — surface only what the user needs at that moment; reveal complexity on demand
+- **Progressive transparency** — show outcomes and system state clearly; no silent failures or ambiguous states
+- **Least clicks** — default paths require minimum interaction; power options are one level deeper
+- **High task success rate** — if a user starts a task, the UI must make it easy to complete it correctly
+- **Short time to task completion** — pre-fill from known data (tracker, DB) wherever possible; never make users re-enter what the system already knows
+- **Low error rate** — validate early, guide recovery, never leave users at a dead end
+- **Low CES (Customer Effort Score)** — every flow should feel effortless; if it feels like work, redesign it
+
+**Practical implications:**
+- Always query existing DB data to pre-populate forms (resumes → tracker → companies)
+- Multiselect + batch actions over one-by-one workflows
+- Inline status and feedback — no page reloads to see what happened
+- Collapse advanced options by default (expanders, tabs); primary path is always visible
+- Show counts and context in labels ("12 applications available", "WORKDAY · DOCX") so users can decide without clicking through
+
 ## Quick Start
 1. Setup: `python -m venv .venv && .venv\Scripts\activate && pip install -r requirements.txt`
 2. Install MYCEL: `pip install -e X:\Projects\_GAIA\_MYCEL`
@@ -70,7 +87,7 @@ output/ -- generated resumes (gitignored)
 - **MNEMIS**: Pattern storage via integrations/mnemis_bridge.py (Phase 3+)
 
 ## Testing
-# Full test suite (440 tests, 439 passing as of v0.3.8)
+# Full test suite (640 tests, 639 passing as of v0.3.12)
 pytest tests/ --cov=jseeker
 
 # Faster feedback during development (~110s without coverage)
@@ -80,7 +97,7 @@ pytest tests/ -q --tb=short
 python scripts/test_v0_3_2_complete.py
 
 # Known failures (not blockers): 1 E2E test in test_e2e_scenarios.py
-# - Language detection edge case (French)
+# - Language detection edge case (French) — pre-existing, not a blocker
 
 # Backwards compatibility testing
 - When adding schema changes (new model fields, DB columns), create tests that load old data without new fields to catch AttributeError/KeyError regressions before production. Example: test old PipelineResult objects without pdf_validation field.
@@ -109,6 +126,15 @@ python scripts/test_v0_3_2_complete.py
 - **DataFrame column additions need defensive checks**: When adding columns to DB tables, check existence before operations: `if "col" not in df.columns: df["col"] = default`. Old records won't have new columns. Example: domain column in patterns table (v0.3.8).
 - **JSON parsing for old DB data**: Wrap JSON parsing in try/except for malformed data from schema migrations: `try: data = json.loads(row["field"]) except json.JSONDecodeError: data = {}`.
 - **Recurring errors**: If same bug appears 2+ times, root cause wasn't fixed - investigate state management, lifecycle, or async issues before patching symptoms
+- **ApplyVerifier hard proof required**: `applied_verified` needs URL OR DOM OR automation-id signal + no error banners + form gone. Never set without hard proof.
+- **ApplyMonitor circuit breaker**: auto-disables platforms after 3 consecutive failures; `BatchSummary.hitl_required=True` flags paused items for user review
+- **BatchSummary**: `apply_batch()` now returns `BatchSummary` not `list[AttemptResult]` — update any callers accordingly
+- **Python 3.14 + Playwright on Windows**: `SelectorEventLoop` breaks Playwright subprocess launch. Fix: `_loop = asyncio.ProactorEventLoop(); asyncio.set_event_loop(_loop)` BEFORE importing playwright. Do NOT use deprecated `set_event_loop_policy`.
+- **Playwright inside Streamlit**: NEVER call `sync_playwright()` in Streamlit's main thread (asyncio conflict). Use `scripts/run_auto_apply_batch.py` as a subprocess via `subprocess.Popen`. See `ui/pages/9_auto_apply.py`.
+- **subprocess.Popen stdout deadlock**: If child process writes heavily to stdout, NEVER use `stdout=subprocess.PIPE` without reading it — pipe buffer (~64KB) fills and child blocks. Use `stdout=None` to inherit terminal; poll DB for progress instead.
+- **Auto-apply dedup logic**: `check_dedup()` in tracker.py must NOT check the `applications` table — every tracked job lives there. Only block on `applied_verified`/`applied_soft` in `apply_queue`.
+- **ATS screening question selectors**: `.field label` and similar broad selectors catch personal info labels (Phone, Email, Name, etc.) as unknown screening questions. Both runners have `_PERSONAL_INFO_LABELS` frozenset — add new labels there, not to the answer bank.
+- **Salary extraction: multi-location JDs**: `_extract_salary()` in jd_parser.py prioritizes "Primary Location" section when multiple pay ranges are listed (e.g. PayPal San Jose + Austin). Also handles `$242,000.00` decimal-cent format via pre-normalization.
 
 ## DO NOT
 - Invent experience or metrics not in resume_blocks YAML

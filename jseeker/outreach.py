@@ -62,6 +62,72 @@ def generate_outreach(
     )
 
 
+def generate_cover_letter(
+    parsed_jd: "ParsedJD",
+    adapted_resume: "AdaptedResume",
+    why_company: str = "",
+    key_achievement: str = "",
+    culture_tone: str = "Professional",
+    language: str = "en",
+) -> str:
+    """Generate a targeted, human-feeling cover letter using Sonnet.
+
+    Args:
+        parsed_jd: Parsed job description with role/company/requirements.
+        adapted_resume: Adapted resume with summary and skills.
+        why_company: User's specific reason for wanting this company.
+        key_achievement: User's most relevant achievement for this role.
+        culture_tone: One of Corporate, Startup, Research, Creative.
+        language: Language code ("en" or "es").
+
+    Returns:
+        Cover letter body text (3 paragraphs, under 300 words).
+    """
+    from pathlib import Path
+
+    prompt_path = (
+        Path(__file__).parent.parent / "data" / "prompts" / "cover_letter_writer.txt"
+    )
+    template = prompt_path.read_text(encoding="utf-8")
+
+    # Build requirements summary (top 5)
+    requirements = ""
+    if hasattr(parsed_jd, "requirements") and parsed_jd.requirements:
+        reqs = [r.text for r in parsed_jd.requirements[:5]]
+        requirements = "\n".join(f"- {r}" for r in reqs)
+    else:
+        requirements = parsed_jd.ats_keywords[:5] if parsed_jd.ats_keywords else ""
+        if isinstance(requirements, list):
+            requirements = "\n".join(f"- {k}" for k in requirements)
+
+    culture_signals = ""
+    if hasattr(parsed_jd, "culture_signals") and parsed_jd.culture_signals:
+        culture_signals = ", ".join(parsed_jd.culture_signals[:5])
+
+    adapted_summary = ""
+    if hasattr(adapted_resume, "summary"):
+        adapted_summary = adapted_resume.summary or ""
+
+    prompt = template.format(
+        role_title=parsed_jd.title or "this role",
+        company=parsed_jd.company or "this company",
+        market=parsed_jd.market or "us",
+        requirements=requirements or "See job description",
+        culture_signals=culture_signals or "Professional, collaborative",
+        adapted_summary=(
+            adapted_summary[:400] if adapted_summary else "Experienced professional"
+        ),
+        key_achievement=key_achievement
+        or "Multiple successful projects in this domain",
+        why_company=why_company
+        or "Strong alignment with the company mission and growth trajectory",
+        culture_tone=culture_tone,
+        language=language,
+    )
+
+    return llm.call_sonnet(prompt, task="cover_letter")
+
+
 def generate_recruiter_search(
     company: str,
     role_title: str,

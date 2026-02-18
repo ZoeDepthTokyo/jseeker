@@ -35,11 +35,14 @@ try:
 
     col1, col2, col3 = st.columns(3)
     col1.metric(
-        "Monthly Cost", f"${monthly_cost:.2f}", f"of ${settings.max_monthly_budget_usd:.2f}"
+        "Monthly Cost",
+        f"${monthly_cost:.2f}",
+        f"of ${settings.max_monthly_budget_usd:.2f}",
     )
     col2.metric("Session Cost", f"${session_cost:.3f}")
     col3.metric(
-        "Budget Remaining", f"${max(0, settings.max_monthly_budget_usd - monthly_cost):.2f}"
+        "Budget Remaining",
+        f"${max(0, settings.max_monthly_budget_usd - monthly_cost):.2f}",
     )
 
     if monthly_cost >= settings.max_monthly_budget_usd:
@@ -90,7 +93,9 @@ if jd_url.strip() and not st.session_state.get("jd_text_input", "").strip():
                         )
                     st.rerun()
                 else:
-                    st.warning("Could not extract enough text from URL. Paste the JD manually.")
+                    st.warning(
+                        "Could not extract enough text from URL. Paste the JD manually."
+                    )
             except Exception as e:
                 st.error(f"Extraction failed: {e}")
 
@@ -161,24 +166,34 @@ if generate_button:
             # Step 1: Load or extract JD and parse
             source_jd_text = jd_text_clean
             if not source_jd_text and jd_url_clean:
-                progress.progress(5, text="Step 1/5: Fetching job description from URL...")
+                progress.progress(
+                    5, text="Step 1/5: Fetching job description from URL..."
+                )
                 source_jd_text, extraction_meta = extract_jd_from_url(jd_url_clean)
                 if not source_jd_text:
                     # Build detailed error message with diagnostics
                     error_parts = ["Could not extract job description from URL."]
                     if extraction_meta.get("company"):
-                        error_parts.append(f"Detected company: {extraction_meta['company']}")
+                        error_parts.append(
+                            f"Detected company: {extraction_meta['company']}"
+                        )
                     if extraction_meta.get("selectors_tried"):
                         error_parts.append(
                             f"Tried {len(extraction_meta['selectors_tried'])} selectors"
                         )
-                    error_parts.append(f"Method: {extraction_meta.get('method', 'unknown')}")
+                    error_parts.append(
+                        f"Method: {extraction_meta.get('method', 'unknown')}"
+                    )
                     error_parts.append("Please paste the JD text and try again.")
                     raise ValueError(" | ".join(error_parts))
                 if extraction_meta.get("linkedin_fallback_used"):
                     alt_src = extraction_meta.get("alternate_source_url", "")
-                    st.caption(f"LinkedIn JD was incomplete. Full content from: {alt_src}")
-                progress.progress(12, text="Step 1/5: Job description extracted from URL.")
+                    st.caption(
+                        f"LinkedIn JD was incomplete. Full content from: {alt_src}"
+                    )
+                progress.progress(
+                    12, text="Step 1/5: Job description extracted from URL."
+                )
             else:
                 progress.progress(12, text="Step 1/5: Using pasted job description.")
 
@@ -247,7 +262,9 @@ if generate_button:
                     custom_style = load_template_style(selected_template["path"])
                     st.caption(f"Applying style from: {selected_template['name']}")
                 except Exception as style_error:
-                    st.warning(f"Could not load template style, using default: {style_error}")
+                    st.warning(
+                        f"Could not load template style, using default: {style_error}"
+                    )
 
             outputs = generate_output(
                 adapted,
@@ -301,7 +318,9 @@ if generate_button:
             resume = Resume(
                 application_id=app_id,
                 template_used=result.adapted_resume.template_used.value,
-                content_json=json.dumps(result.adapted_resume.model_dump(), default=str),
+                content_json=json.dumps(
+                    result.adapted_resume.model_dump(), default=str
+                ),
                 pdf_path=result.pdf_path,
                 docx_path=result.docx_path,
                 ats_score=result.ats_score.overall_score,
@@ -311,8 +330,12 @@ if generate_button:
             tracker_db.add_resume(resume)
 
             progress.progress(100, text="Complete. Resume generated successfully.")
-            status.update(label="Resume generated successfully.", state="complete", expanded=False)
-            st.success(f"Resume generated for {company} - {role} (Application #{app_id})")
+            status.update(
+                label="Resume generated successfully.", state="complete", expanded=False
+            )
+            st.success(
+                f"Resume generated for {company} - {role} (Application #{app_id})"
+            )
 
     except BudgetExceededError as exc:
         st.error(f"Budget exceeded: {exc}")
@@ -335,7 +358,9 @@ if "pipeline_result" in st.session_state:
         col3.metric("Recommended Format", result.ats_score.recommended_format.upper())
 
         if result.ats_score.missing_keywords:
-            st.warning(f"Missing keywords: {', '.join(result.ats_score.missing_keywords[:10])}")
+            st.warning(
+                f"Missing keywords: {', '.join(result.ats_score.missing_keywords[:10])}"
+            )
 
         if result.ats_score.warnings:
             for warning in result.ats_score.warnings:
@@ -366,14 +391,20 @@ if "pipeline_result" in st.session_state:
                 with col_a:
                     st.markdown("**✅ Matched Keywords**")
                     if result.ats_score.matched_keywords:
-                        st.code(", ".join(result.ats_score.matched_keywords[:15]), language=None)
+                        st.code(
+                            ", ".join(result.ats_score.matched_keywords[:15]),
+                            language=None,
+                        )
                     else:
                         st.caption("None")
 
                 with col_b:
                     st.markdown("**❌ Missing Keywords**")
                     if result.ats_score.missing_keywords:
-                        st.code(", ".join(result.ats_score.missing_keywords[:15]), language=None)
+                        st.code(
+                            ", ".join(result.ats_score.missing_keywords[:15]),
+                            language=None,
+                        )
                     else:
                         st.caption("None")
 
@@ -382,7 +413,9 @@ if "pipeline_result" in st.session_state:
 
     with st.expander("Export", expanded=False):
         default_name = Path(result.pdf_path).stem if result.pdf_path else "resume"
-        custom_name = st.text_input("Filename:", value=default_name, key="custom_filename")
+        custom_name = st.text_input(
+            "Filename:", value=default_name, key="custom_filename"
+        )
 
         col1, col2 = st.columns(2)
 
@@ -488,9 +521,73 @@ if "pipeline_result" in st.session_state:
         st.markdown("**Experience Blocks:**")
         for exp in adapted.experience_blocks:
             end = exp.get("end") or "Present"
-            st.markdown(f"**{exp['role']}** - {exp['company']} ({exp['start']} to {end})")
+            st.markdown(
+                f"**{exp['role']}** - {exp['company']} ({exp['start']} to {end})"
+            )
             for bullet in exp.get("bullets", []):
                 st.markdown(f"- {bullet}")
+
+    # ── Cover Letter (optional) ──────────────────────────────────
+    st.markdown("---")
+    with st.expander("Generate Cover Letter (optional, ~$0.015)", expanded=False):
+        st.caption(
+            "Creates a 3-paragraph, human-written cover letter tailored to this specific role and company."
+        )
+        col_cl1, col_cl2 = st.columns(2)
+        with col_cl1:
+            cl_why = st.text_input(
+                "Why THIS company specifically?",
+                max_chars=150,
+                placeholder="e.g. Their approach to X resonates with my work on Y...",
+                key="cl_why",
+            )
+        with col_cl2:
+            cl_tone = st.radio(
+                "Culture vibe:",
+                ["Corporate", "Startup", "Research", "Creative"],
+                horizontal=True,
+                key="cl_tone",
+            )
+        cl_achievement = st.text_area(
+            "Your proudest achievement relevant to this role:",
+            max_chars=250,
+            placeholder="e.g. Led migration of X to Y, reducing costs by 40%...",
+            key="cl_achievement",
+            height=80,
+        )
+        cl_btn_col, cl_regen_col = st.columns([2, 1])
+        if cl_btn_col.button("Generate Cover Letter", key="gen_cl", type="primary"):
+            result = st.session_state["pipeline_result"]
+            from jseeker.outreach import generate_cover_letter
+
+            with st.spinner("Writing cover letter..."):
+                st.session_state["cover_letter"] = generate_cover_letter(
+                    parsed_jd=result.parsed_jd,
+                    adapted_resume=result.adapted_resume,
+                    why_company=cl_why,
+                    key_achievement=cl_achievement,
+                    culture_tone=cl_tone,
+                    language=getattr(result.parsed_jd, "language", "en"),
+                )
+        if st.session_state.get("cover_letter"):
+            if cl_regen_col.button("Regenerate", key="regen_cl"):
+                st.session_state.pop("cover_letter", None)
+                st.rerun()
+            st.text_area(
+                "Cover Letter",
+                st.session_state["cover_letter"],
+                height=320,
+                key="cl_display",
+            )
+            result = st.session_state["pipeline_result"]
+            fname = f"cover_letter_{getattr(result.parsed_jd, 'company', 'company').replace(' ', '_')}.txt"
+            st.download_button(
+                "Download .txt",
+                st.session_state["cover_letter"],
+                file_name=fname,
+                mime="text/plain",
+                key="dl_cover_letter",
+            )
 
     st.markdown("---")
     st.caption(f"**Cost:** ${result.total_cost:.4f}")

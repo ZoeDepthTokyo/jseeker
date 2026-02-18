@@ -12,7 +12,7 @@ from jseeker.batch_processor import (
     BatchJob,
     BatchProgress,
     WorkerStatus,
-    JobStatus,
+    BatchJobStatus as JobStatus,
     JDCache,
 )
 

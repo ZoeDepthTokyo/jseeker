@@ -10,6 +10,7 @@ __pycache__/
 
 # Output
 output/
+data/apply_logs/
 data/jseeker.db
 data/jseeker.db-journal
 data/proteus.db

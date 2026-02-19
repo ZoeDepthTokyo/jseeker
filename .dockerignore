@@ -1,0 +1,55 @@
+# Version control
+.git
+.gitignore
+
+# Secrets and local config
+.env
+.env.local
+
+# Python artifacts
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.egg-info
+
+# Virtual environments (never copy into image)
+.venv
+venv
+
+# Test artifacts
+.pytest_cache
+.pytest_tmp
+.test_tmp
+.coverage
+htmlcov
+x_test_sqlite.db*
+
+# Runtime data (volume-mounted at runtime)
+output/
+data/apply_logs/
+data/jseeker.db
+data/jseeker.db-journal
+data/proteus.db
+data/proteus.db-journal
+data/.cache/
+
+# IDE and OS noise
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+.claude/
+
+# Logs
+logs/
+
+# Docs (not needed in container)
+docs/
+
+# Build artifacts
+dist/
+build/

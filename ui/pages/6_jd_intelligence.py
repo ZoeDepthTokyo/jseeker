@@ -66,9 +66,7 @@ with tab1:
     if agg.get("culture_signals"):
         st.markdown("---")
         st.subheader("Culture Signals (across all JDs)")
-        signals_text = " · ".join(
-            f"{sig} ({cnt})" for sig, cnt in agg["culture_signals"][:12]
-        )
+        signals_text = " · ".join(f"{sig} ({cnt})" for sig, cnt in agg["culture_signals"][:12])
         st.markdown(signals_text)
 
 with tab2:
@@ -125,9 +123,7 @@ with tab2:
                     else:
                         adapted_resume = AdaptedResume()
 
-                    report = generate_ideal_candidate_brief(
-                        parsed_jd, adapted_resume, agg
-                    )
+                    report = generate_ideal_candidate_brief(parsed_jd, adapted_resume, agg)
                     st.session_state["intel_report"] = report
                     st.session_state["intel_parsed_jd"] = parsed_jd
                 except Exception as e:
@@ -179,9 +175,7 @@ with tab3:
     by_market = agg.get("salary_by_market", {})
 
     if not global_perc:
-        st.info(
-            "No salary data yet. Applications with salary ranges will populate this view."
-        )
+        st.info("No salary data yet. Applications with salary ranges will populate this view.")
     else:
         col1, col2, col3 = st.columns(3)
         col1.metric(
@@ -208,16 +202,12 @@ with tab3:
                     {
                         "Market": market.upper(),
                         "P25": f"${perc.get('p25', 0):,}" if perc.get("p25") else "N/A",
-                        "Median": (
-                            f"${perc.get('p50', 0):,}" if perc.get("p50") else "N/A"
-                        ),
+                        "Median": (f"${perc.get('p50', 0):,}" if perc.get("p50") else "N/A"),
                         "P75": f"${perc.get('p75', 0):,}" if perc.get("p75") else "N/A",
                         "Data Points": perc.get("count", 0),
                     }
                 )
-            st.dataframe(
-                pd.DataFrame(market_rows), use_container_width=True, hide_index=True
-            )
+            st.dataframe(pd.DataFrame(market_rows), use_container_width=True, hide_index=True)
 
         st.markdown("---")
         st.subheader("Negotiation Recommendation")

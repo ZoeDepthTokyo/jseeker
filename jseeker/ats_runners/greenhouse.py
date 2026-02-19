@@ -21,9 +21,7 @@ from jseeker.models import AttemptResult, AttemptStatus
 
 logger = logging.getLogger(__name__)
 
-_SELECTORS_PATH = (
-    Path(__file__).parent.parent.parent / "data" / "ats_runners" / "greenhouse.yaml"
-)
+_SELECTORS_PATH = Path(__file__).parent.parent.parent / "data" / "ats_runners" / "greenhouse.yaml"
 
 
 def _load_greenhouse_config() -> dict:
@@ -96,9 +94,7 @@ class GreenhouseRunner(SiteRunner):
             self._fill_personal_info(page, personal, fields_filled)
 
             # 5. Handle screening questions
-            q_result = self._fill_screening_questions(
-                page, answers, market, fields_filled
-            )
+            q_result = self._fill_screening_questions(page, answers, market, fields_filled)
             if q_result is not None:
                 return q_result  # Paused on unknown/salary question
 
@@ -287,9 +283,7 @@ class GreenhouseRunner(SiteRunner):
                     q_normalized = q_text.rstrip("* \t").lower()
                     if q_normalized in self._PERSONAL_INFO_LABELS:
                         continue  # Personal info field — already handled separately
-                    answer, is_pause = answer_screening_question(
-                        answers, q_text, market
-                    )
+                    answer, is_pause = answer_screening_question(answers, q_text, market)
                     if is_pause:
                         status = (
                             AttemptStatus.PAUSED_SALARY_QUESTION

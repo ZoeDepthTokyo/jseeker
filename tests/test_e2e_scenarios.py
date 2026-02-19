@@ -18,12 +18,15 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
-
 from jseeker.batch_processor import BatchProcessor
 from jseeker.job_discovery import rank_discoveries_by_tag_weight
 from jseeker.models import Application, JobDiscovery
 from jseeker.pattern_learner import get_pattern_stats, learn_pattern
 from jseeker.tracker import TrackerDB, init_db
+
+# Project-relative paths — never hardcode machine-specific absolute paths
+_PROJECT_ROOT = Path(__file__).parent.parent
+_TEMPLATES_DIR = _PROJECT_ROOT / "data" / "templates"
 
 # ─── Fixtures ───────────────────────────────────────────────────────────────
 
@@ -111,9 +114,10 @@ class TestBatchResumeGenerationE2E:
         Issues: #1 (pause/stop/start), #2 (parallel processing), #3 (batch works)
         """
         # Mock pipeline dependencies
-        with patch("jseeker.batch_processor.extract_jd_from_url") as mock_extract, patch(
-            "jseeker.batch_processor.run_pipeline"
-        ) as mock_pipeline:
+        with (
+            patch("jseeker.batch_processor.extract_jd_from_url") as mock_extract,
+            patch("jseeker.batch_processor.run_pipeline") as mock_pipeline,
+        ):
 
             # Mock JD extraction - now returns tuple
             mock_extract.return_value = (
@@ -164,9 +168,10 @@ class TestBatchResumeGenerationE2E:
 
         Issue: #1 (pause/stop/start buttons)
         """
-        with patch("jseeker.batch_processor.extract_jd_from_url") as mock_extract, patch(
-            "jseeker.batch_processor.run_pipeline"
-        ) as mock_pipeline:
+        with (
+            patch("jseeker.batch_processor.extract_jd_from_url") as mock_extract,
+            patch("jseeker.batch_processor.run_pipeline") as mock_pipeline,
+        ):
 
             mock_extract.return_value = (
                 "Test JD",
@@ -214,9 +219,10 @@ class TestBatchResumeGenerationE2E:
 
         Issue: #3 (batch generation works), #7 (error handling)
         """
-        with patch("jseeker.batch_processor.extract_jd_from_url") as mock_extract, patch(
-            "jseeker.batch_processor.run_pipeline"
-        ) as mock_pipeline:
+        with (
+            patch("jseeker.batch_processor.extract_jd_from_url") as mock_extract,
+            patch("jseeker.batch_processor.run_pipeline") as mock_pipeline,
+        ):
 
             # First URL fails, second succeeds
             mock_extract.side_effect = [
@@ -304,8 +310,8 @@ class TestPDFFormattingE2E:
 
         Issues: #8 (single font), #9 (spacing/hierarchy)
         """
-        css_path = Path("X:/Projects/jSeeker/data/templates/two_column.css")
-        html_path = Path("X:/Projects/jSeeker/data/templates/two_column.html")
+        css_path = _TEMPLATES_DIR / "two_column.css"
+        html_path = _TEMPLATES_DIR / "two_column.html"
 
         assert css_path.exists(), "CSS template missing"
         assert html_path.exists(), "HTML template missing"
@@ -780,9 +786,10 @@ class TestFullPipelineIntegration:
 
         Covers: All issues #1-#26 in one integration test
         """
-        with patch("jseeker.llm.JseekerLLM.call_haiku") as mock_haiku, patch(
-            "jseeker.llm.JseekerLLM.call_sonnet"
-        ) as mock_sonnet:
+        with (
+            patch("jseeker.llm.JseekerLLM.call_haiku") as mock_haiku,
+            patch("jseeker.llm.JseekerLLM.call_sonnet") as mock_sonnet,
+        ):
 
             # Mock LLM responses
             mock_haiku.return_value = "Pruned job description"
@@ -853,9 +860,10 @@ class TestE2EPerformance:
 
         Issue: #2 (parallel processing), #7 (performance optimization)
         """
-        with patch("jseeker.batch_processor.extract_jd_from_url") as mock_extract, patch(
-            "jseeker.batch_processor.run_pipeline"
-        ) as mock_pipeline:
+        with (
+            patch("jseeker.batch_processor.extract_jd_from_url") as mock_extract,
+            patch("jseeker.batch_processor.run_pipeline") as mock_pipeline,
+        ):
 
             # Add 200ms delay to simulate real work
             def slow_pipeline(*args, **kwargs):

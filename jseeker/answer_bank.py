@@ -156,17 +156,13 @@ def get_resume_format(bank: AnswerBank, ats_platform: str) -> str:
     Returns:
         Format string ("pdf" or "docx").
     """
-    return bank.resume_formats.get(
-        ats_platform.lower(), bank.resume_formats.get("default", "pdf")
-    )
+    return bank.resume_formats.get(ats_platform.lower(), bank.resume_formats.get("default", "pdf"))
 
 
 # ── Internal ──────────────────────────────────────────────────────────
 
 
-def _match_pattern(
-    question: str, patterns: list[ScreeningPattern]
-) -> Optional[tuple[str, bool]]:
+def _match_pattern(question: str, patterns: list[ScreeningPattern]) -> Optional[tuple[str, bool]]:
     """Match question text against screening patterns.
 
     Args:

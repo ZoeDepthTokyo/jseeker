@@ -583,7 +583,9 @@ class BatchProcessor:
         """Analyze patterns from completed jobs in current segment."""
         from jseeker.pattern_learner import analyze_batch_patterns
 
-        completed_jobs = [job for job in self.jobs.values() if job.status == BatchJobStatus.COMPLETED]
+        completed_jobs = [
+            job for job in self.jobs.values() if job.status == BatchJobStatus.COMPLETED
+        ]
 
         if not completed_jobs:
             logger.info("No completed jobs to analyze patterns")

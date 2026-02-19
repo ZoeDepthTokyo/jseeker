@@ -93,9 +93,7 @@ if jd_url.strip() and not st.session_state.get("jd_text_input", "").strip():
                         )
                     st.rerun()
                 else:
-                    st.warning(
-                        "Could not extract enough text from URL. Paste the JD manually."
-                    )
+                    st.warning("Could not extract enough text from URL. Paste the JD manually.")
             except Exception as e:
                 st.error(f"Extraction failed: {e}")
 
@@ -166,34 +164,24 @@ if generate_button:
             # Step 1: Load or extract JD and parse
             source_jd_text = jd_text_clean
             if not source_jd_text and jd_url_clean:
-                progress.progress(
-                    5, text="Step 1/5: Fetching job description from URL..."
-                )
+                progress.progress(5, text="Step 1/5: Fetching job description from URL...")
                 source_jd_text, extraction_meta = extract_jd_from_url(jd_url_clean)
                 if not source_jd_text:
                     # Build detailed error message with diagnostics
                     error_parts = ["Could not extract job description from URL."]
                     if extraction_meta.get("company"):
-                        error_parts.append(
-                            f"Detected company: {extraction_meta['company']}"
-                        )
+                        error_parts.append(f"Detected company: {extraction_meta['company']}")
                     if extraction_meta.get("selectors_tried"):
                         error_parts.append(
                             f"Tried {len(extraction_meta['selectors_tried'])} selectors"
                         )
-                    error_parts.append(
-                        f"Method: {extraction_meta.get('method', 'unknown')}"
-                    )
+                    error_parts.append(f"Method: {extraction_meta.get('method', 'unknown')}")
                     error_parts.append("Please paste the JD text and try again.")
                     raise ValueError(" | ".join(error_parts))
                 if extraction_meta.get("linkedin_fallback_used"):
                     alt_src = extraction_meta.get("alternate_source_url", "")
-                    st.caption(
-                        f"LinkedIn JD was incomplete. Full content from: {alt_src}"
-                    )
-                progress.progress(
-                    12, text="Step 1/5: Job description extracted from URL."
-                )
+                    st.caption(f"LinkedIn JD was incomplete. Full content from: {alt_src}")
+                progress.progress(12, text="Step 1/5: Job description extracted from URL.")
             else:
                 progress.progress(12, text="Step 1/5: Using pasted job description.")
 
@@ -262,9 +250,7 @@ if generate_button:
                     custom_style = load_template_style(selected_template["path"])
                     st.caption(f"Applying style from: {selected_template['name']}")
                 except Exception as style_error:
-                    st.warning(
-                        f"Could not load template style, using default: {style_error}"
-                    )
+                    st.warning(f"Could not load template style, using default: {style_error}")
 
             outputs = generate_output(
                 adapted,
@@ -318,9 +304,7 @@ if generate_button:
             resume = Resume(
                 application_id=app_id,
                 template_used=result.adapted_resume.template_used.value,
-                content_json=json.dumps(
-                    result.adapted_resume.model_dump(), default=str
-                ),
+                content_json=json.dumps(result.adapted_resume.model_dump(), default=str),
                 pdf_path=result.pdf_path,
                 docx_path=result.docx_path,
                 ats_score=result.ats_score.overall_score,
@@ -330,12 +314,8 @@ if generate_button:
             tracker_db.add_resume(resume)
 
             progress.progress(100, text="Complete. Resume generated successfully.")
-            status.update(
-                label="Resume generated successfully.", state="complete", expanded=False
-            )
-            st.success(
-                f"Resume generated for {company} - {role} (Application #{app_id})"
-            )
+            status.update(label="Resume generated successfully.", state="complete", expanded=False)
+            st.success(f"Resume generated for {company} - {role} (Application #{app_id})")
 
     except BudgetExceededError as exc:
         st.error(f"Budget exceeded: {exc}")
@@ -358,9 +338,7 @@ if "pipeline_result" in st.session_state:
         col3.metric("Recommended Format", result.ats_score.recommended_format.upper())
 
         if result.ats_score.missing_keywords:
-            st.warning(
-                f"Missing keywords: {', '.join(result.ats_score.missing_keywords[:10])}"
-            )
+            st.warning(f"Missing keywords: {', '.join(result.ats_score.missing_keywords[:10])}")
 
         if result.ats_score.warnings:
             for warning in result.ats_score.warnings:
@@ -413,9 +391,7 @@ if "pipeline_result" in st.session_state:
 
     with st.expander("Export", expanded=False):
         default_name = Path(result.pdf_path).stem if result.pdf_path else "resume"
-        custom_name = st.text_input(
-            "Filename:", value=default_name, key="custom_filename"
-        )
+        custom_name = st.text_input("Filename:", value=default_name, key="custom_filename")
 
         col1, col2 = st.columns(2)
 
@@ -521,9 +497,7 @@ if "pipeline_result" in st.session_state:
         st.markdown("**Experience Blocks:**")
         for exp in adapted.experience_blocks:
             end = exp.get("end") or "Present"
-            st.markdown(
-                f"**{exp['role']}** - {exp['company']} ({exp['start']} to {end})"
-            )
+            st.markdown(f"**{exp['role']}** - {exp['company']} ({exp['start']} to {end})")
             for bullet in exp.get("bullets", []):
                 st.markdown(f"- {bullet}")
 

@@ -52,9 +52,7 @@ class FakeRunner(SiteRunner):
     def detect(self, url: str) -> bool:
         return self.pattern in url.lower()
 
-    def fill_and_submit(
-        self, page, job_url, resume_path, answers, market="us", dry_run=True
-    ):
+    def fill_and_submit(self, page, job_url, resume_path, answers, market="us", dry_run=True):
         return AttemptResult(
             status=self.result_status,
             steps_taken=3,
@@ -73,9 +71,7 @@ class FailingRunner(SiteRunner):
     def detect(self, url: str) -> bool:
         return self.pattern in url.lower()
 
-    def fill_and_submit(
-        self, page, job_url, resume_path, answers, market="us", dry_run=True
-    ):
+    def fill_and_submit(self, page, job_url, resume_path, answers, market="us", dry_run=True):
         return AttemptResult(
             status=AttemptStatus.FAILED_PERMANENT,
             errors=["Simulated failure"],
@@ -197,9 +193,7 @@ def test_rate_limit_daily(mock_answer_bank):
 
 def test_rate_limit_cost(mock_answer_bank):
     """Cost cap blocks when daily cost exceeded."""
-    config = RateLimitConfig(
-        max_per_hour=100, max_per_day=100, max_cost_per_day_usd=0.01
-    )
+    config = RateLimitConfig(max_per_hour=100, max_per_day=100, max_cost_per_day_usd=0.01)
     engine = AutoApplyEngine(answer_bank=mock_answer_bank, config=config)
     # Manually set cost above cap
     engine._daily_cost = 0.02
@@ -214,20 +208,13 @@ def test_apply_batch_stops_on_3_failures(mock_answer_bank):
     config = RateLimitConfig(max_per_hour=100, max_per_day=100)
     engine = AutoApplyEngine(answer_bank=mock_answer_bank, config=config)
 
-    fail_result = AttemptResult(
-        status=AttemptStatus.FAILED_PERMANENT, errors=["Simulated failure"]
-    )
+    fail_result = AttemptResult(status=AttemptStatus.FAILED_PERMANENT, errors=["Simulated failure"])
 
-    def fake_apply_single(
-        job_url, resume_path, market="us", dry_run=True, attempt_dir=None
-    ):
+    def fake_apply_single(job_url, resume_path, market="us", dry_run=True, attempt_dir=None):
         engine._update_counters(fail_result)
         return fail_result
 
-    queue = [
-        {"job_url": f"https://fail.ats.com/job/{i}", "resume_path": "r.pdf"}
-        for i in range(6)
-    ]
+    queue = [{"job_url": f"https://fail.ats.com/job/{i}", "resume_path": "r.pdf"} for i in range(6)]
 
     with patch.object(engine, "apply_single", side_effect=fake_apply_single):
         summary = engine.apply_batch(queue)
@@ -380,20 +367,13 @@ def test_monitor_stops_batch_on_consecutive_failures(mock_answer_bank):
     config = RateLimitConfig(max_per_hour=100, max_per_day=100)
     engine = AutoApplyEngine(answer_bank=mock_answer_bank, config=config)
 
-    fail_result = AttemptResult(
-        status=AttemptStatus.FAILED_PERMANENT, errors=["Simulated failure"]
-    )
+    fail_result = AttemptResult(status=AttemptStatus.FAILED_PERMANENT, errors=["Simulated failure"])
 
-    def fake_apply_single(
-        job_url, resume_path, market="us", dry_run=True, attempt_dir=None
-    ):
+    def fake_apply_single(job_url, resume_path, market="us", dry_run=True, attempt_dir=None):
         engine._update_counters(fail_result)
         return fail_result
 
-    queue = [
-        {"job_url": f"https://fail.ats.com/job/{i}", "resume_path": "r.pdf"}
-        for i in range(6)
-    ]
+    queue = [{"job_url": f"https://fail.ats.com/job/{i}", "resume_path": "r.pdf"} for i in range(6)]
 
     with patch.object(engine, "apply_single", side_effect=fake_apply_single):
         summary = engine.apply_batch(queue)
@@ -414,16 +394,11 @@ def test_batch_summary_returned(mock_answer_bank):
 
     soft_result = AttemptResult(status=AttemptStatus.APPLIED_SOFT)
 
-    def fake_apply_single(
-        job_url, resume_path, market="us", dry_run=True, attempt_dir=None
-    ):
+    def fake_apply_single(job_url, resume_path, market="us", dry_run=True, attempt_dir=None):
         engine._update_counters(soft_result)
         return soft_result
 
-    queue = [
-        {"job_url": f"https://fake.ats.com/job/{i}", "resume_path": "r.pdf"}
-        for i in range(3)
-    ]
+    queue = [{"job_url": f"https://fake.ats.com/job/{i}", "resume_path": "r.pdf"} for i in range(3)]
 
     with patch.object(engine, "apply_single", side_effect=fake_apply_single):
         summary = engine.apply_batch(queue)
@@ -443,9 +418,7 @@ def test_hitl_flag_set_when_pauses_exist(mock_answer_bank):
 
     paused_result = AttemptResult(status=AttemptStatus.PAUSED_UNKNOWN_QUESTION)
 
-    def fake_apply_single(
-        job_url, resume_path, market="us", dry_run=True, attempt_dir=None
-    ):
+    def fake_apply_single(job_url, resume_path, market="us", dry_run=True, attempt_dir=None):
         engine._update_counters(paused_result)
         return paused_result
 

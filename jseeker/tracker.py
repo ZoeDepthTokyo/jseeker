@@ -161,15 +161,9 @@ def init_db(db_path: Path = None) -> None:
         UNIQUE(pattern_type, source_text, jd_context)
     )""")
 
-    c.execute(
-        "CREATE INDEX IF NOT EXISTS idx_pattern_type ON learned_patterns(pattern_type)"
-    )
-    c.execute(
-        "CREATE INDEX IF NOT EXISTS idx_frequency ON learned_patterns(frequency DESC)"
-    )
-    c.execute(
-        "CREATE INDEX IF NOT EXISTS idx_last_used ON learned_patterns(last_used_at DESC)"
-    )
+    c.execute("CREATE INDEX IF NOT EXISTS idx_pattern_type ON learned_patterns(pattern_type)")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_frequency ON learned_patterns(frequency DESC)")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_last_used ON learned_patterns(last_used_at DESC)")
 
     c.execute("""CREATE TABLE IF NOT EXISTS jd_cache (
         id INTEGER PRIMARY KEY,
@@ -184,9 +178,7 @@ def init_db(db_path: Path = None) -> None:
     )""")
 
     c.execute("CREATE INDEX IF NOT EXISTS idx_jd_cache_title ON jd_cache(title)")
-    c.execute(
-        "CREATE INDEX IF NOT EXISTS idx_jd_cache_hits ON jd_cache(hit_count DESC)"
-    )
+    c.execute("CREATE INDEX IF NOT EXISTS idx_jd_cache_hits ON jd_cache(hit_count DESC)")
 
     c.execute("""CREATE TABLE IF NOT EXISTS intelligence_cache (
         id INTEGER PRIMARY KEY,
@@ -245,9 +237,7 @@ def init_db(db_path: Path = None) -> None:
     c.execute(
         "CREATE INDEX IF NOT EXISTS idx_batch_job_items_batch_id ON batch_job_items(batch_id)"
     )
-    c.execute(
-        "CREATE INDEX IF NOT EXISTS idx_batch_job_items_status ON batch_job_items(status)"
-    )
+    c.execute("CREATE INDEX IF NOT EXISTS idx_batch_job_items_status ON batch_job_items(status)")
 
     c.execute("""CREATE TABLE IF NOT EXISTS saved_searches (
         id INTEGER PRIMARY KEY,
@@ -297,12 +287,8 @@ def init_db(db_path: Path = None) -> None:
         HAVING COUNT(*) >= 3
     """)
 
-    c.execute(
-        "CREATE INDEX IF NOT EXISTS idx_apply_queue_status ON apply_queue(status)"
-    )
-    c.execute(
-        "CREATE INDEX IF NOT EXISTS idx_apply_errors_queue_id ON apply_errors(queue_id)"
-    )
+    c.execute("CREATE INDEX IF NOT EXISTS idx_apply_queue_status ON apply_queue(status)")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_apply_errors_queue_id ON apply_errors(queue_id)")
 
     conn.commit()
     conn.close()
@@ -374,9 +360,7 @@ def _run_migrations(db_path: Path) -> None:
 
         if "salary_currency" not in app_columns:
             try:
-                c.execute(
-                    "ALTER TABLE applications ADD COLUMN salary_currency TEXT DEFAULT 'USD'"
-                )
+                c.execute("ALTER TABLE applications ADD COLUMN salary_currency TEXT DEFAULT 'USD'")
                 conn.commit()
                 logger = logging.getLogger(__name__)
                 logger.info("Added salary_currency column to applications table")
@@ -683,9 +667,7 @@ class TrackerDB:
         except sqlite3.Error:
             conn.close()
             # Retry once if health check fails
-            conn = sqlite3.connect(
-                str(self.db_path), timeout=30.0, check_same_thread=False
-            )
+            conn = sqlite3.connect(str(self.db_path), timeout=30.0, check_same_thread=False)
             conn.row_factory = sqlite3.Row
 
         return conn
@@ -821,9 +803,7 @@ class TrackerDB:
                         f"'{old_name}' -> existing {existing['id']} '{new_name}'"
                     )
                 else:
-                    c.execute(
-                        "UPDATE companies SET name = ? WHERE id = ?", (new_name, cid)
-                    )
+                    c.execute("UPDATE companies SET name = ? WHERE id = ?", (new_name, cid))
                     _logger.info(
                         f"sanitize_existing_companies | renamed {cid}: '{old_name}' -> '{new_name}'"
                     )
@@ -1028,9 +1008,7 @@ class TrackerDB:
         conn.close()
 
         logger = logging.getLogger(__name__)
-        logger.info(
-            f"Deleted application {app_id} and {len(resume_ids)} associated resume(s)"
-        )
+        logger.info(f"Deleted application {app_id} and {len(resume_ids)} associated resume(s)")
         return True
 
     # ── Resumes ────────────────────────────────────────────────────
@@ -1217,17 +1195,13 @@ class TrackerDB:
         conn = self._conn()
         c = conn.cursor()
 
-        c.execute(
-            "SELECT id FROM search_tags WHERE LOWER(tag) = LOWER(?)", (normalized_tag,)
-        )
+        c.execute("SELECT id FROM search_tags WHERE LOWER(tag) = LOWER(?)", (normalized_tag,))
         if c.fetchone():
             conn.close()
             return None
 
         try:
-            c.execute(
-                "INSERT INTO search_tags (tag, active) VALUES (?, 1)", (normalized_tag,)
-            )
+            c.execute("INSERT INTO search_tags (tag, active) VALUES (?, 1)", (normalized_tag,))
             conn.commit()
             row_id = c.lastrowid
         except sqlite3.IntegrityError:
@@ -1320,9 +1294,7 @@ class TrackerDB:
 
     # ── Search Sessions ────────────────────────────────────────────
 
-    def create_search_session(
-        self, tags: list[str], markets: list[str], sources: list[str]
-    ) -> int:
+    def create_search_session(self, tags: list[str], markets: list[str], sources: list[str]) -> int:
         """Create a new search session."""
         conn = self._conn()
         c = conn.cursor()
@@ -1457,13 +1429,11 @@ class TrackerDB:
         """
         conn = self._conn()
         c = conn.cursor()
-        c.execute(
-            """SELECT r.*, a.role_title, a.jd_url, a.company_id, c.name as company_name
+        c.execute("""SELECT r.*, a.role_title, a.jd_url, a.company_id, c.name as company_name
             FROM resumes r
             LEFT JOIN applications a ON r.application_id = a.id
             LEFT JOIN companies c ON a.company_id = c.id
-            ORDER BY r.created_at DESC"""
-        )
+            ORDER BY r.created_at DESC""")
         rows = c.fetchall()
         conn.close()
         return [dict(r) for r in rows]
@@ -1618,9 +1588,7 @@ class TrackerDB:
         )
         active = c.fetchone()["active"]
 
-        c.execute(
-            "SELECT AVG(r.ats_score) as avg_score FROM resumes r WHERE r.ats_score > 0"
-        )
+        c.execute("SELECT AVG(r.ats_score) as avg_score FROM resumes r WHERE r.ats_score > 0")
         row = c.fetchone()
         avg_score = round(row["avg_score"], 1) if row and row["avg_score"] else 0
 
@@ -2081,9 +2049,7 @@ class TrackerDB:
         with open(csv_path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
-                company_id = self.get_or_create_company(
-                    row.get("company_name", "Unknown")
-                )
+                company_id = self.get_or_create_company(row.get("company_name", "Unknown"))
                 app = Application(
                     company_id=company_id,
                     role_title=row.get("role_title", "Unknown"),

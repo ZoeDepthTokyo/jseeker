@@ -118,9 +118,7 @@ def test_hard_verification_workday_confirmationpage_url(
 
 def test_hard_verification_greenhouse_url_signal(verifier: ApplyVerifier) -> None:
     """URL ending with /confirmation produces hard verification."""
-    page = make_mock_page(
-        url="https://boards.greenhouse.io/company/jobs/123/confirmation"
-    )
+    page = make_mock_page(url="https://boards.greenhouse.io/company/jobs/123/confirmation")
     result = verifier.verify(page, "greenhouse", {})
     assert result.is_verified is True
     assert result.confidence == "hard"
@@ -207,9 +205,7 @@ def test_unknown_platform_returns_none(verifier: ApplyVerifier) -> None:
     assert "Unknown platform" in result.reason
 
 
-def test_verification_saves_screenshot_on_success(
-    verifier: ApplyVerifier, tmp_path: Path
-) -> None:
+def test_verification_saves_screenshot_on_success(verifier: ApplyVerifier, tmp_path: Path) -> None:
     """Successful verification saves screenshot artifact."""
     page = make_mock_page(url="https://company.myworkdayjobs.com/thankyou")
 

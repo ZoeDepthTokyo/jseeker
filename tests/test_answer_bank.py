@@ -183,9 +183,7 @@ def test_personal_info_case_insensitive(bank: AnswerBank) -> None:
 
 
 def test_screening_years_of_experience(bank: AnswerBank) -> None:
-    answer, pause = answer_screening_question(
-        bank, "How many years of experience do you have?"
-    )
+    answer, pause = answer_screening_question(bank, "How many years of experience do you have?")
     assert answer == "7"
     assert pause is False
 
@@ -209,9 +207,7 @@ def test_screening_diversity_eeo(bank: AnswerBank) -> None:
 
 
 def test_screening_work_authorization(bank: AnswerBank) -> None:
-    answer, pause = answer_screening_question(
-        bank, "Are you authorized to work in this country?"
-    )
+    answer, pause = answer_screening_question(bank, "Are you authorized to work in this country?")
     assert answer == "yes"
     assert pause is False
 
@@ -247,9 +243,7 @@ def test_screening_criminal_background(bank: AnswerBank) -> None:
 
 
 def test_screening_drug_test(bank: AnswerBank) -> None:
-    answer, pause = answer_screening_question(
-        bank, "Are you willing to take a drug test?"
-    )
+    answer, pause = answer_screening_question(bank, "Are you willing to take a drug test?")
     assert answer == "yes"
     assert pause is False
 

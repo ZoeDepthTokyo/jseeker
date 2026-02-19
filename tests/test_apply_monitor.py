@@ -57,9 +57,7 @@ class TestConsecutiveFailures:
     def test_consecutive_failures_pauses_engine(self, monitor: ApplyMonitor):
         """3 consecutive failures should pause the engine."""
         for _ in range(3):
-            decision = monitor.record_attempt(
-                make_result("failed_permanent"), "workday"
-            )
+            decision = monitor.record_attempt(make_result("failed_permanent"), "workday")
         assert decision.should_continue is False
         assert decision.consecutive_failures == 3
         assert "consecutive failures" in decision.pause_reason
@@ -73,9 +71,7 @@ class TestConsecutiveFailures:
     def test_two_failures_does_not_pause(self, monitor: ApplyMonitor):
         """Two consecutive failures should still allow continuation."""
         for _ in range(2):
-            decision = monitor.record_attempt(
-                make_result("failed_permanent"), "workday"
-            )
+            decision = monitor.record_attempt(make_result("failed_permanent"), "workday")
         assert decision.should_continue is True
         assert decision.consecutive_failures == 2
 
@@ -104,9 +100,7 @@ class TestPlatformDisable:
     def test_platform_failures_disables_platform(self, monitor: ApplyMonitor):
         """3 failures on same platform should disable it."""
         for _ in range(3):
-            decision = monitor.record_attempt(
-                make_result("failed_permanent"), "greenhouse"
-            )
+            decision = monitor.record_attempt(make_result("failed_permanent"), "greenhouse")
         assert "greenhouse" in decision.platform_disabled
 
     def test_reset_platform_re_enables(self, monitor: ApplyMonitor):
@@ -134,9 +128,7 @@ class TestRateLimits:
     def test_daily_limit_stops_engine(self, tight_monitor: ApplyMonitor):
         """Exceeding daily limit should stop the engine."""
         for _ in range(5):
-            decision = tight_monitor.record_attempt(
-                make_result("applied_soft"), "workday"
-            )
+            decision = tight_monitor.record_attempt(make_result("applied_soft"), "workday")
         assert decision.should_continue is False
         assert "Daily limit" in decision.pause_reason
         assert decision.daily_count == 5
@@ -144,9 +136,7 @@ class TestRateLimits:
     def test_hourly_limit_throttles(self, tight_monitor: ApplyMonitor):
         """Exceeding hourly limit should throttle the engine."""
         for _ in range(3):
-            decision = tight_monitor.record_attempt(
-                make_result("applied_soft"), "workday"
-            )
+            decision = tight_monitor.record_attempt(make_result("applied_soft"), "workday")
         assert decision.should_continue is False
         assert "Hourly limit" in decision.pause_reason
         assert decision.hourly_count == 3
@@ -189,9 +179,7 @@ class TestAlertMessages:
     def test_monitor_decision_has_alert_message_on_pause(self, monitor: ApplyMonitor):
         """3 consecutive failures should produce an alert message."""
         for _ in range(3):
-            decision = monitor.record_attempt(
-                make_result("failed_permanent"), "workday"
-            )
+            decision = monitor.record_attempt(make_result("failed_permanent"), "workday")
         assert decision.alert_message is not None
         assert "HITL required" in decision.alert_message
 

@@ -717,9 +717,7 @@ def rank_discoveries_by_tag_weight(
     resume_keywords = _get_resume_keywords()
 
     # Pre-fetch ALL tag weights in one query instead of N*M individual DB calls
-    all_weights: dict[str, int] = {
-        tw["tag"]: tw["weight"] for tw in tracker_db.list_tag_weights()
-    }
+    all_weights: dict[str, int] = {tw["tag"]: tw["weight"] for tw in tracker_db.list_tag_weights()}
 
     for disc in discoveries:
         total_weight = 0

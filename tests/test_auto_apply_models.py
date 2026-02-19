@@ -244,9 +244,7 @@ def test_log_apply_error(db_path):
     )
     conn = sqlite3.connect(str(db_path))
     conn.row_factory = sqlite3.Row
-    row = conn.execute(
-        "SELECT * FROM apply_errors WHERE queue_id = ?", (qid,)
-    ).fetchone()
+    row = conn.execute("SELECT * FROM apply_errors WHERE queue_id = ?", (qid,)).fetchone()
     conn.close()
     assert row["error_type"] == "captcha"
     assert row["error_message"] == "CAPTCHA detected"

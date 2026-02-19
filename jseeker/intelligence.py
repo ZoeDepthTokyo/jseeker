@@ -33,9 +33,7 @@ def aggregate_jd_corpus(db_path=None) -> dict:
     conn.row_factory = sqlite3.Row
 
     # --- Parse all cached JDs ---
-    rows = conn.execute(
-        "SELECT parsed_json FROM jd_cache WHERE parsed_json IS NOT NULL"
-    ).fetchall()
+    rows = conn.execute("SELECT parsed_json FROM jd_cache WHERE parsed_json IS NOT NULL").fetchall()
 
     keyword_counter: Counter = Counter()
     skill_counter: Counter = Counter()
@@ -138,10 +136,7 @@ def generate_ideal_candidate_brief(
     from jseeker.tracker import tracker_db
     from jseeker.llm import llm
 
-    jd_hash = (
-        getattr(parsed_jd, "_pruned_hash", None)
-        or (parsed_jd.title + parsed_jd.company)[:64]
-    )
+    jd_hash = getattr(parsed_jd, "_pruned_hash", None) or (parsed_jd.title + parsed_jd.company)[:64]
 
     # Cache check
     cached = tracker_db.get_intelligence(jd_hash)
@@ -156,9 +151,7 @@ def generate_ideal_candidate_brief(
         )
 
     # Build prompt
-    prompt_path = (
-        Path(__file__).parent.parent / "data" / "prompts" / "ideal_candidate.txt"
-    )
+    prompt_path = Path(__file__).parent.parent / "data" / "prompts" / "ideal_candidate.txt"
     template = prompt_path.read_text(encoding="utf-8")
 
     requirements = ""
@@ -311,9 +304,7 @@ def export_profile_docx(report: "IntelligenceReport", output_path: Path) -> Path
 
     # Coverage metric
     doc.add_heading("Keyword Coverage", level=2)
-    doc.add_paragraph(
-        f"{report.keyword_coverage:.0%} of JD keywords covered by your resume."
-    )
+    doc.add_paragraph(f"{report.keyword_coverage:.0%} of JD keywords covered by your resume.")
 
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)

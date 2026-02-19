@@ -8,13 +8,17 @@ import pytest
 from jseeker.adapter import get_address_for_language
 from jseeker.jd_parser import detect_jd_language, detect_language
 
+# Project-relative paths — never hardcode machine-specific absolute paths
+_PROJECT_ROOT = Path(__file__).parent.parent
+_TEMPLATES_DIR = _PROJECT_ROOT / "data" / "templates"
+
 
 class TestFontConsistency:
     """Test single font family enforcement (no Calibri)."""
 
     def test_css_no_calibri(self):
         """CSS should not contain Calibri font."""
-        css_path = Path("X:/Projects/jSeeker/data/templates/two_column.css")
+        css_path = _TEMPLATES_DIR / "two_column.css"
         assert css_path.exists(), "CSS template not found"
 
         css_content = css_path.read_text(encoding="utf-8")
@@ -22,7 +26,7 @@ class TestFontConsistency:
 
     def test_css_uses_sans_serif_fonts(self):
         """CSS should use universal sans-serif font stack."""
-        css_path = Path("X:/Projects/jSeeker/data/templates/two_column.css")
+        css_path = _TEMPLATES_DIR / "two_column.css"
         css_content = css_path.read_text(encoding="utf-8")
 
         # Check body font-family
@@ -39,7 +43,7 @@ class TestTypographyHierarchy:
 
     def test_css_header_h1_size(self):
         """Header h1 should be 20pt (compact layout)."""
-        css_path = Path("X:/Projects/jSeeker/data/templates/two_column.css")
+        css_path = _TEMPLATES_DIR / "two_column.css"
         css_content = css_path.read_text(encoding="utf-8")
 
         h1_match = re.search(r"\.header\s+h1\s*\{[^}]*font-size:\s*(\d+)pt", css_content, re.DOTALL)
@@ -48,7 +52,7 @@ class TestTypographyHierarchy:
 
     def test_css_header_h2_size_and_italic(self):
         """Header h2 should be 12pt italic."""
-        css_path = Path("X:/Projects/jSeeker/data/templates/two_column.css")
+        css_path = _TEMPLATES_DIR / "two_column.css"
         css_content = css_path.read_text(encoding="utf-8")
 
         h2_section = re.search(r"\.header\s+h2\s*\{([^}]+)\}", css_content, re.DOTALL)
@@ -60,7 +64,7 @@ class TestTypographyHierarchy:
 
     def test_css_section_h3_size(self):
         """Section h3 should be 10pt (compact layout)."""
-        css_path = Path("X:/Projects/jSeeker/data/templates/two_column.css")
+        css_path = _TEMPLATES_DIR / "two_column.css"
         css_content = css_path.read_text(encoding="utf-8")
 
         h3_match = re.search(
@@ -71,7 +75,7 @@ class TestTypographyHierarchy:
 
     def test_css_section_h3_border(self):
         """Section h3 should have 2px solid border."""
-        css_path = Path("X:/Projects/jSeeker/data/templates/two_column.css")
+        css_path = _TEMPLATES_DIR / "two_column.css"
         css_content = css_path.read_text(encoding="utf-8")
 
         h3_match = re.search(
@@ -81,7 +85,7 @@ class TestTypographyHierarchy:
 
     def test_css_company_italic(self):
         """Company names should be italic."""
-        css_path = Path("X:/Projects/jSeeker/data/templates/two_column.css")
+        css_path = _TEMPLATES_DIR / "two_column.css"
         css_content = css_path.read_text(encoding="utf-8")
 
         company_match = re.search(
@@ -91,7 +95,7 @@ class TestTypographyHierarchy:
 
     def test_css_strong_weight_and_color(self):
         """Strong tags should be font-weight 700 and color #1a1a1a."""
-        css_path = Path("X:/Projects/jSeeker/data/templates/two_column.css")
+        css_path = _TEMPLATES_DIR / "two_column.css"
         css_content = css_path.read_text(encoding="utf-8")
 
         strong_section = re.search(r"strong\s*\{([^}]+)\}", css_content, re.DOTALL)
@@ -107,7 +111,7 @@ class TestSpacingConsistency:
 
     def test_css_line_height(self):
         """Body line-height should be 1.3 (compact layout)."""
-        css_path = Path("X:/Projects/jSeeker/data/templates/two_column.css")
+        css_path = _TEMPLATES_DIR / "two_column.css"
         css_content = css_path.read_text(encoding="utf-8")
 
         body_match = re.search(r"body\s*\{[^}]*line-height:\s*([\d.]+)", css_content, re.DOTALL)
@@ -116,7 +120,7 @@ class TestSpacingConsistency:
 
     def test_css_section_spacing(self):
         """Section h3 margin-bottom should be 10pt (compact layout)."""
-        css_path = Path("X:/Projects/jSeeker/data/templates/two_column.css")
+        css_path = _TEMPLATES_DIR / "two_column.css"
         css_content = css_path.read_text(encoding="utf-8")
 
         h3_match = re.search(
@@ -127,7 +131,7 @@ class TestSpacingConsistency:
 
     def test_css_bullet_spacing(self):
         """Bullet li margin-bottom should be 2pt (compact layout)."""
-        css_path = Path("X:/Projects/jSeeker/data/templates/two_column.css")
+        css_path = _TEMPLATES_DIR / "two_column.css"
         css_content = css_path.read_text(encoding="utf-8")
 
         bullet_match = re.search(
@@ -138,7 +142,7 @@ class TestSpacingConsistency:
 
     def test_css_experience_entry_spacing(self):
         """Experience entries should have 6pt margin-bottom (compact layout)."""
-        css_path = Path("X:/Projects/jSeeker/data/templates/two_column.css")
+        css_path = _TEMPLATES_DIR / "two_column.css"
         css_content = css_path.read_text(encoding="utf-8")
 
         exp_match = re.search(
@@ -153,7 +157,7 @@ class TestInformationOrder:
 
     def test_html_experience_before_education(self):
         """Experience section must appear before Education in right column."""
-        html_path = Path("X:/Projects/jSeeker/data/templates/two_column.html")
+        html_path = _TEMPLATES_DIR / "two_column.html"
         assert html_path.exists(), "HTML template not found"
 
         html_content = html_path.read_text(encoding="utf-8")
@@ -174,7 +178,7 @@ class TestInformationOrder:
 
     def test_html_right_column_order(self):
         """Right column should be: Header → Summary → Experience."""
-        html_path = Path("X:/Projects/jSeeker/data/templates/two_column.html")
+        html_path = _TEMPLATES_DIR / "two_column.html"
         html_content = html_path.read_text(encoding="utf-8")
 
         # Find right column
@@ -195,7 +199,7 @@ class TestInformationOrder:
 
     def test_html_location_has_class(self):
         """Location elements should have 'location' class for styling."""
-        html_path = Path("X:/Projects/jSeeker/data/templates/two_column.html")
+        html_path = _TEMPLATES_DIR / "two_column.html"
         html_content = html_path.read_text(encoding="utf-8")
 
         # Check contact location
@@ -284,8 +288,8 @@ class TestIntegration:
 
     def test_css_and_html_consistency(self):
         """CSS classes should match HTML template classes."""
-        css_path = Path("X:/Projects/jSeeker/data/templates/two_column.css")
-        html_path = Path("X:/Projects/jSeeker/data/templates/two_column.html")
+        css_path = _TEMPLATES_DIR / "two_column.css"
+        html_path = _TEMPLATES_DIR / "two_column.html"
 
         css_content = css_path.read_text(encoding="utf-8")
         html_content = html_path.read_text(encoding="utf-8")
@@ -305,16 +309,16 @@ class TestIntegration:
 
     def test_templates_exist(self):
         """Template files should exist."""
-        css_path = Path("X:/Projects/jSeeker/data/templates/two_column.css")
-        html_path = Path("X:/Projects/jSeeker/data/templates/two_column.html")
+        css_path = _TEMPLATES_DIR / "two_column.css"
+        html_path = _TEMPLATES_DIR / "two_column.html"
 
         assert css_path.exists(), "CSS template should exist"
         assert html_path.exists(), "HTML template should exist"
 
     def test_template_encoding(self):
         """Templates should be UTF-8 encoded."""
-        css_path = Path("X:/Projects/jSeeker/data/templates/two_column.css")
-        html_path = Path("X:/Projects/jSeeker/data/templates/two_column.html")
+        css_path = _TEMPLATES_DIR / "two_column.css"
+        html_path = _TEMPLATES_DIR / "two_column.html"
 
         # Should not raise encoding errors
         css_path.read_text(encoding="utf-8")

@@ -140,9 +140,7 @@ def test_build_salary_insight_no_data():
     mock_jd.market = "us"
     mock_jd.salary_min = None
     mock_jd.salary_max = None
-    result = _build_salary_insight(
-        mock_jd, {"salary_by_market": {}, "salary_percentiles": {}}
-    )
+    result = _build_salary_insight(mock_jd, {"salary_by_market": {}, "salary_percentiles": {}})
     assert result["available"] is False
     assert "message" in result
 

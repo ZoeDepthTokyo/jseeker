@@ -456,9 +456,10 @@ def test_rank_by_relevance_then_freshness():
 
     weight_table = {"Product Designer": 80, "Junior": 30}
 
-    with patch("jseeker.job_discovery.tracker_db.list_tag_weights") as mock_list_weights, patch(
-        "jseeker.job_discovery._get_resume_keywords"
-    ) as mock_keywords:
+    with (
+        patch("jseeker.job_discovery.tracker_db.list_tag_weights") as mock_list_weights,
+        patch("jseeker.job_discovery._get_resume_keywords") as mock_keywords,
+    ):
         mock_list_weights.return_value = [
             {"tag": tag, "weight": w} for tag, w in weight_table.items()
         ]

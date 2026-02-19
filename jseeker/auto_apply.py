@@ -208,9 +208,7 @@ class AutoApplyEngine:
             AttemptStatus.APPLIED_VERIFIED,
         ):
             platform_name = self._get_platform_name(runner)
-            verification = self.verifier.verify(
-                page, platform_name, {}, logs_dir=attempt_dir
-            )
+            verification = self.verifier.verify(page, platform_name, {}, logs_dir=attempt_dir)
             if verification.is_verified:
                 result.status = AttemptStatus.APPLIED_VERIFIED
                 result.confirmation_text = verification.confirmation_text
@@ -291,9 +289,7 @@ class AutoApplyEngine:
                 delay = self._randomized_delay(self.config.cooldown_seconds)
                 logger.info(f"Cooldown: {delay}s before next application")
 
-        return self._build_batch_summary(
-            results, stopped_early, stop_reason, paused_items
-        )
+        return self._build_batch_summary(results, stopped_early, stop_reason, paused_items)
 
     def _check_rate_limit(self) -> bool:
         """Check if we're within rate limits.
@@ -331,14 +327,10 @@ class AutoApplyEngine:
             AttemptStatus.APPLIED_SOFT,
         ):
             self._consecutive_failures = 0
-        elif result.status.value.startswith("failed") or result.status.value.startswith(
-            "paused"
-        ):
+        elif result.status.value.startswith("failed") or result.status.value.startswith("paused"):
             self._consecutive_failures += 1
 
-    def _save_artifacts(
-        self, attempt_id: str, result: AttemptResult, attempt_dir: Path
-    ) -> Path:
+    def _save_artifacts(self, attempt_id: str, result: AttemptResult, attempt_dir: Path) -> Path:
         """Save attempt log and artifacts to disk.
 
         Args:

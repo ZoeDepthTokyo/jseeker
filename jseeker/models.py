@@ -146,9 +146,7 @@ class ParsedJD(BaseModel):
     culture_signals: list[str] = Field(default_factory=list)
     detected_ats: ATSPlatform = ATSPlatform.UNKNOWN
     jd_url: str = ""
-    alternate_source_url: str = (
-        ""  # URL where full JD was fetched (if different from jd_url)
-    )
+    alternate_source_url: str = ""  # URL where full JD was fetched (if different from jd_url)
     language: str = "en"  # "en" or "es" — auto-detected from JD
     market: str = "us"  # "us", "mx", "ca", "uk", "es", "dk", "fr"
 
@@ -409,18 +407,12 @@ class JobDiscovery(BaseModel):
     location: str = ""
     salary_range: str = ""
     url: str = ""
-    source: str = (
-        ""  # Clean source: "indeed", "linkedin", "wellfound" (no market suffix)
-    )
+    source: str = ""  # Clean source: "indeed", "linkedin", "wellfound" (no market suffix)
     market: str = ""  # Separate market field: "us", "mx", "ca", "uk", "es", "de"
     posting_date: Optional[date] = None
     search_tags: str = ""
-    search_tag_weights: dict[str, int] = (
-        {}
-    )  # Tag weights for ranking (not persisted to DB)
-    resume_match_score: float = (
-        0.0  # Resume library content match score (not persisted to DB)
-    )
+    search_tag_weights: dict[str, int] = {}  # Tag weights for ranking (not persisted to DB)
+    resume_match_score: float = 0.0  # Resume library content match score (not persisted to DB)
     composite_score: float = 0.0  # Composite relevance score (not persisted to DB)
     tag_weight_contribution: float = (
         0.0  # Tag weight component of composite score (not persisted to DB)

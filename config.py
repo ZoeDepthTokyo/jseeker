@@ -57,9 +57,7 @@ class JseekerSettings(_BaseSettings):
     workday_email: Optional[str] = Field(default=None, alias="WORKDAY_EMAIL")
     workday_password: Optional[str] = Field(default=None, alias="WORKDAY_PASSWORD")
     greenhouse_email: Optional[str] = Field(default=None, alias="GREENHOUSE_EMAIL")
-    greenhouse_password: Optional[str] = Field(
-        default=None, alias="GREENHOUSE_PASSWORD"
-    )
+    greenhouse_password: Optional[str] = Field(default=None, alias="GREENHOUSE_PASSWORD")
 
     # --- GAIA Integration ---
     # Set GAIA_ROOT env var to enable GAIA integration; omit for standalone operation.

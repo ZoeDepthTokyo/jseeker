@@ -52,9 +52,7 @@ class SiteRunner(ABC):
         """Return elapsed seconds since attempt start."""
         return round(time.time() - self._start_time, 2)
 
-    def _fill_field(
-        self, page: Page, selector: str, value: str, timeout: int = 5000
-    ) -> bool:
+    def _fill_field(self, page: Page, selector: str, value: str, timeout: int = 5000) -> bool:
         """Fill a form field. Returns True on success."""
         try:
             page.fill(selector, value, timeout=timeout)
@@ -74,9 +72,7 @@ class SiteRunner(ABC):
             self._log_step("click", selector, "", f"failed: {e}")
             return False
 
-    def _select_option(
-        self, page: Page, selector: str, value: str, timeout: int = 5000
-    ) -> bool:
+    def _select_option(self, page: Page, selector: str, value: str, timeout: int = 5000) -> bool:
         """Select dropdown option. Returns True on success."""
         try:
             page.select_option(selector, value, timeout=timeout)
@@ -138,11 +134,7 @@ class SiteRunner(ABC):
             {
                 "action": action,
                 "target": target,
-                "value": (
-                    value
-                    if action != "fill" or "password" not in target.lower()
-                    else "***"
-                ),
+                "value": (value if action != "fill" or "password" not in target.lower() else "***"),
                 "result": result,
                 "timestamp": time.time(),
                 "duration_ms": round((time.time() - self._start_time) * 1000),

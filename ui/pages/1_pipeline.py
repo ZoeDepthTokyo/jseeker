@@ -87,9 +87,7 @@ with tab1:
         apps = tracker_db.list_applications()
 
         if not apps:
-            st.info(
-                "No applications yet. Start by creating a new resume from a job description."
-            )
+            st.info("No applications yet. Start by creating a new resume from a job description.")
         else:
             for app in apps[:10]:
                 with st.container():
@@ -99,9 +97,7 @@ with tab1:
                     )
                     cols[1].caption(app.get("location", ""))
                     cols[2].caption(f"Resume: {app.get('resume_status', 'draft')}")
-                    cols[3].caption(
-                        f"App: {app.get('application_status', 'not_applied')}"
-                    )
+                    cols[3].caption(f"App: {app.get('application_status', 'not_applied')}")
                     cols[4].caption(f"Job: {app.get('job_status', 'active')}")
                     st.markdown("---")
 
@@ -114,26 +110,18 @@ with tab1:
         # Import Starred Jobs button
         col_import, col_spacer = st.columns([2, 3])
         with col_import:
-            if st.button(
-                "⭐ Import Starred Jobs", help="Load URLs from starred job discoveries"
-            ):
+            if st.button("⭐ Import Starred Jobs", help="Load URLs from starred job discoveries"):
                 starred_jobs = tracker_db.list_discoveries(status="starred")
                 if starred_jobs:
-                    starred_urls = [
-                        job["url"] for job in starred_jobs if job.get("url")
-                    ]
+                    starred_urls = [job["url"] for job in starred_jobs if job.get("url")]
                     if starred_urls:
-                        st.session_state["dashboard_batch_urls_value"] = "\n".join(
-                            starred_urls
-                        )
+                        st.session_state["dashboard_batch_urls_value"] = "\n".join(starred_urls)
                         st.success(f"Loaded {len(starred_urls)} starred job URLs")
                         st.rerun()
                     else:
                         st.warning("No URLs found in starred jobs")
                 else:
-                    st.info(
-                        "No starred jobs found. Go to Job Discovery and star some jobs first."
-                    )
+                    st.info("No starred jobs found. Go to Job Discovery and star some jobs first.")
 
         # Initialize batch URLs from session state if available
         default_urls = st.session_state.pop("dashboard_batch_urls_value", "")
@@ -147,14 +135,10 @@ with tab1:
         )
 
         raw_urls = [line.strip() for line in url_blob.splitlines() if line.strip()]
-        urls = [
-            u for u in raw_urls if u.startswith("http://") or u.startswith("https://")
-        ]
+        urls = [u for u in raw_urls if u.startswith("http://") or u.startswith("https://")]
 
         if raw_urls and len(urls) != len(raw_urls):
-            st.warning(
-                "Some lines were ignored because they are not valid http(s) URLs."
-            )
+            st.warning("Some lines were ignored because they are not valid http(s) URLs.")
 
         # Show warning if exceeding max batch size
         if len(urls) > 20:
@@ -189,8 +173,7 @@ with tab1:
                 (
                     "⏸️ Pause"
                     if not (
-                        st.session_state.batch_progress
-                        and st.session_state.batch_progress.paused
+                        st.session_state.batch_progress and st.session_state.batch_progress.paused
                     )
                     else "▶️ Resume"
                 ),
@@ -198,10 +181,7 @@ with tab1:
                 width="stretch",
                 key="batch_pause_btn",
             ):
-                if (
-                    st.session_state.batch_progress
-                    and st.session_state.batch_progress.paused
-                ):
+                if st.session_state.batch_progress and st.session_state.batch_progress.paused:
                     st.session_state.batch_processor.resume()
                 else:
                     st.session_state.batch_processor.pause()
@@ -220,10 +200,7 @@ with tab1:
 
         # Polling mechanism: Update progress FIRST before any UI rendering
         # (background thread callbacks can't trigger Streamlit reruns)
-        if (
-            st.session_state.resume_batch_running
-            and "batch_processor" in st.session_state
-        ):
+        if st.session_state.resume_batch_running and "batch_processor" in st.session_state:
             try:
                 current_progress = st.session_state.batch_processor.get_progress()
                 if current_progress:
@@ -235,10 +212,7 @@ with tab1:
                         + current_progress.failed
                         + current_progress.skipped
                     )
-                    if (
-                        done_count == current_progress.total
-                        and current_progress.total > 0
-                    ):
+                    if done_count == current_progress.total and current_progress.total > 0:
                         st.session_state.resume_batch_running = False
                         time.sleep(0.5)
                         st.rerun()
@@ -246,10 +220,7 @@ with tab1:
                 st.error(f"Error polling batch progress: {e}")
 
         # Show initial "Starting..." state when batch just started but no progress yet
-        if (
-            st.session_state.resume_batch_running
-            and not st.session_state.batch_progress
-        ):
+        if st.session_state.resume_batch_running and not st.session_state.batch_progress:
             st.progress(0.0, text="Starting batch... preparing workers")
             time.sleep(2)
             st.rerun()
@@ -265,13 +236,9 @@ with tab1:
                 # Segment info
                 segment_text = ""
                 if progress.total_segments > 1:
-                    segment_text = (
-                        f"Batch {progress.current_segment}/{progress.total_segments} "
-                    )
+                    segment_text = f"Batch {progress.current_segment}/{progress.total_segments} "
                     segment_range_start = (progress.current_segment - 1) * 10 + 1
-                    segment_range_end = min(
-                        progress.current_segment * 10, progress.total
-                    )
+                    segment_range_end = min(progress.current_segment * 10, progress.total)
                     segment_text += f"({segment_range_start}-{segment_range_end}) • "
 
                 # Progress bar (ensure running count never goes negative)
@@ -292,17 +259,12 @@ with tab1:
 
             # Status text
             if progress.learning_phase:
-                st.info(
-                    "🧠 Learning patterns from completed resumes... will auto-resume shortly."
-                )
+                st.info("🧠 Learning patterns from completed resumes... will auto-resume shortly.")
             elif progress.paused:
                 st.info("⏸️ Batch paused. Click Resume to continue.")
             elif progress.stopped:
                 st.warning("⏹️ Batch stopped.")
-            elif (
-                progress.completed + progress.failed + progress.skipped
-                == progress.total
-            ):
+            elif progress.completed + progress.failed + progress.skipped == progress.total:
                 # Show completion summary with manual retry hint if failures exist
                 summary_msg = f"✅ Batch complete! {progress.completed} succeeded, {progress.failed} failed, {progress.skipped} skipped."
                 if progress.failed > 0:
@@ -323,9 +285,7 @@ with tab1:
             ):
                 for worker_id, worker in sorted(progress.workers.items()):
                     if worker.is_active:
-                        st.caption(
-                            f"**Worker {worker_id}**: {worker.current_url or 'idle'}"
-                        )
+                        st.caption(f"**Worker {worker_id}**: {worker.current_url or 'idle'}")
                     else:
                         st.caption(
                             f"Worker {worker_id}: {worker.jobs_completed} completed, {worker.jobs_failed} failed"
@@ -333,8 +293,7 @@ with tab1:
 
             # Detailed results (after completion)
             if (
-                progress.completed + progress.failed + progress.skipped
-                == progress.total
+                progress.completed + progress.failed + progress.skipped == progress.total
                 and not progress.stopped
             ):
                 with st.expander("Detailed Results", expanded=False):
@@ -351,8 +310,7 @@ with tab1:
 
             # Manual fallback for failed extractions (OUTSIDE expander, always visible when batch complete)
             if (
-                progress.completed + progress.failed + progress.skipped
-                == progress.total
+                progress.completed + progress.failed + progress.skipped == progress.total
                 and not progress.stopped
             ):
                 failed_jobs = [
@@ -363,9 +321,7 @@ with tab1:
 
                 if failed_jobs:
                     st.markdown("---")
-                    st.subheader(
-                        f"⚠️ Manual Retry Required ({len(failed_jobs)} failed)"
-                    )
+                    st.subheader(f"⚠️ Manual Retry Required ({len(failed_jobs)} failed)")
                     st.caption(
                         "JD extraction failed for these URLs. Paste the job description text manually to retry."
                     )
@@ -388,8 +344,7 @@ with tab1:
                                 if st.button(
                                     "🔄 Retry with Manual JD",
                                     key=f"retry_btn_{job.id}",
-                                    disabled=not manual_jd
-                                    or len(manual_jd.strip()) < 100,
+                                    disabled=not manual_jd or len(manual_jd.strip()) < 100,
                                     help="Retry pipeline with manually pasted JD text",
                                 ):
                                     with st.spinner(f"Processing {job.url}..."):
@@ -402,9 +357,7 @@ with tab1:
                                             )
 
                                             # Create application in tracker
-                                            created = tracker_db.create_from_pipeline(
-                                                result
-                                            )
+                                            created = tracker_db.create_from_pipeline(result)
                                             tracker_db.update_application(
                                                 created["application_id"],
                                                 resume_status="exported",
@@ -416,19 +369,13 @@ with tab1:
                                                 job.url,
                                                 status="completed",
                                                 resume_id=created.get("resume_id"),
-                                                application_id=created[
-                                                    "application_id"
-                                                ],
+                                                application_id=created["application_id"],
                                             )
 
                                             # Update job status in memory
-                                            job.status = job.status.__class__(
-                                                "completed"
-                                            )
+                                            job.status = job.status.__class__("completed")
                                             job.result = {
-                                                "application_id": created[
-                                                    "application_id"
-                                                ],
+                                                "application_id": created["application_id"],
                                                 "company": result.company,
                                                 "role": result.role,
                                                 "ats_score": result.ats_score.overall_score,
@@ -437,9 +384,7 @@ with tab1:
                                             job.error = None
 
                                             # Update progress counters
-                                            st.session_state.batch_progress.completed += (
-                                                1
-                                            )
+                                            st.session_state.batch_progress.completed += 1
                                             st.session_state.batch_progress.failed -= 1
 
                                             st.success(
@@ -450,13 +395,8 @@ with tab1:
                                         except Exception as e:
                                             st.error(f"❌ Retry failed: {str(e)}")
 
-                            if (
-                                len(manual_jd.strip()) > 0
-                                and len(manual_jd.strip()) < 100
-                            ):
-                                st.warning(
-                                    "⚠️ JD text too short (minimum 100 characters)"
-                                )
+                            if len(manual_jd.strip()) > 0 and len(manual_jd.strip()) < 100:
+                                st.warning("⚠️ JD text too short (minimum 100 characters)")
 
             # Auto-refresh: schedule next poll cycle while batch is still running
             # Placed AFTER all UI elements so everything renders before the sleep
@@ -583,9 +523,7 @@ with tab2:
 
     # ── Sub-tabs ─────────────────────────────────────────────────────
 
-    tab_queue, tab_run, tab_results, tab_monitor = st.tabs(
-        ["Queue", "Run", "Results", "Monitor"]
-    )
+    tab_queue, tab_run, tab_results, tab_monitor = st.tabs(["Queue", "Run", "Results", "Monitor"])
 
     # ════════════════════════════════════════════════════════════════════
     # Sub-Tab: Queue
@@ -629,9 +567,7 @@ with tab2:
         st.markdown("**From Tracker** — applications with generated resumes")
 
         if not tracker_apps:
-            st.info(
-                "No applications with resumes found in tracker. Generate a resume first."
-            )
+            st.info("No applications with resumes found in tracker. Generate a resume first.")
         else:
             # Deduplicate by app_id, keep most recent resume per app
             seen_apps: dict[int, dict] = {}
@@ -643,9 +579,7 @@ with tab2:
 
             # Filter to supported platforms
             supported = [
-                r
-                for r in app_rows
-                if _detect_platform(r["jd_url"]) in ("workday", "greenhouse")
+                r for r in app_rows if _detect_platform(r["jd_url"]) in ("workday", "greenhouse")
             ]
             unsupported_count = len(app_rows) - len(supported)
 
@@ -671,9 +605,7 @@ with tab2:
             app_labels = [_app_label(r) for r in supported]
 
             if not supported:
-                st.caption(
-                    "No supported (Workday/Greenhouse) applications with resumes found."
-                )
+                st.caption("No supported (Workday/Greenhouse) applications with resumes found.")
             else:
                 selected_app_labels = st.multiselect(
                     f"Select applications to queue ({len(supported)} available)",
@@ -744,24 +676,16 @@ with tab2:
                         resume_paths, key=lambda p: p.stat().st_mtime, reverse=True
                     )
                 resume_labels = [
-                    (
-                        f"{p.parent.name} / {p.name}"
-                        if p.parent != settings.output_dir
-                        else p.name
-                    )
+                    (f"{p.parent.name} / {p.name}" if p.parent != settings.output_dir else p.name)
                     for p in resume_paths
                 ]
 
                 if resume_paths:
                     selected_label = st.selectbox("Resume", resume_labels)
-                    selected_resume_path = resume_paths[
-                        resume_labels.index(selected_label)
-                    ]
+                    selected_resume_path = resume_paths[resume_labels.index(selected_label)]
                 else:
                     selected_resume_path = None
-                    st.caption(
-                        "No resumes found in output/. Generate one on the New Resume page."
-                    )
+                    st.caption("No resumes found in output/. Generate one on the New Resume page.")
 
                 submitted = st.form_submit_button("Add to Queue")
                 if submitted:
@@ -875,9 +799,7 @@ with tab2:
             "Greenhouse: public forms, no login required."
         )
 
-        _BATCH_SCRIPT = (
-            Path(__file__).parent.parent.parent / "scripts" / "run_auto_apply_batch.py"
-        )
+        _BATCH_SCRIPT = Path(__file__).parent.parent.parent / "scripts" / "run_auto_apply_batch.py"
 
         col_start, col_stop = st.columns(2)
 
@@ -970,9 +892,7 @@ with tab2:
                 "applied_verified": final_stats.get("applied_verified", 0),
                 "applied_soft": final_stats.get("applied_soft", 0),
                 "failed_permanent": final_stats.get("failed_permanent", 0),
-                "paused": sum(
-                    v for k, v in final_stats.items() if k.startswith("paused")
-                ),
+                "paused": sum(v for k, v in final_stats.items() if k.startswith("paused")),
             }
             if any(done_statuses.values()):
                 st.markdown("---")
@@ -1023,9 +943,7 @@ with tab2:
         result_items = [item for item in all_items if item["status"] != "queued"]
 
         if status_filter:
-            result_items = [
-                item for item in result_items if item["status"] in status_filter
-            ]
+            result_items = [item for item in result_items if item["status"] in status_filter]
 
         if not result_items:
             st.info("No results yet. Run a batch to see attempt outcomes.")
@@ -1045,9 +963,7 @@ with tab2:
                     detail_cols[0].caption(f"Queue ID: {item['id']}")
                     detail_cols[1].caption(f"Platform: {item['ats_platform']}")
                     detail_cols[2].caption(f"Market: {item['market']}")
-                    detail_cols[3].caption(
-                        f"Cost: ${item.get('cost_usd', 0.0) or 0.0:.4f}"
-                    )
+                    detail_cols[3].caption(f"Cost: ${item.get('cost_usd', 0.0) or 0.0:.4f}")
 
                     st.caption(f"URL: {item['job_url']}")
 
@@ -1064,16 +980,12 @@ with tab2:
                             st.image(str(screenshot), caption="Confirmation screenshot")
                         last_screenshot = log_dir / "last_page_screenshot.png"
                         if last_screenshot.exists():
-                            st.image(
-                                str(last_screenshot), caption="Last page screenshot"
-                            )
+                            st.image(str(last_screenshot), caption="Last page screenshot")
 
                     # Action buttons for paused items
                     if is_paused:
                         act_cols = st.columns(3)
-                        if act_cols[0].button(
-                            "Mark Verified", key=f"verify_{item['id']}"
-                        ):
+                        if act_cols[0].button("Mark Verified", key=f"verify_{item['id']}"):
                             update_queue_status(item["id"], "applied_verified")
                             st.success("Marked as verified.")
                             st.rerun()
@@ -1132,9 +1044,7 @@ with tab2:
                 else:
                     plat_failures = mon_stats.get(f"{plat}_failures", 0)
                     if plat_failures > 0:
-                        st.markdown(
-                            f":orange[{plat.upper()}] - {plat_failures} failures"
-                        )
+                        st.markdown(f":orange[{plat.upper()}] - {plat_failures} failures")
                     else:
                         st.markdown(f":green[{plat.upper()}] - Healthy")
 

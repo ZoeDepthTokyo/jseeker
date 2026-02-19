@@ -126,9 +126,7 @@ with st.sidebar:
     with st.form("save_search_form"):
         st.markdown("---")
         st.caption("Save Current Configuration")
-        search_name = st.text_input(
-            "Search name", placeholder="e.g., Senior PM - Remote US"
-        )
+        search_name = st.text_input("Search name", placeholder="e.g., Senior PM - Remote US")
         save_button = st.form_submit_button("Save Current Search")
 
         if save_button:
@@ -136,9 +134,7 @@ with st.sidebar:
                 st.error("Please enter a name")
             else:
                 # Get current tag weights
-                tag_weights = {
-                    tw["tag"]: tw["weight"] for tw in tracker_db.list_tag_weights()
-                }
+                tag_weights = {tw["tag"]: tw["weight"] for tw in tracker_db.list_tag_weights()}
 
                 # Get current markets from session
                 current_markets = st.session_state.get("job_discovery_markets", [])
@@ -185,9 +181,7 @@ def _tag_weights_fragment():
         if tags:
             # Calculate current active tag weights and total
             active_tags = [t for t in tags if bool(t.get("active", True))]
-            active_weights = {
-                t["tag"]: tag_weights.get(t["tag"], 50) for t in active_tags
-            }
+            active_weights = {t["tag"]: tag_weights.get(t["tag"], 50) for t in active_tags}
             weight_sum = sum(active_weights.values())
 
             # Display each tag
@@ -235,15 +229,17 @@ def _tag_weights_fragment():
 
                 if col_apply.button("✅ Apply Changes", type="primary"):
                     # Apply all draft weights to database
-                    for tag_name, new_weight in st.session_state[
-                        "draft_weights"
-                    ].items():
+                    for tag_name, new_weight in st.session_state["draft_weights"].items():
                         tracker_db.set_tag_weight(tag_name, new_weight)
                     # Clear draft mode and invalidate caches
                     st.session_state["draft_mode"] = False
                     st.session_state["draft_weights"] = {}
-                    st.session_state["tag_weights_dirty"] = True  # force re-fetch next fragment render
-                    st.session_state["ranked_discoveries_cache"] = None  # force re-rank with new weights
+                    st.session_state["tag_weights_dirty"] = (
+                        True  # force re-fetch next fragment render
+                    )
+                    st.session_state["ranked_discoveries_cache"] = (
+                        None  # force re-rank with new weights
+                    )
                     # Full rerun needed so results section re-ranks with new weights
                     st.rerun(scope="app")
 
@@ -258,13 +254,9 @@ def _tag_weights_fragment():
             if weight_sum == 100:
                 st.success(f"✓ Total weight: {weight_sum}% (Ready to search)")
             elif weight_sum < 100:
-                st.error(
-                    f"✗ Total weight: {weight_sum}% (Need {100 - weight_sum}% more)"
-                )
+                st.error(f"✗ Total weight: {weight_sum}% (Need {100 - weight_sum}% more)")
             else:
-                st.error(
-                    f"✗ Total weight: {weight_sum}% (Reduce by {weight_sum - 100}%)"
-                )
+                st.error(f"✗ Total weight: {weight_sum}% (Reduce by {weight_sum - 100}%)")
         else:
             st.info("No search tags configured. Add some below.")
             active_tags = []
@@ -278,9 +270,7 @@ def _tag_weights_fragment():
 
             # Calculate default weight suggestion (remaining percentage / 2, or 20 if sum is 0)
             remaining_pct = 100 - weight_sum if weight_sum < 100 else 20
-            suggested_weight = (
-                max(1, min(100, remaining_pct // 2)) if active_tags else 100
-            )
+            suggested_weight = max(1, min(100, remaining_pct // 2)) if active_tags else 100
 
             new_weight = new_col2.number_input(
                 "Initial weight %", min_value=0, max_value=100, value=suggested_weight
@@ -291,9 +281,7 @@ def _tag_weights_fragment():
                     result = tracker_db.add_search_tag(new_tag.strip())
                     if result:
                         tracker_db.set_tag_weight(new_tag.strip(), new_weight)
-                        st.success(
-                            f"Added tag: {new_tag.strip()} (weight: {new_weight}%)"
-                        )
+                        st.success(f"Added tag: {new_tag.strip()} (weight: {new_weight}%)")
                     else:
                         st.warning("Tag already exists or was empty.")
                     st.rerun()
@@ -332,10 +320,7 @@ location = st.text_input(
 st.session_state["current_location"] = location
 
 # Sync loaded_sources into the keyed widget state (one-time on load)
-if (
-    "loaded_sources" in st.session_state
-    and "job_discovery_sources" not in st.session_state
-):
+if "loaded_sources" in st.session_state and "job_discovery_sources" not in st.session_state:
     st.session_state["job_discovery_sources"] = st.session_state.pop("loaded_sources")
 elif "loaded_sources" in st.session_state:
     st.session_state["job_discovery_sources"] = st.session_state.pop("loaded_sources")
@@ -446,9 +431,7 @@ if col_search.button("🔍 Run Search", type="primary") or (auto_run is True):
 
     # Validate tag weights sum to 100%
     tag_weights_active = {
-        tw["tag"]: tw["weight"]
-        for tw in tracker_db.list_tag_weights()
-        if tw["tag"] in tag_strings
+        tw["tag"]: tw["weight"] for tw in tracker_db.list_tag_weights() if tw["tag"] in tag_strings
     }
     weight_sum = sum(tag_weights_active.values())
 
@@ -457,14 +440,10 @@ if col_search.button("🔍 Run Search", type="primary") or (auto_run is True):
     elif not selected_markets:
         st.error("Select at least one market to search.")
     elif weight_sum != 100:
-        st.error(
-            f"Tag weights must sum to 100% (currently {weight_sum}%). Adjust weights above."
-        )
+        st.error(f"Tag weights must sum to 100% (currently {weight_sum}%). Adjust weights above.")
     else:
         # Create search session
-        session_id = tracker_db.create_search_session(
-            tag_strings, selected_markets, sources
-        )
+        session_id = tracker_db.create_search_session(tag_strings, selected_markets, sources)
         st.session_state["search_session_id"] = session_id
         st.session_state["search_paused"] = False
 
@@ -500,9 +479,7 @@ if col_search.button("🔍 Run Search", type="primary") or (auto_run is True):
         )
 
         # Rank by tag weights and freshness, limit to top 100 per country
-        ranked_discoveries = rank_discoveries_by_tag_weight(
-            discoveries, max_per_country=100
-        )
+        ranked_discoveries = rank_discoveries_by_tag_weight(discoveries, max_per_country=100)
 
         # Save to database (needs JobDiscovery objects — must happen before dict conversion)
         saved = save_discoveries(ranked_discoveries)
@@ -532,9 +509,7 @@ if col_search.button("🔍 Run Search", type="primary") or (auto_run is True):
                 "tags": len(tag_strings),
                 "sources": len(sources),
                 "markets": len(selected_markets),
-                "total_combinations": len(tag_strings)
-                * len(sources)
-                * len(selected_markets),
+                "total_combinations": len(tag_strings) * len(sources) * len(selected_markets),
                 "total_found": len(discoveries),
                 "new_saved": saved,
             },
@@ -579,9 +554,7 @@ if col_pause.button("⏸️ Pause"):
 
 if col_stop.button("⏹️ Stop"):
     if st.session_state.get("search_session_id"):
-        tracker_db.update_search_session(
-            st.session_state["search_session_id"], status="stopped"
-        )
+        tracker_db.update_search_session(st.session_state["search_session_id"], status="stopped")
     st.session_state["search_paused"] = True
     st.session_state["search_session_id"] = None
     st.warning("Search stopped.")
@@ -602,8 +575,7 @@ with st.expander("🐛 Debug: Cache Status", expanded=False):
     st.json(
         {
             "cache_match": cache_match,
-            "cached_results_exists": st.session_state["cached_search_results"]
-            is not None,
+            "cached_results_exists": st.session_state["cached_search_results"] is not None,
             "current_cache_key": current_cache_key,
             "cached_search_params": st.session_state["cached_search_params"],
             "cached_timestamp": st.session_state["cached_search_timestamp"],
@@ -681,9 +653,7 @@ else:
     if _all_ranked_raw:
         from jseeker.job_discovery import rank_discoveries_by_tag_weight
 
-        _all_ranked = rank_discoveries_by_tag_weight(
-            _all_ranked_raw, max_per_country=100
-        )
+        _all_ranked = rank_discoveries_by_tag_weight(_all_ranked_raw, max_per_country=100)
         st.session_state["ranked_discoveries_cache"] = _all_ranked
     else:
         _all_ranked = []
@@ -694,17 +664,11 @@ def _filter_discoveries(ranked_list, status, search, market, location_val, sourc
     """Filter pre-ranked discoveries in memory."""
     result = ranked_list
     if status:
-        result = [
-            d for d in result if str(d.get("status", "new")).strip().lower() == status
-        ]
+        result = [d for d in result if str(d.get("status", "new")).strip().lower() == status]
     if market:
-        result = [
-            d for d in result if (d.get("market") or "").lower() == market.lower()
-        ]
+        result = [d for d in result if (d.get("market") or "").lower() == market.lower()]
     if source:
-        result = [
-            d for d in result if (d.get("source") or "").lower() == source.lower()
-        ]
+        result = [d for d in result if (d.get("source") or "").lower() == source.lower()]
     if location_val:
         loc_lower = location_val.lower()
         result = [d for d in result if loc_lower in (d.get("location") or "").lower()]
@@ -718,10 +682,7 @@ def _filter_discoveries(ranked_list, status, search, market, location_val, sourc
                 or q in (d.get("company") or "").lower()
                 or q in (d.get("location") or "").lower()
                 or q in (d.get("source") or "").lower()
-                or any(
-                    q in tag.lower()
-                    for tag in (d.get("search_tag_weights") or {}).keys()
-                )
+                or any(q in tag.lower() for tag in (d.get("search_tag_weights") or {}).keys())
             )
         ]
     return result
@@ -776,9 +737,7 @@ if discoveries:
         st.rerun()
 
     # Slice to current page
-    page_discoveries = discoveries[
-        current_page * PAGE_SIZE : (current_page + 1) * PAGE_SIZE
-    ]
+    page_discoveries = discoveries[current_page * PAGE_SIZE : (current_page + 1) * PAGE_SIZE]
 
     # Group page discoveries by hierarchical location: Country > State/Province > City
     from collections import defaultdict
@@ -842,11 +801,7 @@ if discoveries:
             # Check if second part is a known country
             if potential_country in market_countries.values():
                 # It's a country - first part could be city or state
-                if (
-                    "Greater" in parts[0]
-                    or "Metropolitan" in parts[0]
-                    or "Area" in parts[0]
-                ):
+                if "Greater" in parts[0] or "Metropolitan" in parts[0] or "Area" in parts[0]:
                     return (potential_country, parts[0], "")  # Region/area
                 else:
                     return (potential_country, "", parts[0])  # City
@@ -1103,18 +1058,14 @@ if discoveries:
                     if app_id:
                         _update_cached_discovery_status(disc["id"], "imported")
                         st.toast("Imported to Tracker!")
-                        st.success(
-                            f"Imported as application #{app_id} (no resume generated)"
-                        )
+                        st.success(f"Imported as application #{app_id} (no resume generated)")
                     else:
                         st.error("Failed to import")
                     st.rerun()
 
             if status in ("new", "starred"):
                 if action_cols[3].button("Generate Resume", key=f"gen_{disc['id']}"):
-                    with st.spinner(
-                        f"Generating resume for {disc.get('company', 'Unknown')}..."
-                    ):
+                    with st.spinner(f"Generating resume for {disc.get('company', 'Unknown')}..."):
                         from jseeker.job_discovery import generate_resume_from_discovery
 
                         result = generate_resume_from_discovery(disc["id"])
@@ -1140,9 +1091,7 @@ if discoveries:
     for country in sorted_countries:
         states = by_location_hierarchy[country]
         country_total = sum(
-            len(jobs)
-            for state_cities in states.values()
-            for jobs in state_cities.values()
+            len(jobs) for state_cities in states.values() for jobs in state_cities.values()
         )
         country_emoji = COUNTRY_EMOJIS.get(country, "🌍")
         country_avg = country_avgs[country]
@@ -1157,24 +1106,18 @@ if discoveries:
             for state, cities in states.items():
                 all_jobs = [job for city_jobs in cities.values() for job in city_jobs]
                 state_avgs[state] = calc_avg_relevance(all_jobs)
-            sorted_states = sorted(
-                states.keys(), key=lambda s: state_avgs[s], reverse=True
-            )
+            sorted_states = sorted(states.keys(), key=lambda s: state_avgs[s], reverse=True)
 
             for state in sorted_states:
                 cities = states[state]
                 state_total = sum(len(jobs) for jobs in cities.values())
 
                 # Calculate city averages for sorting
-                city_avgs = {
-                    city: calc_avg_relevance(jobs) for city, jobs in cities.items()
-                }
+                city_avgs = {city: calc_avg_relevance(jobs) for city, jobs in cities.items()}
 
                 # If no state/province, skip that level and go straight to cities
                 if not state:
-                    sorted_cities = sorted(
-                        cities.keys(), key=lambda c: city_avgs[c], reverse=True
-                    )
+                    sorted_cities = sorted(cities.keys(), key=lambda c: city_avgs[c], reverse=True)
                     for city in sorted_cities:
                         city_jobs = cities[city]
                         city_avg_pct = int(city_avgs[city] * 100)

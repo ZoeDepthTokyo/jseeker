@@ -15,9 +15,7 @@ class _DummyRunner(SiteRunner):
     def detect(self, url: str) -> bool:
         return "example.com" in url
 
-    def fill_and_submit(
-        self, page, job_url, resume_path, answers, market="us", dry_run=True
-    ):
+    def fill_and_submit(self, page, job_url, resume_path, answers, market="us", dry_run=True):
         return self._build_result(status=AttemptStatus.APPLIED_SOFT)
 
 

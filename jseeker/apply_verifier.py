@@ -18,22 +18,16 @@ class ApplyVerifier:
         "url_thankyou": lambda url: any(
             s in url for s in ["/thankyou", "/confirmationpage", "/myApplications"]
         ),
-        "dom_thank_you_for_applying": lambda text: "thank you for applying"
-        in text.lower(),
-        "dom_application_submitted": lambda text: "application has been submitted"
-        in text.lower(),
-        "dom_successfully_submitted": lambda text: "successfully submitted"
-        in text.lower(),
+        "dom_thank_you_for_applying": lambda text: "thank you for applying" in text.lower(),
+        "dom_application_submitted": lambda text: "application has been submitted" in text.lower(),
+        "dom_successfully_submitted": lambda text: "successfully submitted" in text.lower(),
     }
     WORKDAY_AUTOMATION_ID = "thankYouMessage"
 
     GREENHOUSE_HARD_SIGNALS = {
-        "url_confirmation": lambda url: url.endswith("/confirmation")
-        or "/confirmation" in url,
-        "dom_application_submitted": lambda text: "application has been submitted"
-        in text.lower(),
-        "dom_received_application": lambda text: "we've received your application"
-        in text.lower(),
+        "url_confirmation": lambda url: url.endswith("/confirmation") or "/confirmation" in url,
+        "dom_application_submitted": lambda text: "application has been submitted" in text.lower(),
+        "dom_received_application": lambda text: "we've received your application" in text.lower(),
     }
     GREENHOUSE_CONTAINER = ".application-confirmation"
 
@@ -82,13 +76,9 @@ class ApplyVerifier:
 
             # Platform-specific verification
             if platform == "workday":
-                return self._verify_workday(
-                    page, current_url, page_text, form_visible, logs_dir
-                )
+                return self._verify_workday(page, current_url, page_text, form_visible, logs_dir)
             elif platform == "greenhouse":
-                return self._verify_greenhouse(
-                    page, current_url, page_text, form_visible, logs_dir
-                )
+                return self._verify_greenhouse(page, current_url, page_text, form_visible, logs_dir)
             else:
                 return VerificationResult(
                     is_verified=False,
@@ -109,13 +99,9 @@ class ApplyVerifier:
         """Verify Workday submission via automation-id, URL, and DOM signals."""
         # Check automation-id first (most reliable)
         try:
-            elem = page.query_selector(
-                f"[data-automation-id='{self.WORKDAY_AUTOMATION_ID}']"
-            )
+            elem = page.query_selector(f"[data-automation-id='{self.WORKDAY_AUTOMATION_ID}']")
             if elem:
-                screenshot = self._save_screenshot(
-                    page, logs_dir, "confirmation_screenshot.png"
-                )
+                screenshot = self._save_screenshot(page, logs_dir, "confirmation_screenshot.png")
                 self._save_text(text, logs_dir, "confirmation_text.txt")
                 return VerificationResult(
                     is_verified=True,
@@ -132,9 +118,7 @@ class ApplyVerifier:
         # Check URL signals
         for name, check in self.WORKDAY_HARD_SIGNALS.items():
             if name.startswith("url_") and check(url):
-                screenshot = self._save_screenshot(
-                    page, logs_dir, "confirmation_screenshot.png"
-                )
+                screenshot = self._save_screenshot(page, logs_dir, "confirmation_screenshot.png")
                 self._save_text(text, logs_dir, "confirmation_text.txt")
                 return VerificationResult(
                     is_verified=True,
@@ -149,9 +133,7 @@ class ApplyVerifier:
         # Check DOM signals
         for name, check in self.WORKDAY_HARD_SIGNALS.items():
             if name.startswith("dom_") and check(text):
-                screenshot = self._save_screenshot(
-                    page, logs_dir, "confirmation_screenshot.png"
-                )
+                screenshot = self._save_screenshot(page, logs_dir, "confirmation_screenshot.png")
                 self._save_text(text, logs_dir, "confirmation_text.txt")
                 return VerificationResult(
                     is_verified=True,
@@ -165,9 +147,7 @@ class ApplyVerifier:
 
         # Soft: page changed but no hard signal
         if not form_visible:
-            screenshot = self._save_screenshot(
-                page, logs_dir, "last_page_screenshot.png"
-            )
+            screenshot = self._save_screenshot(page, logs_dir, "last_page_screenshot.png")
             return VerificationResult(
                 is_verified=False,
                 confidence="soft",
@@ -194,9 +174,7 @@ class ApplyVerifier:
         try:
             elem = page.query_selector(self.GREENHOUSE_CONTAINER)
             if elem:
-                screenshot = self._save_screenshot(
-                    page, logs_dir, "confirmation_screenshot.png"
-                )
+                screenshot = self._save_screenshot(page, logs_dir, "confirmation_screenshot.png")
                 self._save_text(text, logs_dir, "confirmation_text.txt")
                 return VerificationResult(
                     is_verified=True,
@@ -212,9 +190,7 @@ class ApplyVerifier:
 
         for name, check in self.GREENHOUSE_HARD_SIGNALS.items():
             if name.startswith("url_") and check(url):
-                screenshot = self._save_screenshot(
-                    page, logs_dir, "confirmation_screenshot.png"
-                )
+                screenshot = self._save_screenshot(page, logs_dir, "confirmation_screenshot.png")
                 self._save_text(text, logs_dir, "confirmation_text.txt")
                 return VerificationResult(
                     is_verified=True,
@@ -228,9 +204,7 @@ class ApplyVerifier:
 
         for name, check in self.GREENHOUSE_HARD_SIGNALS.items():
             if name.startswith("dom_") and check(text):
-                screenshot = self._save_screenshot(
-                    page, logs_dir, "confirmation_screenshot.png"
-                )
+                screenshot = self._save_screenshot(page, logs_dir, "confirmation_screenshot.png")
                 self._save_text(text, logs_dir, "confirmation_text.txt")
                 return VerificationResult(
                     is_verified=True,
@@ -243,9 +217,7 @@ class ApplyVerifier:
                 )
 
         if not form_visible:
-            screenshot = self._save_screenshot(
-                page, logs_dir, "last_page_screenshot.png"
-            )
+            screenshot = self._save_screenshot(page, logs_dir, "last_page_screenshot.png")
             return VerificationResult(
                 is_verified=False,
                 confidence="soft",
@@ -298,9 +270,7 @@ class ApplyVerifier:
         except Exception:
             return False
 
-    def _save_screenshot(
-        self, page, logs_dir: Optional[Path], filename: str
-    ) -> Optional[Path]:
+    def _save_screenshot(self, page, logs_dir: Optional[Path], filename: str) -> Optional[Path]:
         """Save a page screenshot to logs_dir.
 
         Args:

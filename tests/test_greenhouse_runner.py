@@ -123,9 +123,7 @@ def test_verification_no_match_returns_false(runner):
     from unittest.mock import MagicMock, PropertyMock
 
     page = MagicMock()
-    type(page).url = PropertyMock(
-        return_value="https://boards.greenhouse.io/company/jobs/123"
-    )
+    type(page).url = PropertyMock(return_value="https://boards.greenhouse.io/company/jobs/123")
     page.text_content.return_value = "some random page content"
     page.is_visible.return_value = False
 
@@ -139,9 +137,7 @@ def test_verification_url_match(runner):
     from unittest.mock import MagicMock, PropertyMock
 
     page = MagicMock()
-    type(page).url = PropertyMock(
-        return_value="https://boards.greenhouse.io/company/confirmation"
-    )
+    type(page).url = PropertyMock(return_value="https://boards.greenhouse.io/company/confirmation")
     page.text_content.return_value = ""
 
     verified, text = runner._verify_submission(page)
@@ -154,9 +150,7 @@ def test_verification_dom_text_match(runner):
     from unittest.mock import MagicMock, PropertyMock
 
     page = MagicMock()
-    type(page).url = PropertyMock(
-        return_value="https://boards.greenhouse.io/company/jobs/123"
-    )
+    type(page).url = PropertyMock(return_value="https://boards.greenhouse.io/company/jobs/123")
     page.text_content.return_value = "Thank you! Your application has been submitted."
     page.is_visible.return_value = False
 
@@ -170,9 +164,7 @@ def test_verification_dom_text_match(runner):
 
 def test_greenhouse_form_fixture_exists():
     """Greenhouse mock HTML fixture exists."""
-    fixture_path = (
-        Path(__file__).parent / "fixtures" / "ats_pages" / "greenhouse_form.html"
-    )
+    fixture_path = Path(__file__).parent / "fixtures" / "ats_pages" / "greenhouse_form.html"
     assert fixture_path.exists()
     content = fixture_path.read_text()
     assert "first_name" in content

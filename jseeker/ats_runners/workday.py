@@ -21,9 +21,7 @@ from jseeker.models import AttemptResult, AttemptStatus
 
 logger = logging.getLogger(__name__)
 
-_SELECTORS_PATH = (
-    Path(__file__).parent.parent.parent / "data" / "ats_runners" / "workday.yaml"
-)
+_SELECTORS_PATH = Path(__file__).parent.parent.parent / "data" / "ats_runners" / "workday.yaml"
 
 
 def _load_workday_config() -> dict:
@@ -99,9 +97,7 @@ class WorkdayRunner(SiteRunner):
             self._handle_sms_consent(page)
 
             # 6. Handle screening questions
-            q_result = self._fill_screening_questions(
-                page, answers, market, fields_filled
-            )
+            q_result = self._fill_screening_questions(page, answers, market, fields_filled)
             if q_result is not None:
                 return q_result  # Paused on unknown/salary question
 
@@ -196,9 +192,7 @@ class WorkdayRunner(SiteRunner):
             pass
 
         # Detect login wall
-        login_wall_selectors = self.config.get("selectors", {}).get(
-            "login_wall_signals", []
-        )
+        login_wall_selectors = self.config.get("selectors", {}).get("login_wall_signals", [])
         on_login_wall = False
         for sel in login_wall_selectors:
             try:
@@ -341,9 +335,7 @@ class WorkdayRunner(SiteRunner):
                     q_normalized = q_text.rstrip("* \t").lower()
                     if q_normalized in self._PERSONAL_INFO_LABELS:
                         continue
-                    answer, is_pause = answer_screening_question(
-                        answers, q_text, market
-                    )
+                    answer, is_pause = answer_screening_question(answers, q_text, market)
                     if is_pause:
                         status = (
                             AttemptStatus.PAUSED_SALARY_QUESTION

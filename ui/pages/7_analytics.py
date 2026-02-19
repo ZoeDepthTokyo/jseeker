@@ -252,9 +252,7 @@ with tab1:
             # Learned keywords / tags
             if all_keywords:
                 st.markdown("### Learned JD Keywords")
-                st.caption(
-                    "Keywords extracted from job descriptions during pattern learning:"
-                )
+                st.caption("Keywords extracted from job descriptions during pattern learning:")
                 kw_tags = "  ".join([f"`{kw}`" for kw in sorted(all_keywords)])
                 st.markdown(kw_tags)
 
@@ -262,9 +260,7 @@ with tab1:
             st.markdown("### Patterns by Type")
             type_data = [
                 {"Type": k.replace("_", " ").title(), "Count": v}
-                for k, v in sorted(
-                    type_counts.items(), key=lambda x: x[1], reverse=True
-                )
+                for k, v in sorted(type_counts.items(), key=lambda x: x[1], reverse=True)
             ]
             st.dataframe(pd.DataFrame(type_data), width="stretch", hide_index=True)
 
@@ -335,9 +331,7 @@ with tab1:
             )
 
         else:
-            st.info(
-                "No patterns learned yet. Generate resumes to build the pattern library."
-            )
+            st.info("No patterns learned yet. Generate resumes to build the pattern library.")
 
             # Show schema documentation even with no patterns
             st.markdown("### Pattern JSON Schema")
@@ -367,12 +361,7 @@ with tab1:
     try:
         import yaml
 
-        skills_path = (
-            Path(__file__).parent.parent.parent
-            / "data"
-            / "resume_blocks"
-            / "skills.yaml"
-        )
+        skills_path = Path(__file__).parent.parent.parent / "data" / "resume_blocks" / "skills.yaml"
 
         if skills_path.exists():
             with open(skills_path, "r", encoding="utf-8") as f:
@@ -396,9 +385,7 @@ with tab1:
                 skills_df = pd.DataFrame(skill_categories)
                 st.dataframe(skills_df, width="stretch", hide_index=True)
         else:
-            st.info(
-                "Skills file not found. Run a resume generation to populate skill tags."
-            )
+            st.info("Skills file not found. Run a resume generation to populate skill tags.")
 
     except Exception as e:
         st.warning(f"Could not load skills data: {e}")
@@ -477,15 +464,9 @@ then increase as they are validated by successful reuse.
                         col1, col2 = st.columns([3, 1])
 
                         with col1:
-                            st.markdown(
-                                f"**Pattern #{pattern['id']}** — Learned from: *{role}*"
-                            )
-                            st.markdown(
-                                f"**Keywords**: {keywords if keywords else 'None'}"
-                            )
-                            st.caption(
-                                "↑ Job role that triggered this pattern learning"
-                            )
+                            st.markdown(f"**Pattern #{pattern['id']}** — Learned from: *{role}*")
+                            st.markdown(f"**Keywords**: {keywords if keywords else 'None'}")
+                            st.caption("↑ Job role that triggered this pattern learning")
 
                             # Show before/after
                             st.markdown("**Before:**")
@@ -507,12 +488,12 @@ then increase as they are validated by successful reuse.
                             st.metric("Confidence", f"{pattern['confidence']:.2f}")
 
                             # Format dates
-                            created = datetime.fromisoformat(
-                                pattern["created_at"]
-                            ).strftime("%b %d")
-                            last_used = datetime.fromisoformat(
-                                pattern["last_used_at"]
-                            ).strftime("%b %d")
+                            created = datetime.fromisoformat(pattern["created_at"]).strftime(
+                                "%b %d"
+                            )
+                            last_used = datetime.fromisoformat(pattern["last_used_at"]).strftime(
+                                "%b %d"
+                            )
 
                             st.caption(f"Created: {created}")
                             st.caption(f"Last used: {last_used}")
@@ -528,9 +509,7 @@ then increase as they are validated by successful reuse.
                 GROUP BY DATE(created_at)
                 ORDER BY created_at ASC
             """)
-            pattern_timeline = [
-                {"date": row[0], "count": row[1]} for row in c.fetchall()
-            ]
+            pattern_timeline = [{"date": row[0], "count": row[1]} for row in c.fetchall()]
 
             if pattern_timeline and len(pattern_timeline) > 1:
                 timeline_df = pd.DataFrame(pattern_timeline)
@@ -632,9 +611,7 @@ jSeeker reuses more learned patterns instead of calling the LLM.
             ORDER BY created_at ASC
         """)
 
-        resume_costs = [
-            {"resume_number": row[0], "cost": row[1]} for row in c.fetchall()
-        ]
+        resume_costs = [{"resume_number": row[0], "cost": row[1]} for row in c.fetchall()]
 
         if len(resume_costs) >= 2:
             cost_df = pd.DataFrame(resume_costs)
@@ -673,16 +650,10 @@ jSeeker reuses more learned patterns instead of calling the LLM.
 
             # Calculate trend
             first_5_avg = (
-                cost_df.head(5)["cost"].mean()
-                if len(cost_df) >= 5
-                else cost_df["cost"].mean()
+                cost_df.head(5)["cost"].mean() if len(cost_df) >= 5 else cost_df["cost"].mean()
             )
             last_5_avg = cost_df.tail(5)["cost"].mean()
-            improvement = (
-                ((first_5_avg - last_5_avg) / first_5_avg * 100)
-                if first_5_avg > 0
-                else 0
-            )
+            improvement = ((first_5_avg - last_5_avg) / first_5_avg * 100) if first_5_avg > 0 else 0
 
             if improvement > 0:
                 st.success(
@@ -731,9 +702,7 @@ with tab2:
     # Show data availability summary
     total_apps = len(apps)
     apps_with_salary = [
-        a
-        for a in apps
-        if a.get("salary_min") or a.get("salary_max") or a.get("salary_range")
+        a for a in apps if a.get("salary_min") or a.get("salary_max") or a.get("salary_range")
     ]
     apps_with_location = [a for a in apps if a.get("location")]
 
@@ -789,9 +758,7 @@ with tab2:
             target_locations = st.sidebar.multiselect(
                 "Target Locations",
                 options=sorted(df["location"].dropna().unique()),
-                default=list(
-                    df["location"].dropna().unique()
-                ),  # Show ALL locations by default
+                default=list(df["location"].dropna().unique()),  # Show ALL locations by default
                 help="All locations selected by default. Uncheck to filter.",
             )
 
@@ -804,9 +771,7 @@ with tab2:
             # Filter data
             filtered_df = df.copy()
             if target_locations:
-                filtered_df = filtered_df[
-                    filtered_df["location"].isin(target_locations)
-                ]
+                filtered_df = filtered_df[filtered_df["location"].isin(target_locations)]
             if target_roles:
                 filtered_df = filtered_df[filtered_df["role_title"].isin(target_roles)]
 
@@ -1005,9 +970,7 @@ Provide a detailed, data-driven analysis addressing the query."""
                                     f"Model: Claude Opus 4.6"
                                 )
                             else:
-                                st.caption(
-                                    "💰 Analysis cost: Tracked in API costs table"
-                                )
+                                st.caption("💰 Analysis cost: Tracked in API costs table")
 
                             st.success("✅ Analysis complete! Review insights above.")
 

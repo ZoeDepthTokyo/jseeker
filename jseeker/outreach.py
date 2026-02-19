@@ -85,9 +85,7 @@ def generate_cover_letter(
     """
     from pathlib import Path
 
-    prompt_path = (
-        Path(__file__).parent.parent / "data" / "prompts" / "cover_letter_writer.txt"
-    )
+    prompt_path = Path(__file__).parent.parent / "data" / "prompts" / "cover_letter_writer.txt"
     template = prompt_path.read_text(encoding="utf-8")
 
     # Build requirements summary (top 5)
@@ -114,11 +112,8 @@ def generate_cover_letter(
         market=parsed_jd.market or "us",
         requirements=requirements or "See job description",
         culture_signals=culture_signals or "Professional, collaborative",
-        adapted_summary=(
-            adapted_summary[:400] if adapted_summary else "Experienced professional"
-        ),
-        key_achievement=key_achievement
-        or "Multiple successful projects in this domain",
+        adapted_summary=(adapted_summary[:400] if adapted_summary else "Experienced professional"),
+        key_achievement=key_achievement or "Multiple successful projects in this domain",
         why_company=why_company
         or "Strong alignment with the company mission and growth trajectory",
         culture_tone=culture_tone,

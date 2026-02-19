@@ -40,7 +40,6 @@ from jseeker.ats_runners.workday import WorkdayRunner
 from jseeker.auto_apply import AutoApplyEngine
 from jseeker.tracker import get_queued_applications, init_db, update_queue_status
 
-
 _LOG_FILE = Path(__file__).parent.parent / "data" / "apply_logs" / "batch_run.jsonl"
 
 

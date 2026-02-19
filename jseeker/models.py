@@ -128,7 +128,7 @@ class JDRequirement(BaseModel):
 class ParsedJD(BaseModel):
     """Structured representation of a job description."""
 
-    raw_text: str
+    raw_text: str = ""
     pruned_text: str = ""
     title: str = ""
     company: str = ""

@@ -87,7 +87,7 @@ output/ -- generated resumes (gitignored)
 - **MNEMIS**: Pattern storage via integrations/mnemis_bridge.py (Phase 3+)
 
 ## Testing
-# Full test suite (640 tests, 639 passing as of v0.3.12)
+# Full test suite (642 tests, 640 passing as of v0.3.13)
 pytest tests/ --cov=jseeker
 
 # Faster feedback during development (~110s without coverage)

@@ -26,7 +26,7 @@ def empty_db(tmp_path):
         id INTEGER PRIMARY KEY,
         salary_min INTEGER,
         salary_max INTEGER,
-        market TEXT
+        salary_currency TEXT
     )""")
     conn.commit()
     conn.close()
@@ -84,10 +84,10 @@ def populated_db(empty_db):
             (f"hash_{i}", json.dumps(jd), f"Role {i}", f"Company {i}"),
         )
     conn.execute(
-        "INSERT INTO applications (salary_min, salary_max, market) VALUES (120000, 160000, 'us')"
+        "INSERT INTO applications (salary_min, salary_max, salary_currency) VALUES (120000, 160000, 'USD')"
     )
     conn.execute(
-        "INSERT INTO applications (salary_min, salary_max, market) VALUES (140000, 180000, 'us')"
+        "INSERT INTO applications (salary_min, salary_max, salary_currency) VALUES (140000, 180000, 'USD')"
     )
     conn.commit()
     conn.close()
@@ -113,8 +113,8 @@ def test_aggregate_populated_db(populated_db):
     # Python appears in 2 JDs
     kw_dict = dict(result["top_keywords"])
     assert kw_dict.get("python", 0) >= 2
-    # Salary: 2 data points in US market
-    us_perc = result["salary_by_market"].get("us", {})
+    # Salary: 2 data points in USD currency
+    us_perc = result["salary_by_market"].get("USD", {})
     assert us_perc.get("count") == 2
     assert us_perc.get("p50") is not None
 
@@ -223,7 +223,7 @@ def test_aggregate_handles_malformed_json(tmp_path):
         id INTEGER PRIMARY KEY,
         salary_min INTEGER,
         salary_max INTEGER,
-        market TEXT
+        salary_currency TEXT
     )""")
     conn.execute("INSERT INTO jd_cache (parsed_json) VALUES (?)", ("not valid json",))
     conn.execute(

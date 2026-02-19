@@ -6,7 +6,10 @@ import json
 import logging
 from collections import Counter
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from jseeker.models import IntelligenceReport
 
 logger = logging.getLogger(__name__)
 

@@ -14,7 +14,6 @@ from jseeker.models import (
     AttemptResult,
     AttemptStatus,
     BatchSummary,
-    MonitorDecision,
     RateLimitConfig,
     VerificationResult,
 )
@@ -169,8 +168,8 @@ def test_rate_limit_hourly(mock_answer_bank):
     engine.register_runner(FakeRunner("fake.ats.com"))
 
     with patch("jseeker.tracker.check_dedup", return_value=False):
-        r1 = engine.apply_single("https://fake.ats.com/job/1", Path("r.pdf"))
-        r2 = engine.apply_single("https://fake.ats.com/job/2", Path("r.pdf"))
+        engine.apply_single("https://fake.ats.com/job/1", Path("r.pdf"))
+        engine.apply_single("https://fake.ats.com/job/2", Path("r.pdf"))
         r3 = engine.apply_single("https://fake.ats.com/job/3", Path("r.pdf"))
 
     # First two consume slots, third is blocked

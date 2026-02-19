@@ -565,3 +565,4 @@ if "pipeline_result" in st.session_state:
 
     st.markdown("---")
     st.caption(f"**Cost:** ${result.total_cost:.4f}")
+    st.caption("Tip: More resumes generated = faster generation via pattern cache (30-70% of blocks served from cache after 10+ resumes)")

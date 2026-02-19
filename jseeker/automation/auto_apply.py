@@ -10,10 +10,10 @@ import uuid
 from pathlib import Path
 from typing import Optional
 
-from jseeker.answer_bank import AnswerBank, load_answer_bank
-from jseeker.apply_monitor import ApplyMonitor
-from jseeker.apply_verifier import ApplyVerifier
-from jseeker.ats_runners.base import SiteRunner
+from jseeker.automation.answer_bank import AnswerBank, load_answer_bank
+from jseeker.automation.apply_monitor import ApplyMonitor
+from jseeker.automation.apply_verifier import ApplyVerifier
+from jseeker.automation.ats_runners.base import SiteRunner
 from jseeker.models import (
     AttemptResult,
     AttemptStatus,

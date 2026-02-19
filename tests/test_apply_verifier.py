@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from jseeker.apply_verifier import ApplyVerifier
+from jseeker.automation.apply_verifier import ApplyVerifier
 
 # ── Helper ───────────────────────────────────────────────────────────
 

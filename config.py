@@ -29,7 +29,7 @@ class JseekerSettings(_BaseSettings):
 
     # --- Identity ---
     app_name: str = "JSEEKER"
-    app_version: str = "0.3.12"
+    app_version: str = "0.3.13"
 
     # --- Paths (computed from project root) ---
     jseeker_root: Path = _PROJECT_ROOT

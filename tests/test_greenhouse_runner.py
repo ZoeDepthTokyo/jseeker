@@ -7,8 +7,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-from jseeker.ats_runners.base import SiteRunner
-from jseeker.ats_runners.greenhouse import GreenhouseRunner, _SELECTORS_PATH
+from jseeker.automation.ats_runners.base import SiteRunner
+from jseeker.automation.ats_runners.greenhouse import GreenhouseRunner, _SELECTORS_PATH
 
 # ── Fixtures ─────────────────────────────────────────────────────────
 

@@ -13,7 +13,7 @@ from playwright.sync_api import Page, TimeoutError as PlaywrightTimeout
 from jseeker.models import AttemptResult, AttemptStatus
 
 if TYPE_CHECKING:
-    from jseeker.answer_bank import AnswerBank
+    from jseeker.automation.answer_bank import AnswerBank
 
 logger = logging.getLogger(__name__)
 

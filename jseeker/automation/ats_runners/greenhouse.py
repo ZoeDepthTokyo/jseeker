@@ -1,4 +1,4 @@
-"""Workday ATS form filler."""
+"""Greenhouse ATS form filler."""
 
 from __future__ import annotations
 
@@ -10,35 +10,39 @@ from typing import Optional
 import yaml
 from playwright.sync_api import Page, TimeoutError as PlaywrightTimeout
 
-from jseeker.answer_bank import (
+from jseeker.automation.answer_bank import (
     AnswerBank,
     PersonalInfo,
     answer_screening_question,
     get_personal_info,
 )
-from jseeker.ats_runners.base import SiteRunner
+from jseeker.automation.ats_runners.base import SiteRunner
 from jseeker.models import AttemptResult, AttemptStatus
 
 logger = logging.getLogger(__name__)
 
-_SELECTORS_PATH = Path(__file__).parent.parent.parent / "data" / "ats_runners" / "workday.yaml"
+_SELECTORS_PATH = Path(__file__).parent.parent.parent.parent / "data" / "ats_runners" / "greenhouse.yaml"
 
 
-def _load_workday_config() -> dict:
-    """Load Workday selectors and config from YAML."""
+def _load_greenhouse_config() -> dict:
+    """Load Greenhouse selectors and config from YAML."""
     with open(_SELECTORS_PATH, encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
-class WorkdayRunner(SiteRunner):
-    """Playwright-based Workday form filler."""
+class GreenhouseRunner(SiteRunner):
+    """Playwright-based Greenhouse form filler.
+
+    Greenhouse applications are typically single-page forms
+    with no login required.
+    """
 
     def __init__(self) -> None:
         super().__init__()
-        self.config = _load_workday_config()
+        self.config = _load_greenhouse_config()
 
     def detect(self, url: str) -> bool:
-        """Return True if the URL matches a known Workday pattern."""
+        """Return True if the URL matches a known Greenhouse pattern."""
         url_lower = url.lower()
         for pattern in self.config["url_patterns"]:
             if re.search(pattern, url_lower):
@@ -54,7 +58,19 @@ class WorkdayRunner(SiteRunner):
         market: str = "us",
         dry_run: bool = True,
     ) -> AttemptResult:
-        """Fill out and optionally submit a Workday application form."""
+        """Fill out and optionally submit a Greenhouse application form.
+
+        Args:
+            page: Playwright Page instance.
+            job_url: URL of the Greenhouse job posting.
+            resume_path: Path to the resume PDF.
+            answers: AnswerBank with personal info and screening answers.
+            market: Market code for personal info lookup.
+            dry_run: If True, stop before clicking submit.
+
+        Returns:
+            AttemptResult with status and metadata.
+        """
         self._start_attempt()
         fields_filled: dict[str, str] = {}
         screenshots: list[str] = []
@@ -62,59 +78,32 @@ class WorkdayRunner(SiteRunner):
 
         try:
             # 1. Navigate
-            page.goto(
-                job_url,
-                timeout=self.config.get("page_load_timeout_ms", 45000),
-            )
+            page.goto(job_url, timeout=30000)
             self._log_step("navigate", job_url, "", "success")
             self._check_for_overlay(page)
 
-            # 2. Click Apply (if button exists)
-            self._try_selectors(page, "apply_button")
-
-            # 2b. Handle auth gate — Workday shows a login wall per employer.
-            # Each employer has an isolated instance; no unified account exists.
-            # Always attempt guest/anonymous flow first.
-            guest_result = self._handle_guest_flow(page)
-            if guest_result is not None:
-                return guest_result  # Paused — login wall with no guest option
-
-            # 3. Get personal info for market
+            # 2. Get personal info for market
             personal = get_personal_info(answers, market)
 
-            # 4. Upload resume (DOCX preferred for Workday)
+            # 3. Upload resume (PDF preferred for Greenhouse)
             uploaded = self._try_upload(page, resume_path)
             if not uploaded:
                 errors.append("Resume upload failed")
 
-            # 5. Fill personal info
+            # 4. Fill personal info
             self._fill_personal_info(page, personal, fields_filled)
 
-            # 5b. Fill phone extension if available
-            self._fill_phone_extension(page, personal, fields_filled)
-
-            # 5c. Handle SMS consent checkbox
-            self._handle_sms_consent(page)
-
-            # 6. Handle screening questions
+            # 5. Handle screening questions
             q_result = self._fill_screening_questions(page, answers, market, fields_filled)
             if q_result is not None:
                 return q_result  # Paused on unknown/salary question
 
-            # 6b. Handle FCRA acknowledgement
-            self._handle_fcra_ack(page)
-
-            # 6c. Fill skills tags if available
-            skills = getattr(personal, "resume_skills", [])
-            if skills:
-                self._fill_skills_tags(page, skills)
-
-            # 7. Screenshot before submit
-            attempt_dir = Path("data/apply_logs/workday_temp")
+            # 6. Screenshot before submit
+            attempt_dir = Path("data/apply_logs/greenhouse_temp")
             ss = self._screenshot(page, "form_before_submit", attempt_dir)
             screenshots.append(str(ss))
 
-            # 8. Dry run -- stop before submit
+            # 7. Dry run -- stop before submit
             if dry_run:
                 return self._build_result(
                     status=AttemptStatus.APPLIED_SOFT,
@@ -123,7 +112,7 @@ class WorkdayRunner(SiteRunner):
                     fields_filled=fields_filled,
                 )
 
-            # 9. Click submit
+            # 8. Click submit
             submitted = self._try_selectors(page, "submit_button")
             if not submitted:
                 errors.append("Submit button not found")
@@ -134,7 +123,7 @@ class WorkdayRunner(SiteRunner):
                     fields_filled=fields_filled,
                 )
 
-            # 10. Verify submission
+            # 9. Verify submission
             page.wait_for_timeout(3000)
             verified, conf_text = self._verify_submission(page)
 
@@ -173,66 +162,12 @@ class WorkdayRunner(SiteRunner):
                 fields_filled=fields_filled,
             )
 
-    def _handle_guest_flow(self, page: Page) -> Optional[AttemptResult]:
-        """Handle Workday per-employer login wall using guest/anonymous flow.
-
-        Workday has no unified account — each employer runs an isolated instance.
-        After clicking Apply, some instances show a login gate. This method
-        detects that gate and clicks through as guest. If no login wall is
-        present the form is already accessible and we return None to continue.
+    def _try_selectors(self, page: Page, field_key: str) -> bool:
+        """Try selector fallback chain from config.
 
         Returns:
-            None if guest flow succeeded or no login wall detected.
-            AttemptResult(paused_login_failed) if login wall exists but no guest option.
+            True if any selector matched and was clicked.
         """
-        # Brief settle time for SPA navigation after Apply click
-        try:
-            page.wait_for_timeout(1500)
-        except Exception:
-            pass
-
-        # Detect login wall
-        login_wall_selectors = self.config.get("selectors", {}).get("login_wall_signals", [])
-        on_login_wall = False
-        for sel in login_wall_selectors:
-            try:
-                if page.is_visible(sel, timeout=2000):
-                    on_login_wall = True
-                    self._log_step("detect", sel, "login_wall_detected", "found")
-                    break
-            except Exception:
-                continue
-
-        if not on_login_wall:
-            # Form is directly accessible — no auth gate
-            self._log_step("auth", "guest_flow", "no_login_wall", "skip")
-            return None
-
-        # Login wall detected — try guest selectors
-        guest_selectors = self.config.get("selectors", {}).get("guest_apply_button", [])
-        for sel in guest_selectors:
-            try:
-                if page.is_visible(sel, timeout=2000):
-                    page.click(sel, timeout=3000)
-                    page.wait_for_timeout(1500)
-                    self._log_step("click", sel, "guest_apply_selected", "success")
-                    return None  # Proceeded as guest — continue with form filling
-            except Exception:
-                continue
-
-        # Login wall present but no guest option found — HITL required
-        self._log_step("auth", "guest_flow", "no_guest_option_found", "paused")
-        return self._build_result(
-            status=AttemptStatus.PAUSED_LOGIN_FAILED,
-            errors=[
-                "Workday login wall detected but no guest/anonymous apply option found. "
-                "This employer may require account creation. Manual intervention needed."
-            ],
-            fields_filled={},
-        )
-
-    def _try_selectors(self, page: Page, field_key: str) -> bool:
-        """Try selector fallback chain from config. Returns True if any succeeded."""
         selectors = self.config.get("selectors", {}).get(field_key, [])
         for sel in selectors:
             try:
@@ -264,15 +199,23 @@ class WorkdayRunner(SiteRunner):
     def _fill_personal_info(
         self, page: Page, info: PersonalInfo, fields_filled: dict[str, str]
     ) -> bool:
-        """Fill personal info fields."""
+        """Fill personal info fields.
+
+        Args:
+            page: Playwright Page.
+            info: PersonalInfo from the answer bank.
+            fields_filled: Dict to record which fields were successfully filled.
+
+        Returns:
+            True if all fields with values were filled.
+        """
         field_map = {
             "first_name": info.first_name,
             "last_name": info.last_name,
             "email": info.email,
             "phone": info.phone,
-            "address": info.address,
-            "city": info.city,
-            "zip": info.zip,
+            "linkedin": info.linkedin_url,
+            "location": info.city,
         }
         success = True
         for field_key, value in field_map.items():
@@ -282,6 +225,7 @@ class WorkdayRunner(SiteRunner):
                 success = False
         return success
 
+    # Labels that belong to personal info fields — skip during screening question scan
     _PERSONAL_INFO_LABELS = frozenset(
         {
             "first name",
@@ -301,10 +245,6 @@ class WorkdayRunner(SiteRunner):
             "location",
             "city",
             "address",
-            "postal code",
-            "zip",
-            "state",
-            "country",
             "website",
             "cover letter",
             "portfolio",
@@ -319,10 +259,17 @@ class WorkdayRunner(SiteRunner):
         market: str,
         fields_filled: dict[str, str],
     ) -> Optional[AttemptResult]:
-        """Fill screening questions. Returns AttemptResult if paused, None if all answered."""
+        """Fill screening questions.
+
+        Returns:
+            AttemptResult if paused on an unknown question, None if all answered.
+        """
+        # Prefer the dedicated custom fields section; fall back to broader selectors.
+        # Broader selectors (like ".field label") pick up personal info labels too,
+        # so we filter those out via _PERSONAL_INFO_LABELS.
         question_selectors = [
-            "[data-automation-id='questionSection'] label",
-            ".css-1wc5dpp label",
+            "#custom_fields label",
+            ".field label",
             "fieldset legend",
         ]
         for q_sel in question_selectors:
@@ -332,9 +279,10 @@ class WorkdayRunner(SiteRunner):
                     q_text = q_elem.text_content().strip()
                     if not q_text:
                         continue
+                    # Strip trailing asterisk (required marker) before matching
                     q_normalized = q_text.rstrip("* \t").lower()
                     if q_normalized in self._PERSONAL_INFO_LABELS:
-                        continue
+                        continue  # Personal info field — already handled separately
                     answer, is_pause = answer_screening_question(answers, q_text, market)
                     if is_pause:
                         status = (
@@ -351,73 +299,6 @@ class WorkdayRunner(SiteRunner):
             except Exception:
                 continue
         return None
-
-    def _handle_sms_consent(self, page: Page) -> None:
-        """Check for and accept SMS consent checkbox if present."""
-        sms_cfg = self.config.get("selectors", {}).get("sms_consent", {})
-        selectors = [
-            sms_cfg.get("primary", ""),
-            sms_cfg.get("fallback_1", ""),
-            sms_cfg.get("fallback_2", ""),
-        ]
-        for sel in selectors:
-            if not sel:
-                continue
-            try:
-                elem = page.query_selector(sel)
-                if elem and not elem.is_checked():
-                    elem.click()
-                    self._log_step("click", sel, "sms_consent_accepted", "success")
-                    return
-            except Exception:
-                continue
-
-    def _handle_fcra_ack(self, page: Page) -> None:
-        """Check for and accept FCRA background check acknowledgement if present."""
-        fcra_cfg = self.config.get("selectors", {}).get("fcra_ack", {})
-        selectors = [
-            fcra_cfg.get("primary", ""),
-            fcra_cfg.get("fallback_1", ""),
-            fcra_cfg.get("fallback_2", ""),
-            fcra_cfg.get("fallback_3", ""),
-        ]
-        for sel in selectors:
-            if not sel:
-                continue
-            try:
-                elem = page.query_selector(sel)
-                if elem and not elem.is_checked():
-                    elem.click()
-                    self._log_step("click", sel, "fcra_ack_accepted", "success")
-                    return
-            except Exception:
-                continue
-
-    def _fill_phone_extension(
-        self, page: Page, info: PersonalInfo, fields_filled: dict[str, str]
-    ) -> None:
-        """Fill phone extension field if present and value is set."""
-        ext = getattr(info, "phone_extension", None)
-        if not ext:
-            return
-        if self._try_fill(page, "phone_extension", ext):
-            fields_filled["phone_extension"] = ext
-
-    def _fill_skills_tags(self, page: Page, skills: list[str]) -> None:
-        """Fill skills tag input by typing each skill and pressing Enter."""
-        selectors = self.config.get("selectors", {}).get("skills_input", [])
-        for sel in selectors:
-            try:
-                elem = page.query_selector(sel)
-                if elem:
-                    for skill in skills[:10]:
-                        elem.type(skill)
-                        page.wait_for_timeout(500)
-                        elem.press("Enter")
-                        self._log_step("fill_skill", sel, skill, "success")
-                    return
-            except Exception:
-                continue
 
     def _verify_submission(self, page: Page) -> tuple[bool, str]:
         """Check for hard verification signals.

@@ -853,3 +853,21 @@ def test_resolve_branded_greenhouse_url_no_gh_jid():
 
     result = _resolve_branded_greenhouse_url("https://hubspot.com/careers/jobs/1234")
     assert result is None
+
+
+def test_waymo_greenhouse_url_resolves():
+    """Branded Greenhouse URLs with careers.* subdomain extract correct company slug."""
+    from jseeker.jd_parser import _resolve_branded_greenhouse_url
+
+    url = "https://careers.withwaymo.com/jobs/7404570?gh_jid=7404570"
+    result = _resolve_branded_greenhouse_url(url)
+    assert result == "https://job-boards.greenhouse.io/withwaymo/jobs/7404570"
+
+
+def test_hubspot_greenhouse_url_resolves():
+    """Non-career subdomain Greenhouse URLs still extract correct company slug."""
+    from jseeker.jd_parser import _resolve_branded_greenhouse_url
+
+    url = "https://hubspot.com/careers/jobs/7609930?gh_jid=7609930"
+    result = _resolve_branded_greenhouse_url(url)
+    assert result == "https://job-boards.greenhouse.io/hubspot/jobs/7609930"

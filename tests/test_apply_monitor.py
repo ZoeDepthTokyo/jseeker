@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from jseeker.apply_monitor import ApplyMonitor
+from jseeker.automation.apply_monitor import ApplyMonitor
 from jseeker.models import (
     AttemptResult,
     AttemptStatus,

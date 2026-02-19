@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import time
 
 from jseeker.block_manager import block_manager
 from jseeker.llm import llm
@@ -480,13 +481,30 @@ def adapt_resume(
     template = match_result.template_type
     corpus = block_manager.load_corpus()
 
+    _start = time.time()
+    hit_count = 0
+    llm_calls = 0
+
     logger.info(
         f"adapt_resume | starting adaptation | template={template.value} | jd_title={parsed_jd.title}"
     )
 
     # 1. Adapt summary
     logger.info("adapt_resume | step 1: adapting summary")
+    from jseeker.pattern_learner import find_matching_pattern as _fmp
+
+    _summary_original = block_manager.get_summary(template, language=parsed_jd.language)
+    _jd_dict_check = {
+        "title": parsed_jd.title,
+        "ats_keywords": parsed_jd.ats_keywords,
+        "industry": getattr(parsed_jd, "industry", None),
+    }
+    _summary_cache_hit = _fmp("summary_adaptation", _summary_original, _jd_dict_check) is not None
     adapted_summary = adapt_summary(template, parsed_jd)
+    if _summary_cache_hit:
+        hit_count += 1
+    else:
+        llm_calls += 1
 
     # 2. Get tagged experience blocks (priority) and adapt them IN BATCH
     logger.info("adapt_resume | step 2: getting tagged experiences")
@@ -509,6 +527,18 @@ def adapt_resume(
         f"adapt_resume | step 2: adapting {len(experience_blocks)} experience blocks in batch"
     )
     # Single batched LLM call for all bullets (75% cost reduction)
+    # Pre-check which blocks will be cache hits vs LLM calls
+    _jd_dict_bullets = {
+        "title": parsed_jd.title,
+        "ats_keywords": parsed_jd.ats_keywords,
+        "industry": getattr(parsed_jd, "industry", None),
+    }
+    for _exp in experience_blocks:
+        _bullets_str = "\n".join(_exp.get("bullets", []))
+        if _fmp("bullet_adaptation", _bullets_str, _jd_dict_bullets) is not None:
+            hit_count += 1
+        else:
+            llm_calls += 1
     all_adapted_bullets = adapt_bullets_batch(experience_blocks, template, parsed_jd)
 
     # Reconstruct adapted experiences with results
@@ -584,9 +614,15 @@ def adapt_resume(
         f"market={market} -> {localized_address}"
     )
 
+    elapsed = time.time() - _start
+    total_blocks = hit_count + llm_calls
     logger.info(
         f"adapt_resume | completed | total_experience_blocks={len(adapted_experiences)} | "
         f"skill_categories={len(skills_ordered)}"
+    )
+    logger.info(
+        f"Generation: {hit_count}/{total_blocks} blocks from cache, "
+        f"{llm_calls} LLM calls, {elapsed:.1f}s"
     )
 
     return AdaptedResume(

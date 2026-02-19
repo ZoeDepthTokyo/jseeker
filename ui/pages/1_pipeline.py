@@ -1096,9 +1096,11 @@ How it works:
         if changes:
             st.warning(f"Updated {len(changes)} job status value(s).")
             for change in changes:
+                app_id = change.get("app_id", "?")
                 st.caption(
-                    f"{change['company']} - {change['role']}: "
-                    f"{change['old_status']} -> {change['new_status']}"
+                    f"[#{app_id}] {change['company']} \u2013 {change['role']}: "
+                    f"{change['old_status']} \u2192 {change['new_status']}"
                 )
+            st.info("Tracker page will reflect updated statuses \u2014 navigate to Application Tracker to view.")
         else:
             st.success("No status changes detected. Active URLs still appear live.")

@@ -34,10 +34,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from playwright.sync_api import sync_playwright
 
 from config import settings
-from jseeker.answer_bank import load_answer_bank
-from jseeker.ats_runners.greenhouse import GreenhouseRunner
-from jseeker.ats_runners.workday import WorkdayRunner
-from jseeker.auto_apply import AutoApplyEngine
+from jseeker.automation.answer_bank import load_answer_bank
+from jseeker.automation.ats_runners.greenhouse import GreenhouseRunner
+from jseeker.automation.ats_runners.workday import WorkdayRunner
+from jseeker.automation.auto_apply import AutoApplyEngine
 from jseeker.tracker import get_queued_applications, init_db, update_queue_status
 
 _LOG_FILE = Path(__file__).parent.parent / "data" / "apply_logs" / "batch_run.jsonl"

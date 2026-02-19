@@ -30,6 +30,9 @@ ATS_DETECTION = {
     "oracle.com/careers": ATSPlatform.TALEO,
 }
 
+# Subdomains that indicate a careers site, not the company name itself
+CAREER_SUBDOMAINS: frozenset[str] = frozenset({"careers", "jobs", "hire", "apply", "work", "talent"})
+
 
 def _load_prompt(name: str) -> str:
     """Load a prompt template from data/prompts/."""
@@ -578,7 +581,11 @@ def _extract_company_from_url(url: str) -> str | None:
         from urllib.parse import urlparse
 
         domain = urlparse(url).netloc.lower().replace("www.", "")
-        slug = domain.split(".")[0]
+        parts = domain.split(".")
+        if len(parts) >= 3 and parts[0] in CAREER_SUBDOMAINS:
+            slug = parts[1]  # "withwaymo" from "careers.withwaymo.com"
+        else:
+            slug = parts[0]  # "hubspot" from "hubspot.com"
         return slug.replace("-", " ").title()
 
     # Lever: jobs.lever.co/company-name/
@@ -850,9 +857,13 @@ def _resolve_branded_greenhouse_url(url: str) -> str | None:
     gh_jid = params.get("gh_jid", [None])[0]
     if not gh_jid:
         return None
-    # Extract company slug from domain: hubspot.com → hubspot, navan.com → navan
+    # Extract company slug from domain, handling careers.* subdomains
     domain = parsed.netloc.lower().replace("www.", "")
-    company_slug = domain.split(".")[0]
+    parts = domain.split(".")
+    if len(parts) >= 3 and parts[0] in CAREER_SUBDOMAINS:
+        company_slug = parts[1]  # "withwaymo" from "careers.withwaymo.com"
+    else:
+        company_slug = parts[0]  # "hubspot" from "hubspot.com"
     return f"https://job-boards.greenhouse.io/{company_slug}/jobs/{gh_jid}"
 
 

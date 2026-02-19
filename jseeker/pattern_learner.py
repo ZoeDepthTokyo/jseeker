@@ -135,8 +135,8 @@ def find_matching_pattern(
     pattern_type: str,
     source_text: str,
     jd_context: Optional[dict] = None,
-    min_frequency: int = 3,
-    similarity_threshold: float = 0.85,
+    min_frequency: int = 2,
+    similarity_threshold: float = 0.75,
     db_path: Optional[Path] = None,
 ) -> Optional[str]:
     """Find a matching learned pattern and return adapted text.
@@ -145,8 +145,8 @@ def find_matching_pattern(
         pattern_type: Type of pattern to search for.
         source_text: Text to adapt.
         jd_context: Job description context for matching.
-        min_frequency: Minimum pattern frequency to trust (default: 3).
-        similarity_threshold: Minimum text similarity (default: 0.85).
+        min_frequency: Minimum pattern frequency to trust (default: 2).
+        similarity_threshold: Minimum text similarity (default: 0.75).
         db_path: Path to jseeker.db (auto-detected if None).
 
     Returns:

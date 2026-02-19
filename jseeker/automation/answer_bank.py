@@ -73,7 +73,7 @@ class AnswerBank(BaseModel):
 
 REQUIRED_MARKETS = {"us", "mx", "uk", "ca", "fr", "es", "dk"}
 
-DEFAULT_ANSWER_BANK_PATH = Path(__file__).parent.parent / "data" / "answer_bank.yaml"
+DEFAULT_ANSWER_BANK_PATH = Path(__file__).parent.parent.parent / "data" / "answer_bank.yaml"
 
 
 # ── Public API ────────────────────────────────────────────────────────

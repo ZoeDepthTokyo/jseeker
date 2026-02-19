@@ -23,9 +23,10 @@ Every UI decision must optimize for:
 ## Quick Start
 1. Setup: `python -m venv .venv && .venv\Scripts\activate && pip install -r requirements.txt`
 2. Install MYCEL: `pip install -e X:\Projects\_GAIA\_MYCEL`
-3. Install browsers: `playwright install`
-4. Launch: `python run.py`
-5. Open: http://localhost:8502
+3. Install autojs: `pip install -e autojs/`
+4. Install browsers: `playwright install`
+5. Launch: `python run.py`
+6. Open: http://localhost:8502
 
 ## Setup & Launch
 
@@ -65,11 +66,12 @@ streamlit run ui/app.py --server.port 8502  # jSeeker only
 5. User edits are sacred -- the feedback system learns from them, never overrides
 
 ## Directory Structure
-jseeker/ -- main package (models, llm, jd_parser, matcher, adapter, ats_scorer, renderer, outreach, tracker, job_discovery, job_monitor, feedback)
+jseeker/ -- core package (models, llm, jd_parser, matcher, adapter, ats_scorer, renderer, outreach, tracker, job_discovery, job_monitor, feedback)
+autojs/ -- automation sibling package (auto_apply, answer_bank, apply_verifier, apply_monitor, ats_runners/)
 data/ -- YAML resume blocks, HTML/CSS templates, prompt templates, ATS profiles, SQLite DB
 ui/ -- Streamlit app (dashboard, new_resume, editor, tracker, job_discovery, block_manager, analytics)
 scripts/ -- maintenance tools (backfill_application_data.py, validation test suites)
-tests/ -- pytest suite
+tests/ -- pytest suite (core jseeker, 500+ tests)
 docs/ -- PRD, architecture, user guide, ATS research, changelog
 output/ -- generated resumes (gitignored)
 
@@ -87,8 +89,11 @@ output/ -- generated resumes (gitignored)
 - **MNEMIS**: Pattern storage via integrations/mnemis_bridge.py (Phase 3+)
 
 ## Testing
-# Full test suite (642 tests, 640 passing as of v0.3.13)
+# Full test suite (641 tests, 641 passing as of v0.3.14)
+# Core jseeker (500 tests):
 pytest tests/ --cov=jseeker
+# Automation package (141 tests):
+pytest autojs/tests/ -q --tb=short
 
 # Faster feedback during development (~110s without coverage)
 pytest tests/ -q --tb=short
@@ -135,7 +140,7 @@ python scripts/test_v0_3_2_complete.py
 - **Auto-apply dedup logic**: `check_dedup()` in tracker.py must NOT check the `applications` table — every tracked job lives there. Only block on `applied_verified`/`applied_soft` in `apply_queue`.
 - **ATS screening question selectors**: `.field label` and similar broad selectors catch personal info labels (Phone, Email, Name, etc.) as unknown screening questions. Both runners have `_PERSONAL_INFO_LABELS` frozenset — add new labels there, not to the answer bank.
 - **Salary extraction: multi-location JDs**: `_extract_salary()` in jd_parser.py prioritizes "Primary Location" section when multiple pay ranges are listed (e.g. PayPal San Jose + Austin). Also handles `$242,000.00` decimal-cent format via pre-normalization.
-- **automation/ namespace path depth**: Files in `jseeker/automation/` are one level deeper than the old `jseeker/` root. Any `Path(__file__).parent.parent...` data-path resolvers need one extra `.parent`. answer_bank.py uses `.parent.parent.parent`; ats_runners/*.py use `.parent.parent.parent.parent`.
+- **autojs/ namespace path depth**: Files in `autojs/autojs/` resolve data paths to repo root. answer_bank.py uses `.parent.parent.parent`; ats_runners/*.py use `.parent.parent.parent.parent`. When moving files deeper, add one `.parent` per level.
 - **Greenhouse branded URL career subdomains**: `CAREER_SUBDOMAINS` frozenset in jd_parser.py handles `careers.withwaymo.com` → extract `parts[1]` not `parts[0]`. Add new career subdomain prefixes to that frozenset.
 
 ## DO NOT

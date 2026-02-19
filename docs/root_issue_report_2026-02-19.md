@@ -1,10 +1,10 @@
 # jSeeker Root Issue Report — 2026-02-19
 
 **Version at session start:** v0.3.12
-**Version at session end:** v0.3.13
+**Version at session end:** v0.3.14
 **Tests at start:** 640 total, 639 passing
-**Tests at end:** 633 core + 141 autojs = 774 total, 772 passing
-**Commits:** `cdd3cc0` → `555e03d` → `2622d3c` → `68e8698` → `17c669a` → `acefd88` → P0 decoupling commit
+**Tests at end:** 500 core + 141 autojs = 641 total, 641 passing (1 pre-existing French lang)
+**Commits:** `cdd3cc0` → `555e03d` → `2622d3c` → `68e8698` → `17c669a` → `acefd88` → `f428659`
 
 ---
 
@@ -206,8 +206,8 @@ Several task notifications delivered results from before fixes were applied. Alw
 | `68e8698` | fix(intelligence): replace non-existent market column with salary_currency |
 | `17c669a` | fix(models): make ParsedJD.raw_text optional (default empty string) |
 | `acefd88` | fix(tests): update test_intelligence fixtures market→salary_currency |
-| *(P0 decoupling)* | refactor: promote automation to autojs/ sibling package |
+| `f428659` | fix(autojs): complete P0 decoupling — update all imports to autojs.* namespace |
 
 ---
 
-*Generated: 2026-02-19 | jSeeker v0.3.13*
+*Generated: 2026-02-19 | jSeeker v0.3.14*

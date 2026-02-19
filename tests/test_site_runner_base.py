@@ -1,7 +1,6 @@
 """Tests for the SiteRunner abstract base class."""
 
 import time
-from pathlib import Path
 
 import pytest
 

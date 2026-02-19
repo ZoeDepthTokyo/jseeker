@@ -8,7 +8,6 @@ from unittest.mock import MagicMock
 import pytest
 
 from jseeker.apply_verifier import ApplyVerifier
-from jseeker.models import VerificationResult
 
 # ── Helper ───────────────────────────────────────────────────────────
 

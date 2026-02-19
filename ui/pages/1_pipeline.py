@@ -12,7 +12,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 import streamlit as st
 
 from config import settings
-from jseeker.models import AttemptStatus, BatchSummary, RateLimitConfig
 from jseeker.pipeline import run_pipeline
 from jseeker.tracker import (
     get_queue_stats,

@@ -13,7 +13,6 @@ from pathlib import Path
 
 # Fix Windows console encoding for emojis
 if sys.platform == "win32":
-    import codecs
 
     sys.stdout.reconfigure(encoding="utf-8")
 

@@ -13,7 +13,6 @@ from typing import Optional
 from jseeker.models import (
     APICost,
     Application,
-    AttemptStatus,
     Company,
     DiscoveryStatus,
     JobDiscovery,

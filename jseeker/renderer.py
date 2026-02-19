@@ -199,8 +199,6 @@ def _format_date(date_str: str) -> str:
     if not date_str:
         return ""
 
-    from datetime import datetime
-
     parts = date_str.split("-")
 
     # Handle YYYY-MM-DD or YYYY-MM

@@ -1,6 +1,5 @@
 """Tests for the WorkdayRunner."""
 
-from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest

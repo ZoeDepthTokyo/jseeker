@@ -74,7 +74,7 @@ def aggregate_jd_corpus(db_path=None) -> dict:
 
     # --- Salary from applications ---
     salary_rows = conn.execute(
-        "SELECT salary_min, salary_max, market FROM applications "
+        "SELECT salary_min, salary_max, salary_currency FROM applications "
         "WHERE salary_min IS NOT NULL AND salary_max IS NOT NULL"
     ).fetchall()
     conn.close()
@@ -88,7 +88,7 @@ def aggregate_jd_corpus(db_path=None) -> dict:
     for r in salary_rows:
         if r["salary_min"] and r["salary_max"]:
             mid = (r["salary_min"] + r["salary_max"]) // 2
-            salary_by_market.setdefault(r["market"] or "unknown", []).append(mid)
+            salary_by_market.setdefault(r["salary_currency"] or "USD", []).append(mid)
 
     def _percentiles(vals: list[int]) -> dict:
         if not vals:

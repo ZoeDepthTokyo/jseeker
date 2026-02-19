@@ -135,6 +135,8 @@ python scripts/test_v0_3_2_complete.py
 - **Auto-apply dedup logic**: `check_dedup()` in tracker.py must NOT check the `applications` table — every tracked job lives there. Only block on `applied_verified`/`applied_soft` in `apply_queue`.
 - **ATS screening question selectors**: `.field label` and similar broad selectors catch personal info labels (Phone, Email, Name, etc.) as unknown screening questions. Both runners have `_PERSONAL_INFO_LABELS` frozenset — add new labels there, not to the answer bank.
 - **Salary extraction: multi-location JDs**: `_extract_salary()` in jd_parser.py prioritizes "Primary Location" section when multiple pay ranges are listed (e.g. PayPal San Jose + Austin). Also handles `$242,000.00` decimal-cent format via pre-normalization.
+- **automation/ namespace path depth**: Files in `jseeker/automation/` are one level deeper than the old `jseeker/` root. Any `Path(__file__).parent.parent...` data-path resolvers need one extra `.parent`. answer_bank.py uses `.parent.parent.parent`; ats_runners/*.py use `.parent.parent.parent.parent`.
+- **Greenhouse branded URL career subdomains**: `CAREER_SUBDOMAINS` frozenset in jd_parser.py handles `careers.withwaymo.com` → extract `parts[1]` not `parts[0]`. Add new career subdomain prefixes to that frozenset.
 
 ## DO NOT
 - Invent experience or metrics not in resume_blocks YAML

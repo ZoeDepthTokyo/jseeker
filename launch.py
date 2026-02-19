@@ -1,23 +1,25 @@
 """jSeeker Launch Script (Default).
 
-This is the default launcher for jSeeker. It starts only jSeeker on port 8502.
+Forwards to launch_jseeker.py. This is the default entry point for jSeeker.
 
 For other launch options:
   - python launch_jseeker.py  (same as this, explicit)
   - python launch_argus.py    (ARGUS only on port 8501)
   - python launch_both.py     (both jSeeker + ARGUS together)
+  - python run.py             (full pipeline launcher with venv/dep checks)
 
 Usage:
     python launch.py
+    python launch.py --debug
+    python launch.py --check-only
 """
 
-# Forward to standalone jSeeker launcher
+import sys
+from pathlib import Path
+
 if __name__ == "__main__":
-    from pathlib import Path
-
-    # Import and execute launch_jseeker
-    launch_jseeker_path = Path(__file__).parent / "launch_jseeker.py"
-
-    with open(launch_jseeker_path) as f:
-        code = compile(f.read(), str(launch_jseeker_path), "exec")
-        exec(code)
+    # Import and delegate to launch_jseeker so all args pass through cleanly
+    _launcher_path = Path(__file__).parent / "launch_jseeker.py"
+    _ns: dict = {}
+    exec(compile(_launcher_path.read_text(), str(_launcher_path), "exec"), _ns)
+    _ns["launcher"].run()

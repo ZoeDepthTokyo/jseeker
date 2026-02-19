@@ -4,7 +4,7 @@ import time
 
 import pytest
 
-from jseeker.automation.ats_runners.base import SiteRunner
+from autojs.ats_runners.base import SiteRunner
 from jseeker.models import AttemptResult, AttemptStatus
 
 

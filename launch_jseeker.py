@@ -1,156 +1,48 @@
 """jSeeker Launch Script (Standalone).
 
 Starts jSeeker (Streamlit Resume Engine) on port 8502.
-Includes port conflict detection and process verification.
+Uses the shared gaia_launch_lib for standardized launch infrastructure.
 
 Usage:
     python launch_jseeker.py
+    python launch_jseeker.py --debug
+    python launch_jseeker.py --check-only
+    python launch_jseeker.py --port 8510
+    python launch_jseeker.py --no-kill
+    python launch_jseeker.py --skip-warden
 """
 
-import socket
-import subprocess
 import sys
-import signal
-import time
 from pathlib import Path
 
-JSEEKER_DIR = Path(__file__).parent
-JSEEKER_APP = JSEEKER_DIR / "ui" / "app.py"
-JSEEKER_PORT = 8502
+# Make gaia_launch_lib importable from the shared GAIA directory
+sys.path.insert(0, str(Path(r"X:\Projects\_GAIA")))
 
-process = None
+from gaia_launch_lib import ProjectLauncher  # noqa: E402
 
+# Read version from package without importing jseeker itself (avoids heavy deps at launch time)
+_version_file = Path(__file__).parent / "jseeker" / "__init__.py"
+_version = "0.3.13"
+try:
+    for _line in _version_file.read_text().splitlines():
+        if _line.startswith("__version__"):
+            _version = _line.split('"')[1]
+            break
+except Exception:
+    pass
 
-def _check_port(port: int) -> bool:
-    """Check if a port is available. Returns True if free, False if in use."""
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind(("127.0.0.1", port))
-            return True
-    except OSError:
-        return False
+_PROJECT_ROOT = Path(__file__).parent.resolve()
 
-
-def _kill_port(port: int) -> bool:
-    """Attempt to kill whatever process is using a port. Returns True if freed."""
-    try:
-        subprocess.run(
-            [
-                "powershell.exe",
-                "-NoProfile",
-                "-Command",
-                f"Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue | "
-                f"ForEach-Object {{ Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }}",
-            ],
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-        time.sleep(1)
-        return _check_port(port)
-    except Exception:
-        return False
-
-
-def _clear_pycache():
-    """Clear stale __pycache__ directories to prevent import errors."""
-    count = 0
-    for cache_dir in JSEEKER_DIR.rglob("__pycache__"):
-        if cache_dir.is_dir():
-            import shutil
-
-            shutil.rmtree(cache_dir, ignore_errors=True)
-            count += 1
-    if count:
-        print(f"  Cleared {count} __pycache__ directories")
-
-
-def launch():
-    """Launch jSeeker Streamlit app."""
-    global process
-
-    print("=" * 60)
-    print("  jSeeker - The Shape-Shifting Resume Engine")
-    print("=" * 60)
-
-    # Step 0: Clear stale bytecode cache
-    _clear_pycache()
-
-    # Step 1: Check port availability
-    print(f"\n  Checking port {JSEEKER_PORT}...")
-    if not _check_port(JSEEKER_PORT):
-        print(f"  Port {JSEEKER_PORT} is in use. Attempting to free it...")
-        if _kill_port(JSEEKER_PORT):
-            print(f"  Port {JSEEKER_PORT} freed successfully.")
-        else:
-            print(f"  ERROR: Cannot free port {JSEEKER_PORT}. Please close the process manually.")
-            print(f'  Run: powershell -Command "Get-NetTCPConnection -LocalPort {JSEEKER_PORT}"')
-            return
-    else:
-        print(f"  Port {JSEEKER_PORT}: available")
-
-    # Step 2: Launch jSeeker
-    print(f"\n  Starting jSeeker on port {JSEEKER_PORT}...")
-    process = subprocess.Popen(
-        [
-            sys.executable,
-            "-m",
-            "streamlit",
-            "run",
-            str(JSEEKER_APP),
-            "--server.port",
-            str(JSEEKER_PORT),
-            "--server.headless",
-            "true",
-            "--browser.serverAddress",
-            "localhost",
-        ],
-        cwd=str(JSEEKER_DIR),
-    )
-
-    # Step 3: Verify process is running
-    time.sleep(3)
-    if process.poll() is not None:
-        print(f"  ERROR: jSeeker exited with code {process.returncode}")
-        print("\n  Check the logs above for errors.")
-        return
-
-    print(f"  jSeeker: running (PID {process.pid})")
-
-    # Step 4: Print dashboard URL
-    print("\n" + "=" * 60)
-    print(f"  jSeeker Dashboard: http://localhost:{JSEEKER_PORT}")
-    print("=" * 60)
-    print("  Press Ctrl+C to stop.")
-    print("=" * 60 + "\n")
-
-    # Wait for process
-    try:
-        while True:
-            if process.poll() is not None:
-                print(f"\n  jSeeker (PID {process.pid}) exited with code {process.returncode}")
-                return
-            time.sleep(1)
-    except KeyboardInterrupt:
-        print("\n\n  Shutting down jSeeker...")
-        shutdown()
-
-
-def shutdown():
-    """Gracefully stop the running process."""
-    global process
-    if process and process.poll() is None:
-        print(f"  Stopping jSeeker (PID {process.pid})...")
-        process.terminate()
-        try:
-            process.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            process.kill()
-    print("  jSeeker stopped.")
-
-
-# Handle Ctrl+C gracefully
-signal.signal(signal.SIGINT, lambda s, f: None)
+launcher = ProjectLauncher(
+    name="jSeeker",
+    project_root=_PROJECT_ROOT,
+    app_path=Path("ui/app.py"),
+    default_port=8502,
+    venv_name=".venv",
+    key_imports=["streamlit", "anthropic", "yaml", "pydantic"],
+    editable_extras=[str(Path(r"X:\Projects\_GAIA\_MYCEL"))],
+    version=_version,
+)
 
 if __name__ == "__main__":
-    launch()
+    launcher.run()

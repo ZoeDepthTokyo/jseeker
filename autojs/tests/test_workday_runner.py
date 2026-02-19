@@ -5,9 +5,9 @@ from unittest.mock import MagicMock
 import pytest
 import yaml
 
-from jseeker.automation.answer_bank import answer_screening_question, load_answer_bank
-from jseeker.automation.ats_runners.base import SiteRunner
-from jseeker.automation.ats_runners.workday import WorkdayRunner, _SELECTORS_PATH
+from autojs.answer_bank import answer_screening_question, load_answer_bank
+from autojs.ats_runners.base import SiteRunner
+from autojs.ats_runners.workday import WorkdayRunner, _SELECTORS_PATH
 
 
 @pytest.fixture

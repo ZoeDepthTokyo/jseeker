@@ -10,13 +10,13 @@ from typing import Optional
 import yaml
 from playwright.sync_api import Page, TimeoutError as PlaywrightTimeout
 
-from jseeker.automation.answer_bank import (
+from autojs.answer_bank import (
     AnswerBank,
     PersonalInfo,
     answer_screening_question,
     get_personal_info,
 )
-from jseeker.automation.ats_runners.base import SiteRunner
+from autojs.ats_runners.base import SiteRunner
 from jseeker.models import AttemptResult, AttemptStatus
 
 logger = logging.getLogger(__name__)

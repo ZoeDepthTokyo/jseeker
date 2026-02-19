@@ -7,8 +7,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-from jseeker.automation.ats_runners.base import SiteRunner
-from jseeker.automation.ats_runners.greenhouse import GreenhouseRunner, _SELECTORS_PATH
+from autojs.ats_runners.base import SiteRunner
+from autojs.ats_runners.greenhouse import GreenhouseRunner, _SELECTORS_PATH
 
 # ── Fixtures ─────────────────────────────────────────────────────────
 
@@ -164,7 +164,7 @@ def test_verification_dom_text_match(runner):
 
 def test_greenhouse_form_fixture_exists():
     """Greenhouse mock HTML fixture exists."""
-    fixture_path = Path(__file__).parent / "fixtures" / "ats_pages" / "greenhouse_form.html"
+    fixture_path = Path(__file__).parent.parent.parent / "tests" / "fixtures" / "ats_pages" / "greenhouse_form.html"
     assert fixture_path.exists()
     content = fixture_path.read_text()
     assert "first_name" in content

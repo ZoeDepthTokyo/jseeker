@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from jseeker.automation.answer_bank import (
+from autojs.answer_bank import (
     REQUIRED_MARKETS,
     AnswerBank,
     PersonalInfo,

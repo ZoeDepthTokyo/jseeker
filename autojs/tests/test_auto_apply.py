@@ -8,8 +8,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from jseeker.automation.auto_apply import AutoApplyEngine
-from jseeker.automation.ats_runners.base import SiteRunner
+from autojs.auto_apply import AutoApplyEngine
+from autojs.ats_runners.base import SiteRunner
 from jseeker.models import (
     AttemptResult,
     AttemptStatus,
@@ -110,7 +110,7 @@ def test_register_runner(engine):
 
 def test_detect_workday_routes_correctly(engine):
     """WorkdayRunner detected for Workday URLs."""
-    from jseeker.automation.ats_runners.workday import WorkdayRunner
+    from autojs.ats_runners.workday import WorkdayRunner
 
     wd = WorkdayRunner()
     engine.register_runner(wd)
@@ -120,7 +120,7 @@ def test_detect_workday_routes_correctly(engine):
 
 def test_detect_greenhouse_routes_correctly(engine):
     """GreenhouseRunner detected for Greenhouse URLs."""
-    from jseeker.automation.ats_runners.greenhouse import GreenhouseRunner
+    from autojs.ats_runners.greenhouse import GreenhouseRunner
 
     gh = GreenhouseRunner()
     engine.register_runner(gh)

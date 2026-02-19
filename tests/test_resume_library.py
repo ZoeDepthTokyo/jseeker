@@ -206,7 +206,7 @@ class TestPDFUpload:
             "uploaded_templates": [
                 {
                     "name": "Test_Resume",
-                    "path": "X:/Projects/jSeeker/docs/Resume References/Test_Resume.pdf",
+                    "path": "docs/Resume References/Test_Resume.pdf",
                     "language": "Spanish",
                     "uploaded_at": "2026-02-10T15:30:00",
                     "size_kb": len(sample_pdf_bytes) / 1024,

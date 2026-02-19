@@ -62,8 +62,14 @@ class JseekerSettings(_BaseSettings):
     )
 
     # --- GAIA Integration ---
-    gaia_root: Path = Path("X:/Projects/_GAIA")
-    argus_log_path: Path = Path("X:/Projects/_GAIA/logs/jseeker_build.jsonl")
+    # Set GAIA_ROOT env var to enable GAIA integration; omit for standalone operation.
+    gaia_root: Path = Path(os.environ.get("GAIA_ROOT", ""))
+    argus_log_path: Path = Path(os.environ.get("GAIA_ROOT", "")) / "logs" / "jseeker_build.jsonl"
+
+    @property
+    def gaia_enabled(self) -> bool:
+        """Return True if GAIA_ROOT is set and the directory exists."""
+        return bool(self.gaia_root) and self.gaia_root != Path("") and self.gaia_root.exists()
 
     @model_validator(mode="after")
     def _resolve_api_key(self):

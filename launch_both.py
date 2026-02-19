@@ -11,6 +11,7 @@ Usage:
     python launch_both.py
 """
 
+import os
 import socket
 import subprocess
 import sys
@@ -22,7 +23,8 @@ JSEEKER_DIR = Path(__file__).parent
 JSEEKER_APP = JSEEKER_DIR / "ui" / "app.py"
 JSEEKER_PORT = 8502
 
-ARGUS_DIR = Path(r"X:\Projects\_GAIA\_ARGUS")
+_GAIA_ROOT = Path(os.environ.get("GAIA_ROOT", ""))
+ARGUS_DIR = (_GAIA_ROOT / "_ARGUS") if _GAIA_ROOT and _GAIA_ROOT.exists() else Path("_ARGUS")
 ARGUS_APP = ARGUS_DIR / "dashboard" / "app.py"
 ARGUS_PORT = 8501
 

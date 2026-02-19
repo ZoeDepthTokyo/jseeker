@@ -3,7 +3,12 @@
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+# ui/pages/ is two levels below the project root
+_PROJECT_ROOT = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(_PROJECT_ROOT))
+
+_RESUME_REFS_DIR = _PROJECT_ROOT / "docs" / "Resume References"
+_SOURCES_PATH = _PROJECT_ROOT / "data" / "resume_sources.json"
 
 import pandas as pd
 import streamlit as st
@@ -53,10 +58,10 @@ with st.expander("Upload PDF Templates", expanded=False):
 
     if st.button("Upload Template(s)", width="stretch", disabled=not uploaded_files):
         if uploaded_files:
-            save_dir = Path("X:/Projects/jSeeker/docs/Resume References")
+            save_dir = _RESUME_REFS_DIR
             save_dir.mkdir(parents=True, exist_ok=True)
 
-            sources_path = Path("X:/Projects/jSeeker/data/resume_sources.json")
+            sources_path = _SOURCES_PATH
             if sources_path.exists():
                 sources_data = json.loads(sources_path.read_text(encoding="utf-8"))
             else:
@@ -108,7 +113,7 @@ with st.expander("Upload PDF Templates", expanded=False):
                 st.rerun()
 
     # Display existing uploaded templates with preview and delete
-    sources_path = Path("X:/Projects/jSeeker/data/resume_sources.json")
+    sources_path = _SOURCES_PATH
     if sources_path.exists():
         sources_data = json.loads(sources_path.read_text(encoding="utf-8"))
         uploaded_templates = sources_data.get("uploaded_templates", [])

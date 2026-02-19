@@ -1,0 +1,87 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jseeker"
+version = "0.3.12"
+description = "The Shape-Shifting Resume Engine"
+requires-python = ">=3.11"
+dependencies = [
+    "pyyaml>=6.0",
+    "playwright>=1.40.0",
+    "beautifulsoup4>=4.12.0",
+    "anthropic>=0.39.0",
+    "streamlit>=1.30.0",
+    "python-docx>=1.1.0",
+    "jinja2>=3.1.0",
+    "requests>=2.31.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    "PyMuPDF>=1.23.0",
+    "weasyprint>=60.0",
+    "statsmodels>=0.14.0",
+    "plotly>=5.18.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.1.0",
+    "black>=23.0",
+]
+gaia = [
+    # Install manually: pip install -e $GAIA_ROOT/_MYCEL
+    # Not on PyPI; requires GAIA_ROOT environment variable.
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["jseeker*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--verbose",
+    "--strict-markers",
+    "--tb=short",
+    "--disable-warnings",
+]
+markers = [
+    "integration: Integration tests (cross-module workflows)",
+    "performance: Performance and benchmark tests",
+    "slow: Slow-running tests (>1s)",
+]
+
+[tool.coverage.run]
+source = ["jseeker"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/.venv/*",
+]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]

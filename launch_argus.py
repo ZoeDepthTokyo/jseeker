@@ -7,6 +7,7 @@ Usage:
     python launch_argus.py
 """
 
+import os
 import socket
 import subprocess
 import sys
@@ -14,7 +15,8 @@ import signal
 import time
 from pathlib import Path
 
-ARGUS_DIR = Path(r"X:\Projects\_GAIA\_ARGUS")
+_GAIA_ROOT = Path(os.environ.get("GAIA_ROOT", ""))
+ARGUS_DIR = (_GAIA_ROOT / "_ARGUS") if _GAIA_ROOT and _GAIA_ROOT.exists() else Path("_ARGUS")
 ARGUS_APP = ARGUS_DIR / "dashboard" / "app.py"
 ARGUS_PORT = 8501
 
@@ -63,7 +65,7 @@ def launch():
     # Step 1: Check if ARGUS exists
     if not ARGUS_APP.exists():
         print(f"\n  ERROR: ARGUS not found at {ARGUS_APP}")
-        print("  Please ensure ARGUS is installed at X:\\Projects\\_GAIA\\_ARGUS")
+        print("  Please set GAIA_ROOT environment variable to the GAIA ecosystem root.")
         return
 
     # Step 2: Check port availability

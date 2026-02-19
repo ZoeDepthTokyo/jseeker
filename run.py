@@ -17,8 +17,10 @@ VENV_DIR = PROJECT_ROOT / ".venv"
 REQUIREMENTS = PROJECT_ROOT / "requirements.txt"
 APP_ENTRY = PROJECT_ROOT / "ui" / "app.py"
 PORT = 8502
-MYCEL_PATH = Path(r"X:\Projects\_GAIA\_MYCEL")
-WARDEN_PATH = Path(r"X:\Projects\_GAIA\_WARDEN")
+
+_GAIA_ROOT = Path(os.environ.get("GAIA_ROOT", ""))
+MYCEL_PATH = (_GAIA_ROOT / "_MYCEL") if _GAIA_ROOT and _GAIA_ROOT.exists() else None
+WARDEN_PATH = (_GAIA_ROOT / "_WARDEN") if _GAIA_ROOT and _GAIA_ROOT.exists() else None
 
 
 def get_venv_python() -> Path:
@@ -94,7 +96,7 @@ def step_dependencies():
         print("  Continuing anyway (some deps may be optional)...")
 
     # Install MYCEL (editable, local)
-    if MYCEL_PATH.exists():
+    if MYCEL_PATH is not None and MYCEL_PATH.exists():
         print("  Installing MYCEL (local editable)...")
         subprocess.run(
             [str(venv_pip), "install", "-e", str(MYCEL_PATH), "--quiet"],
@@ -127,7 +129,7 @@ def step_warden():
     print("\n[3/4] Running WARDEN validation...")
     venv_python = get_venv_python()
 
-    if not (WARDEN_PATH / "warden" / "cli.py").exists():
+    if WARDEN_PATH is None or not (WARDEN_PATH / "warden" / "cli.py").exists():
         print(f"  SKIP: WARDEN not found at {WARDEN_PATH}")
         return True
 

@@ -14,6 +14,11 @@ from jseeker.style_extractor import (
     load_template_style,
 )
 
+# Project-relative paths — never hardcode machine-specific absolute paths
+_PROJECT_ROOT = Path(__file__).parent.parent
+_DOCS_DIR = _PROJECT_ROOT / "docs" / "Resume References"
+_DATA_DIR = _PROJECT_ROOT / "data"
+
 
 class TestExtractedStyleModel:
     """Test ExtractedStyle Pydantic model."""
@@ -191,13 +196,13 @@ class TestPDFStyleExtraction:
                 sys.modules["fitz"] = fitz_backup
 
     @pytest.mark.skipif(
-        not Path("X:/Projects/jSeeker/docs/Resume References").exists(),
+        not _DOCS_DIR.exists(),
         reason="Resume References directory not found",
     )
     def test_extract_from_real_pdf(self):
         """Test extraction from real uploaded PDF template."""
         # Look for actual uploaded templates
-        refs_dir = Path("X:/Projects/jSeeker/docs/Resume References")
+        refs_dir = _DOCS_DIR
         pdf_files = list(refs_dir.glob("Fede Ponce*.pdf"))
 
         if not pdf_files:
@@ -244,7 +249,7 @@ class TestTemplateStyleLoading:
         assert style is None
 
     @pytest.mark.skipif(
-        not Path("X:/Projects/jSeeker/data/resume_sources.json").exists(),
+        not (_DATA_DIR / "resume_sources.json").exists(),
         reason="resume_sources.json not found",
     )
     def test_get_available_styles_from_sources(self):
@@ -292,12 +297,12 @@ class TestIntegration:
         assert "#1A5490" in css
 
     @pytest.mark.skipif(
-        not Path("X:/Projects/jSeeker/docs/Resume References").exists(),
+        not _DOCS_DIR.exists(),
         reason="Resume References directory not found",
     )
     def test_extract_and_generate_css_from_real_pdf(self):
         """Test extracting style from real PDF and generating CSS."""
-        refs_dir = Path("X:/Projects/jSeeker/docs/Resume References")
+        refs_dir = _DOCS_DIR
         pdf_files = list(refs_dir.glob("Fede Ponce*.pdf"))
 
         if not pdf_files:

@@ -704,7 +704,7 @@ def rank_discoveries_by_tag_weight(
     after ranking by relevance and freshness.
 
     Ranking formula:
-        composite_score = (tag_weight * 0.35) + (resume_match * 0.65) + (freshness_bonus * 0.05)
+        composite_score = (tag_weight * 0.30) + (resume_match * 0.50) + (freshness_bonus * 0.20)
 
     Args:
         discoveries: List of JobDiscovery objects or dicts with search_tags field
@@ -793,27 +793,27 @@ def rank_discoveries_by_tag_weight(
         else:
             freshness_raw = 0.0
 
-        # Composite score: tag_weight (35%) + resume_match (65%) + freshness_bonus (5%)
+        # Composite score: tag_weight (30%) + resume_match (50%) + freshness_bonus (20%)
         # Normalize tag_weight to 0-1 scale by dividing by 100 (tag weights range 0-100)
         normalized_tag_weight = min(total_weight / 100.0, 1.0)
         composite_score = (
-            (normalized_tag_weight * 0.35) + (resume_match * 0.65) + (freshness_raw * 0.05)
+            (normalized_tag_weight * 0.30) + (resume_match * 0.50) + (freshness_raw * 0.20)
         )
 
         # Store composite score and breakdown in discovery for UI display
         if isinstance(d, dict):
             d["composite_score"] = composite_score
-            d["tag_weight_contribution"] = normalized_tag_weight * 0.35
-            d["resume_match_contribution"] = resume_match * 0.65
-            d["freshness_contribution"] = freshness_raw * 0.05
+            d["tag_weight_contribution"] = normalized_tag_weight * 0.30
+            d["resume_match_contribution"] = resume_match * 0.50
+            d["freshness_contribution"] = freshness_raw * 0.20
         else:
             d.composite_score = composite_score
-            d.tag_weight_contribution = normalized_tag_weight * 0.35
-            d.resume_match_contribution = resume_match * 0.65
-            d.freshness_contribution = freshness_raw * 0.05
+            d.tag_weight_contribution = normalized_tag_weight * 0.30
+            d.resume_match_contribution = resume_match * 0.50
+            d.freshness_contribution = freshness_raw * 0.20
 
-        # Return tuple: (composite_score, posting_date) for tie-breaking
-        return (composite_score, posting_date_obj)
+        # Return tuple: (posting_date, composite_score) — recency-first, score as tiebreaker
+        return (posting_date_obj, composite_score)
 
     sorted_discoveries = sorted(discoveries, key=_get_sort_key, reverse=True)
 
@@ -823,7 +823,7 @@ def rank_discoveries_by_tag_weight(
         logger.info(
             f"rank_discoveries_by_tag_weight | ranked {len(sorted_discoveries)} jobs | "
             f"resume_keywords={len(resume_keywords)} | "
-            f"top_scores=[{', '.join([f'{_get_sort_key(d)[0]:.2f}' for d in top_3])}]"
+            f"top_scores=[{', '.join([f'{_get_sort_key(d)[1]:.2f}' for d in top_3])}]"
         )
 
     # Apply per-country limit if specified

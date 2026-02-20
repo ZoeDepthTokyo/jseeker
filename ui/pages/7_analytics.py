@@ -1,9 +1,8 @@
 """Analytics — Pattern Learning and Salary & Markets intelligence dashboard."""
 
 import json
-import sqlite3
 import sys
-from datetime import datetime, date
+from datetime import date, datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -17,6 +16,129 @@ from config import settings
 from jseeker.llm import llm
 from jseeker.pattern_learner import get_pattern_stats
 from jseeker.tracker import tracker_db
+
+
+@st.cache_data(ttl=60)
+def _cached_get_pattern_stats(db_path_str: str):
+    """Cache pattern stats for 60 seconds."""
+    from pathlib import Path as _Path
+
+    return get_pattern_stats(db_path=_Path(db_path_str))
+
+
+@st.cache_data(ttl=60)
+def _cached_cost_data(db_path_str: str):
+    """Cache API cost records for 60 seconds."""
+    import sqlite3 as _sqlite3
+
+    conn = _sqlite3.connect(db_path_str)
+    c = conn.cursor()
+    c.execute("""
+        SELECT COALESCE(SUM(cost_usd), 0) as total
+        FROM api_costs
+        WHERE strftime('%Y-%m', timestamp) = strftime('%Y-%m', 'now')
+    """)
+    monthly_cost = c.fetchone()[0]
+    c.execute("SELECT COUNT(*) FROM resumes")
+    total_resumes = c.fetchone()[0]
+    c.execute("""
+        SELECT DATE(timestamp) as date, SUM(cost_usd) as daily_cost
+        FROM api_costs
+        GROUP BY DATE(timestamp)
+        ORDER BY timestamp ASC
+    """)
+    cost_data = [{"date": row[0], "cost": row[1]} for row in c.fetchall()]
+    conn.close()
+    return monthly_cost, total_resumes, cost_data
+
+
+@st.cache_data(ttl=60)
+def _cached_list_applications_analytics():
+    """Cache applications for analytics tab for 60 seconds."""
+    return tracker_db.list_applications()
+
+
+@st.cache_data(ttl=60)
+def _cached_all_patterns(db_path_str: str) -> list[dict]:
+    """Cache all learned patterns for 60 seconds."""
+    import sqlite3 as _sqlite3
+
+    conn = _sqlite3.connect(db_path_str)
+    conn.row_factory = _sqlite3.Row
+    c = conn.cursor()
+    c.execute(
+        "SELECT id, pattern_type, source_text, target_text, jd_context, "
+        "frequency, confidence FROM learned_patterns ORDER BY frequency DESC"
+    )
+    rows = c.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+@st.cache_data(ttl=60)
+def _cached_pattern_history(db_path_str: str) -> tuple[list[dict], list[dict], list[dict]]:
+    """Cache pattern history, timeline, and savings data for 60 seconds.
+
+    Returns:
+        Tuple of (patterns, pattern_timeline, savings_data)
+    """
+    import sqlite3 as _sqlite3
+
+    conn = _sqlite3.connect(db_path_str)
+    conn.row_factory = _sqlite3.Row
+    c = conn.cursor()
+
+    c.execute(
+        "SELECT id, pattern_type, source_text, target_text, jd_context, "
+        "frequency, confidence, created_at, last_used_at "
+        "FROM learned_patterns ORDER BY created_at DESC LIMIT 50"
+    )
+    patterns = [dict(r) for r in c.fetchall()]
+
+    c.execute(
+        "SELECT DATE(created_at) as date, COUNT(*) as patterns_created "
+        "FROM learned_patterns GROUP BY DATE(created_at) ORDER BY created_at ASC"
+    )
+    pattern_timeline = [{"date": row[0], "count": row[1]} for row in c.fetchall()]
+
+    c.execute(
+        "SELECT pattern_type, COUNT(*) as pattern_count, SUM(frequency) as total_uses, "
+        "SUM(CASE WHEN frequency >= 3 THEN frequency ELSE 0 END) as cache_hits "
+        "FROM learned_patterns GROUP BY pattern_type ORDER BY cache_hits DESC"
+    )
+    savings_data = []
+    for row in c.fetchall():
+        cost_saved = row["cache_hits"] * 0.01
+        savings_data.append(
+            {
+                "Type": row["pattern_type"].replace("_", " ").title(),
+                "Patterns": row["pattern_count"],
+                "Total Uses": row["total_uses"],
+                "Cache Hits": row["cache_hits"],
+                "Cost Saved": f"${cost_saved:.2f}",
+            }
+        )
+
+    conn.close()
+    return patterns, pattern_timeline, savings_data
+
+
+@st.cache_data(ttl=60)
+def _cached_resume_costs(db_path_str: str) -> list[dict]:
+    """Cache per-resume cost data for 60 seconds."""
+    import sqlite3 as _sqlite3
+
+    conn = _sqlite3.connect(db_path_str)
+    conn.row_factory = _sqlite3.Row
+    c = conn.cursor()
+    c.execute(
+        "SELECT ROW_NUMBER() OVER (ORDER BY created_at) as resume_number, generation_cost "
+        "FROM resumes WHERE generation_cost IS NOT NULL AND generation_cost > 0 "
+        "ORDER BY created_at ASC"
+    )
+    rows = c.fetchall()
+    conn.close()
+    return [{"resume_number": row[0], "cost": row[1]} for row in rows]
 
 st.set_page_config(page_title="Analytics - jSeeker", page_icon="📊", layout="wide")
 
@@ -52,7 +174,7 @@ with tab1:
     st.header("📊 Pattern Learning Stats")
 
     try:
-        stats = get_pattern_stats(db_path=settings.db_path)
+        stats = _cached_get_pattern_stats(str(settings.db_path))
 
         if stats["total_patterns"] == 0:
             st.info(
@@ -129,20 +251,7 @@ with tab1:
     st.header("💰 Cost Optimization")
 
     try:
-        conn = sqlite3.connect(str(settings.db_path))
-        c = conn.cursor()
-
-        # Monthly cost
-        c.execute("""
-            SELECT COALESCE(SUM(cost_usd), 0) as total
-            FROM api_costs
-            WHERE strftime('%Y-%m', timestamp) = strftime('%Y-%m', 'now')
-        """)
-        monthly_cost = c.fetchone()[0]
-
-        # Total resumes generated
-        c.execute("SELECT COUNT(*) FROM resumes")
-        total_resumes = c.fetchone()[0]
+        monthly_cost, total_resumes, cost_data = _cached_cost_data(str(settings.db_path))
 
         # Average cost per resume
         avg_cost = monthly_cost / total_resumes if total_resumes > 0 else 0.0
@@ -161,15 +270,6 @@ with tab1:
         generate more resumes.
         """)
 
-        # Cumulative cost chart
-        c.execute("""
-            SELECT DATE(timestamp) as date, SUM(cost_usd) as daily_cost
-            FROM api_costs
-            GROUP BY DATE(timestamp)
-            ORDER BY timestamp ASC
-        """)
-        cost_data = [{"date": row[0], "cost": row[1]} for row in c.fetchall()]
-
         if cost_data:
             cost_df = pd.DataFrame(cost_data)
             cost_df["cumulative_cost"] = cost_df["cost"].cumsum()
@@ -186,8 +286,6 @@ with tab1:
         else:
             st.info("No cost data yet. Generate your first resume to start tracking.")
 
-        conn.close()
-
     except Exception as exc:
         st.error(f"Failed to load cost data: {exc}")
 
@@ -203,18 +301,7 @@ with tab1:
     )
 
     try:
-        conn_schema = sqlite3.connect(str(settings.db_path))
-        conn_schema.row_factory = sqlite3.Row
-        c_schema = conn_schema.cursor()
-
-        # Get all patterns grouped by type with context tags
-        c_schema.execute("""
-            SELECT id, pattern_type, source_text, target_text, jd_context, frequency, confidence
-            FROM learned_patterns
-            ORDER BY frequency DESC
-        """)
-        all_patterns = c_schema.fetchall()
-        conn_schema.close()
+        all_patterns = _cached_all_patterns(str(settings.db_path))
 
         if all_patterns:
             # Collect all unique tags (keywords) and roles across patterns
@@ -413,20 +500,7 @@ then increase as they are validated by successful reuse.
 """)
 
     try:
-        conn = sqlite3.connect(str(settings.db_path))
-        conn.row_factory = sqlite3.Row
-        c = conn.cursor()
-
-        # Get all patterns ordered by creation date
-        c.execute("""
-            SELECT id, pattern_type, source_text, target_text, jd_context,
-                   frequency, confidence, created_at, last_used_at
-            FROM learned_patterns
-            ORDER BY created_at DESC
-            LIMIT 50
-        """)
-
-        patterns = c.fetchall()
+        patterns, pattern_timeline, savings_data = _cached_pattern_history(str(settings.db_path))
 
         if patterns:
             st.markdown(f"### Pattern Library ({len(patterns)} patterns shown)")
@@ -503,14 +577,6 @@ then increase as they are validated by successful reuse.
             # Pattern frequency over time chart
             st.markdown("### Pattern Usage Over Time")
 
-            c.execute("""
-                SELECT DATE(created_at) as date, COUNT(*) as patterns_created
-                FROM learned_patterns
-                GROUP BY DATE(created_at)
-                ORDER BY created_at ASC
-            """)
-            pattern_timeline = [{"date": row[0], "count": row[1]} for row in c.fetchall()]
-
             if pattern_timeline and len(pattern_timeline) > 1:
                 timeline_df = pd.DataFrame(pattern_timeline)
                 timeline_df["cumulative"] = timeline_df["count"].cumsum()
@@ -540,29 +606,6 @@ then increase as they are validated by successful reuse.
             # Cost savings breakdown
             st.markdown("### Cost Savings from Pattern Reuse")
 
-            c.execute("""
-                SELECT pattern_type,
-                       COUNT(*) as pattern_count,
-                       SUM(frequency) as total_uses,
-                       SUM(CASE WHEN frequency >= 3 THEN frequency ELSE 0 END) as cache_hits
-                FROM learned_patterns
-                GROUP BY pattern_type
-                ORDER BY cache_hits DESC
-            """)
-
-            savings_data = []
-            for row in c.fetchall():
-                cost_saved = row["cache_hits"] * 0.01  # $0.01 per cache hit
-                savings_data.append(
-                    {
-                        "Type": row["pattern_type"].replace("_", " ").title(),
-                        "Patterns": row["pattern_count"],
-                        "Total Uses": row["total_uses"],
-                        "Cache Hits": row["cache_hits"],
-                        "Cost Saved": f"${cost_saved:.2f}",
-                    }
-                )
-
             if savings_data:
                 savings_df = pd.DataFrame(savings_data)
                 st.dataframe(
@@ -581,8 +624,6 @@ then increase as they are validated by successful reuse.
                 "No patterns learned yet. Generate a few resumes and the system will start learning adaptation patterns."
             )
 
-        conn.close()
-
     except Exception as exc:
         st.error(f"Failed to load pattern history: {exc}")
 
@@ -597,21 +638,7 @@ jSeeker reuses more learned patterns instead of calling the LLM.
 """)
 
     try:
-        conn = sqlite3.connect(str(settings.db_path))
-        conn.row_factory = sqlite3.Row
-        c = conn.cursor()
-
-        # Get cost per resume over time
-        c.execute("""
-            SELECT
-                ROW_NUMBER() OVER (ORDER BY created_at) as resume_number,
-                generation_cost
-            FROM resumes
-            WHERE generation_cost IS NOT NULL AND generation_cost > 0
-            ORDER BY created_at ASC
-        """)
-
-        resume_costs = [{"resume_number": row[0], "cost": row[1]} for row in c.fetchall()]
+        resume_costs = _cached_resume_costs(str(settings.db_path))
 
         if len(resume_costs) >= 2:
             cost_df = pd.DataFrame(resume_costs)
@@ -675,8 +702,6 @@ jSeeker reuses more learned patterns instead of calling the LLM.
                 "No resume generation data yet. Create your first resume to start tracking performance."
             )
 
-        conn.close()
-
     except Exception as exc:
         st.error(f"Failed to load performance trends: {exc}")
 
@@ -697,7 +722,7 @@ with tab2:
     )
 
     # --- Load Applications ---
-    apps = tracker_db.list_applications()
+    apps = _cached_list_applications_analytics()
 
     # Show data availability summary
     total_apps = len(apps)

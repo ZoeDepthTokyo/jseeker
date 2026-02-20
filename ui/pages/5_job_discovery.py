@@ -34,6 +34,13 @@ if "ranked_discoveries_filter_key" not in st.session_state:
     st.session_state["ranked_discoveries_filter_key"] = None
 if "disc_page" not in st.session_state:
     st.session_state["disc_page"] = 0
+if "market_key_ver" not in st.session_state:
+    st.session_state["market_key_ver"] = 0
+if "discovery_time_window" not in st.session_state:
+    st.session_state["discovery_time_window"] = "All time"
+
+# Load known application URLs for dedup badges
+_known_app_urls: dict[str, str] = tracker_db.get_known_application_urls()
 
 # --- Saved Searches Sidebar ---
 with st.sidebar:
@@ -53,12 +60,33 @@ with st.sidebar:
                 if search.get("location"):
                     st.caption(f"Location: {search['location']}")
 
-                col1, col2 = st.columns(2)
+                col1, col2, col3 = st.columns(3)
 
                 # Load button
                 if col1.button("Load", key=f"load_{search['id']}"):
-                    # Load tag weights
-                    for tag, weight in search["tag_weights"].items():
+                    # Restore search tags + weights from saved config.
+                    # Saved tag_weights may contain junk entries (test data,
+                    # non-search labels) from old save logic — filter them
+                    # against actual search_tags in the DB.
+                    current_tags = tracker_db.list_search_tags(active_only=False)
+                    known_search_tags = {t["tag"] for t in current_tags}
+
+                    # Only consider saved tags that are real search tags
+                    valid_saved_tags = {
+                        tag: weight
+                        for tag, weight in search["tag_weights"].items()
+                        if tag in known_search_tags
+                    }
+
+                    # Activate saved tags, deactivate the rest
+                    for t in current_tags:
+                        should_be_active = t["tag"] in valid_saved_tags
+                        is_active = int(t.get("active", 1)) == 1
+                        if should_be_active != is_active:
+                            tracker_db.toggle_search_tag(t["id"], should_be_active)
+
+                    # Set weights only for valid search tags
+                    for tag, weight in valid_saved_tags.items():
                         tracker_db.set_tag_weight(tag, weight)
 
                     # Load markets
@@ -71,8 +99,11 @@ with st.sidebar:
                     if search.get("location"):
                         st.session_state["loaded_location"] = search["location"]
 
-                    # Bump slider key version to force slider reinitialization
+                    # Bump key versions to force widget reinitialization
                     st.session_state["tag_weight_key_ver"] += 1
+                    st.session_state["market_key_ver"] += 1
+                    # Invalidate tag weights cache so fragment re-reads from DB
+                    st.session_state["tag_weights_dirty"] = True
                     # Clear stale draft state
                     st.session_state["draft_mode"] = False
                     st.session_state["draft_weights"] = {}
@@ -92,6 +123,31 @@ with st.sidebar:
                         st.rerun()
                     else:
                         st.error("Failed to delete")
+
+                # Update button — overwrite saved config with current settings
+                if col3.button("Update", key=f"update_{search['id']}"):
+                    active_tags_for_save = {
+                        t["tag"]
+                        for t in tracker_db.list_search_tags(active_only=True)
+                    }
+                    current_tw = {
+                        tw["tag"]: tw["weight"]
+                        for tw in tracker_db.list_tag_weights()
+                        if tw["tag"] in active_tags_for_save
+                    }
+                    if tracker_db.update_saved_search(
+                        search["id"],
+                        tag_weights=current_tw,
+                        markets=st.session_state.get(
+                            "job_discovery_markets", []
+                        ),
+                        sources=st.session_state.get("current_sources", []),
+                        location=st.session_state.get("current_location", ""),
+                    ):
+                        st.success(f"Updated: {search['name']}")
+                        st.rerun()
+                    else:
+                        st.error("Failed to update")
 
                 # Rename form
                 with st.form(key=f"rename_form_{search['id']}"):
@@ -133,8 +189,16 @@ with st.sidebar:
             if not search_name.strip():
                 st.error("Please enter a name")
             else:
-                # Get current tag weights
-                tag_weights = {tw["tag"]: tw["weight"] for tw in tracker_db.list_tag_weights()}
+                # Get current tag weights — only for active search tags
+                # (tag_weights table may contain junk entries from tests/other features)
+                active_search_tags = {
+                    t["tag"] for t in tracker_db.list_search_tags(active_only=True)
+                }
+                tag_weights = {
+                    tw["tag"]: tw["weight"]
+                    for tw in tracker_db.list_tag_weights()
+                    if tw["tag"] in active_search_tags
+                }
 
                 # Get current markets from session
                 current_markets = st.session_state.get("job_discovery_markets", [])
@@ -180,7 +244,8 @@ def _tag_weights_fragment():
 
         if tags:
             # Calculate current active tag weights and total
-            active_tags = [t for t in tags if bool(t.get("active", True))]
+            # Use int() cast — SQLite BOOLEAN DEFAULT TRUE may store as string
+            active_tags = [t for t in tags if int(t.get("active", 1)) == 1]
             active_weights = {t["tag"]: tag_weights.get(t["tag"], 50) for t in active_tags}
             weight_sum = sum(active_weights.values())
 
@@ -188,7 +253,7 @@ def _tag_weights_fragment():
             for tag in tags:
                 col1, col2, col3, col4 = st.columns([3, 1, 2, 1])
                 col1.text(tag["tag"])
-                active = bool(tag.get("active", True))
+                active = int(tag.get("active", 1)) == 1
                 col2.caption("✓ Active" if active else "✗ Inactive")
 
                 # Weight slider (only enabled for active tags)
@@ -219,7 +284,7 @@ def _tag_weights_fragment():
 
                 if col4.button("Toggle", key=f"toggle_{tag['id']}"):
                     tracker_db.toggle_search_tag(tag["id"], not active)
-                    st.rerun()
+                    st.rerun(scope="app")
 
             # Display draft mode controls
             if st.session_state["draft_mode"]:
@@ -304,7 +369,7 @@ selected_markets = st.multiselect(
     options=list(market_options.keys()),
     default=st.session_state["job_discovery_markets"],
     format_func=lambda x: market_options[x],
-    key="job_discovery_markets_widget",
+    key=f"job_discovery_markets_widget_v{st.session_state.get('market_key_ver', 0)}",
 )
 st.session_state["job_discovery_markets"] = selected_markets
 
@@ -430,9 +495,9 @@ if col_search.button("🔍 Run Search", type="primary") or (auto_run is True):
     tag_strings = [t["tag"] for t in active_tags]
 
     # Validate tag weights sum to 100%
-    tag_weights_active = {
-        tw["tag"]: tw["weight"] for tw in tracker_db.list_tag_weights() if tw["tag"] in tag_strings
-    }
+    # Use get_tag_weight per active tag (returns default 50 if unset) —
+    # matches the display fragment's calculation exactly.
+    tag_weights_active = {tag: tracker_db.get_tag_weight(tag) for tag in tag_strings}
     weight_sum = sum(tag_weights_active.values())
 
     if not tag_strings:
@@ -639,6 +704,17 @@ search_query = st.text_input(
     placeholder="Title, company, location, source, or tag",
 )
 
+# Time window filter
+_time_options = ["All time", "Today", "24h", "48h", "7 days"]
+time_window = st.radio(
+    "Posted within",
+    options=_time_options,
+    index=_time_options.index(st.session_state.get("discovery_time_window", "All time")),
+    horizontal=True,
+    label_visibility="collapsed",
+)
+st.session_state["discovery_time_window"] = time_window
+
 # Apply filters
 status_value = None if status_filter == "All" else status_filter
 market_value = None if market_filter == "All" else market_filter
@@ -658,6 +734,24 @@ else:
     else:
         _all_ranked = []
 
+# Apply time window filter
+if time_window != "All time":
+    from datetime import datetime, timedelta, date as date_type
+    _now = datetime.now().date()
+    _cutoffs = {"Today": 0, "24h": 1, "48h": 2, "7 days": 7}
+    _days = _cutoffs.get(time_window, 0)
+    _cutoff = _now - timedelta(days=_days)
+    def _parse_posting_date(d):
+        pd = d.get("posting_date") or d.get("posted_date")
+        if not pd:
+            return None
+        if isinstance(pd, date_type):
+            return pd
+        try:
+            return datetime.strptime(str(pd), "%Y-%m-%d").date()
+        except (ValueError, TypeError):
+            return None
+    _all_ranked = [d for d in _all_ranked if (_parse_posting_date(d) or _cutoff) >= _cutoff]
 
 # Apply filters in-memory on the ranked cache (no DB re-query needed)
 def _filter_discoveries(ranked_list, status, search, market, location_val, source):
@@ -711,7 +805,7 @@ discoveries = _filter_discoveries(
 PAGE_SIZE = 50
 
 # Detect filter changes and reset to page 0
-_filter_hash = (status_value, search_query, market_value, location_value, source_value)
+_filter_hash = (status_value, search_query, market_value, location_value, source_value, time_window)
 if st.session_state.get("_disc_filter_hash") != _filter_hash:
     st.session_state["_disc_filter_hash"] = _filter_hash
     st.session_state["disc_page"] = 0
@@ -1012,6 +1106,17 @@ if discoveries:
             location = disc.get("location", "Unknown")
             source = disc.get("source", "")
             st.caption(f"📍 {location} · {source}")
+
+            # Dedup badge — check if already in tracker
+            _job_url = disc.get("url", "")
+            if _job_url and _job_url in _known_app_urls:
+                _app_status = _known_app_urls[_job_url]
+                if _app_status in ("applied", "applied_verified"):
+                    st.caption("✅ **Applied** · Already in tracker")
+                elif _app_status == "easy_apply":
+                    st.caption("🟦 **Easy Apply** · Already in tracker")
+                else:
+                    st.caption("📥 **In Tracker** · Already imported")
 
             # Score breakdown in expandable section
             with st.expander("📊 Score Breakdown", expanded=False):

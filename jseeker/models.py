@@ -43,6 +43,7 @@ class ResumeStatus(str, Enum):
 
 class ApplicationStatus(str, Enum):
     NOT_APPLIED = "not_applied"
+    EASY_APPLY = "easy_apply"
     APPLIED = "applied"
     SCREENING = "screening"
     PHONE_SCREEN = "phone_screen"

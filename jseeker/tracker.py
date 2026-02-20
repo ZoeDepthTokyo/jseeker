@@ -1551,6 +1551,26 @@ class TrackerDB:
         conn.close()
         return dict(row) if row else None
 
+    def get_known_application_urls(self) -> dict[str, str]:
+        """Return {job_url: status} for all tracked applications.
+
+        Returns:
+            Dict mapping job_url to application_status string. When multiple
+            rows exist for the same URL, the most recently updated row wins.
+        """
+        conn = self._conn()
+        c = conn.cursor()
+        c.execute(
+            """SELECT jd_url, application_status
+               FROM applications
+               WHERE jd_url IS NOT NULL AND jd_url != ''
+               ORDER BY updated_at ASC"""
+        )
+        rows = c.fetchall()
+        conn.close()
+        # Later rows overwrite earlier ones — most recent updated_at wins
+        return {row["jd_url"]: row["application_status"] for row in rows}
+
     def is_url_known(self, url: str) -> bool:
         """Check if a URL exists in job_discoveries or applications.
 

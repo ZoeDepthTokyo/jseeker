@@ -68,6 +68,7 @@ streamlit run ui/app.py --server.port 8502  # jSeeker only
 ## Directory Structure
 jseeker/ -- core package (models, llm, jd_parser, matcher, adapter, ats_scorer, renderer, outreach, tracker, job_discovery, job_monitor, feedback)
 autojs/ -- automation sibling package (auto_apply, answer_bank, apply_verifier, apply_monitor, ats_runners/)
+  BOUNDARY RULE: autojs may import from jseeker — jseeker and ui/ must NEVER import from autojs. One-way dependency only.
 data/ -- YAML resume blocks, HTML/CSS templates, prompt templates, ATS profiles, SQLite DB
 ui/ -- Streamlit app (dashboard, new_resume, editor, tracker, job_discovery, block_manager, analytics)
 scripts/ -- maintenance tools (backfill_application_data.py, validation test suites)

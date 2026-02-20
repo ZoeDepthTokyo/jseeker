@@ -5,6 +5,71 @@ All notable changes to jSeeker will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.15] — 2026-02-20
+
+### Added
+- Easy Apply (`🟦`) status added to `ApplicationStatus` enum and tracker status display
+- Dedup badges in Job Discovery: shows `✅ Applied`, `🟦 Easy Apply`, or `📥 In Tracker` for already-tracked jobs
+- Recency time window filter in Job Discovery: `[All time] [Today] [24h] [48h] [7 days]` radio bar above results
+- `get_known_application_urls()` method in `TrackerDB` for cross-table URL→status lookup
+
+### Changed
+- Freshness weight in discovery ranking: 5% → 20% (recency matters more)
+- Composite score rebalanced: tag_weight 35%→30%, resume_match 65%→50%, freshness 5%→20%
+- Sort order in discovery: newest postings ranked first (recency-first, composite score as tiebreaker)
+
+### Fixed
+- Tag toggle weight calculation (int cast + `scope="app"`)
+- Market loading from saved search (versioned widget key prevents stale state)
+- Update button on saved searches now works correctly
+- Saved search load filters junk tags from `tag_weights`
+
+---
+
+## [0.3.14] — 2026-02-19
+
+### Added
+- `autojs/` promoted to sibling package with its own `pyproject.toml` (P0 decoupling)
+- All automation imports migrated to `autojs.*` namespace
+
+### Fixed
+- `CAREER_SUBDOMAINS` frozenset in `jd_parser.py` for branded career subdomains
+- Cache thresholds: 0.85→0.75 (similarity), 3→2 (min hits)
+- `[#app_id]` prefix handling in job monitor
+- Navan duplicate cleanup
+- `salary_currency` field name in `intelligence.py`
+- `ParsedJD.raw_text` defaults to empty string
+
+---
+
+## [0.3.11] — 2026-02-17
+
+### Added
+- Apply verification (`apply_verifier.py`): hard proof required for `applied_verified` status
+- Apply monitor (`apply_monitor.py`): circuit breaker, auto-disables platforms after 3 consecutive failures
+- `BatchSummary` model replaces `list[AttemptResult]` from `apply_batch()`
+- Workday runner: SMS consent, FCRA ack, phone extension, skills tags
+
+---
+
+## [0.3.10] — 2026-02-16
+
+### Added
+- Auto-Apply Engine v1.0: Answer Bank, ATS site runners (Workday, Greenhouse), Orchestrator
+- 98 new tests for automation package
+
+---
+
+## [0.3.6] — 2026-02-13
+
+### Added
+- LinkedIn→ATS URL resolution with Google fallback
+- `generate_resume_from_discovery()` full pipeline
+- 4 ATS form JSON profiles in `ats_scorer.py`
+- Sidebar-driven model selection
+
+---
+
 ## [0.3.0] - 2026-02-10
 
 ### Fixed

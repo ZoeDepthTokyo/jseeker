@@ -22,6 +22,24 @@ from jseeker.tracker import (
     update_queue_status,
 )
 
+
+@st.cache_data(ttl=60)
+def _cached_get_dashboard_stats():
+    """Cache dashboard stats for 60 seconds."""
+    return tracker_db.get_dashboard_stats()
+
+
+@st.cache_data(ttl=60)
+def _cached_list_applications():
+    """Cache application list for 60 seconds."""
+    return tracker_db.list_applications()
+
+
+@st.cache_data(ttl=60)
+def _cached_get_queued_applications(limit: int = 50):
+    """Cache queued applications for 60 seconds."""
+    return get_queued_applications(limit=limit)
+
 st.title("Pipeline")
 
 # ── Initialize ALL session state keys ───────────────────────────────────────
@@ -56,8 +74,8 @@ tab1, tab2, tab3 = st.tabs(["Generate Resumes", "Auto-Submit", "Job Monitor"])
 
 with tab1:
     # --- Metrics Row ---
-    stats = tracker_db.get_dashboard_stats()
-    apps_all = tracker_db.list_applications()
+    stats = _cached_get_dashboard_stats()
+    apps_all = _cached_list_applications()
     week_ago = datetime.now() - timedelta(days=7)
 
     this_week_count = 0
@@ -83,7 +101,7 @@ with tab1:
 
     # --- Recent Applications ---
     with st.expander("Recent Applications", expanded=True):
-        apps = tracker_db.list_applications()
+        apps = _cached_list_applications()
 
         if not apps:
             st.info("No applications yet. Start by creating a new resume from a job description.")
@@ -221,7 +239,7 @@ with tab1:
         # Show initial "Starting..." state when batch just started but no progress yet
         if st.session_state.resume_batch_running and not st.session_state.batch_progress:
             st.progress(0.0, text="Starting batch... preparing workers")
-            time.sleep(2)
+            time.sleep(0.5)
             st.rerun()
 
         # Progress display
@@ -404,7 +422,7 @@ with tab1:
                 and not progress.paused
                 and not progress.stopped
             ):
-                time.sleep(2)
+                time.sleep(0.5)
                 st.rerun()
 
     st.markdown("---")
@@ -803,7 +821,7 @@ with tab2:
         col_start, col_stop = st.columns(2)
 
         with col_start:
-            queued = get_queued_applications(limit=50)
+            queued = _cached_get_queued_applications(limit=50)
             start_disabled = st.session_state["apply_batch_running"] or len(queued) == 0
             if st.button(
                 f"Start ({len(queued)} queued)",
@@ -881,7 +899,7 @@ with tab2:
                     pct,
                     text=f"Processing… {done}/{total_est} done, {in_prog} in progress",
                 )
-                time.sleep(2)
+                time.sleep(0.5)
                 st.rerun()
 
         # Show queue stats after completion

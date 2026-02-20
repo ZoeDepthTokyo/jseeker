@@ -16,12 +16,16 @@ from jseeker.intelligence import (
     export_profile_docx,
 )
 
-# -- Load aggregate (cached in session) -------------------------------------
-if "jd_aggregate" not in st.session_state:
-    with st.spinner("Analyzing your JD corpus..."):
-        st.session_state["jd_aggregate"] = aggregate_jd_corpus()
 
-agg = st.session_state["jd_aggregate"]
+@st.cache_data(ttl=300)
+def _cached_aggregate_jd_corpus():
+    """Cache JD corpus aggregation for 5 minutes (expensive computation)."""
+    return aggregate_jd_corpus()
+
+
+# -- Load aggregate (persistent cache, survives tab navigation) -------------
+with st.spinner("Analyzing your JD corpus..."):
+    agg = _cached_aggregate_jd_corpus()
 
 if agg["total_jds"] == 0:
     st.info(

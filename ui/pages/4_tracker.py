@@ -12,6 +12,66 @@ import streamlit as st
 from jseeker.models import ApplicationStatus, JobStatus, ResumeStatus
 from jseeker.tracker import tracker_db
 
+
+@st.cache_data(ttl=60)
+def _cached_list_applications(
+    application_status: str | None = None,
+    resume_status: str | None = None,
+    job_status: str | None = None,
+):
+    """Cache application list for 60 seconds with filter params as cache key."""
+    kwargs = {}
+    if application_status is not None:
+        kwargs["application_status"] = application_status
+    if resume_status is not None:
+        kwargs["resume_status"] = resume_status
+    if job_status is not None:
+        kwargs["job_status"] = job_status
+    return tracker_db.list_applications(**kwargs)
+
+
+@st.cache_data(ttl=60)
+def _cached_salary_chart(apps_json: str):
+    """Cache Plotly salary scatter for given apps data."""
+    import json as _json
+
+    apps_with_salary = _json.loads(apps_json)
+    df = pd.DataFrame(apps_with_salary)
+    df["salary_avg"] = (df["salary_min"].fillna(0) + df["salary_max"].fillna(0)) / 2
+    df["salary_avg"] = df["salary_avg"].replace(0, pd.NA)
+    df = df[df["salary_avg"].notna()]
+    if df.empty:
+        return None, df
+    df["hover_text"] = (
+        df["role_title"]
+        + "<br>"
+        + df["company_name"]
+        + "<br>Salary: "
+        + df["salary_currency"].fillna("USD")
+        + " "
+        + df["salary_min"].fillna(0).astype(int).astype(str)
+        + " - "
+        + df["salary_max"].fillna(0).astype(int).astype(str)
+    )
+    fig = px.scatter(
+        df,
+        x="created_at",
+        y="salary_avg",
+        color="application_status",
+        size="relevance_score",
+        hover_data=["hover_text"],
+        labels={
+            "created_at": "Application Date",
+            "salary_avg": "Average Salary",
+            "application_status": "Status",
+        },
+        title="Salary Distribution Over Time",
+    )
+    fig.update_traces(
+        hovertemplate="<b>%{customdata[0]}</b><br>Date: %{x}<br>Avg Salary: %{y:,.0f}<extra></extra>"
+    )
+    return fig, df
+
 st.title("Application Tracker")
 
 # --- Filters ---
@@ -41,7 +101,11 @@ if resume_status_filter != "All":
 if job_status_filter != "All":
     kwargs["job_status"] = job_status_filter
 
-apps = tracker_db.list_applications(**kwargs)
+apps = _cached_list_applications(
+    application_status=kwargs.get("application_status"),
+    resume_status=kwargs.get("resume_status"),
+    job_status=kwargs.get("job_status"),
+)
 st.caption(f"Showing {len(apps)} applications")
 
 # --- Salary Analytics Chart ---
@@ -53,57 +117,22 @@ if apps:
 
     if not df_with_salary.empty:
         with st.expander("Salary Analytics", expanded=False):
-            # Calculate average salary
-            df_with_salary["salary_avg"] = (
-                df_with_salary["salary_min"].fillna(0) + df_with_salary["salary_max"].fillna(0)
-            ) / 2
-            df_with_salary["salary_avg"] = df_with_salary["salary_avg"].replace(0, pd.NA)
-            df_with_salary = df_with_salary[df_with_salary["salary_avg"].notna()]
+            import json as _json
 
-            if not df_with_salary.empty:
-                # Format hover data
-                df_with_salary["hover_text"] = (
-                    df_with_salary["role_title"]
-                    + "<br>"
-                    + df_with_salary["company_name"]
-                    + "<br>Salary: "
-                    + df_with_salary["salary_currency"].fillna("USD")
-                    + " "
-                    + df_with_salary["salary_min"].fillna(0).astype(int).astype(str)
-                    + " - "
-                    + df_with_salary["salary_max"].fillna(0).astype(int).astype(str)
-                )
+            salary_json = _json.dumps(df_with_salary.to_dict(orient="records"), default=str)
+            fig, df_salary_computed = _cached_salary_chart(salary_json)
 
-                # Create scatter plot
-                fig = px.scatter(
-                    df_with_salary,
-                    x="created_at",
-                    y="salary_avg",
-                    color="application_status",
-                    size="relevance_score",
-                    hover_data=["hover_text"],
-                    labels={
-                        "created_at": "Application Date",
-                        "salary_avg": "Average Salary",
-                        "application_status": "Status",
-                    },
-                    title="Salary Distribution Over Time",
-                )
-
-                fig.update_traces(
-                    hovertemplate="<b>%{customdata[0]}</b><br>Date: %{x}<br>Avg Salary: %{y:,.0f}<extra></extra>"
-                )
-
+            if fig is not None:
                 st.plotly_chart(fig, use_container_width=True)
 
                 # Summary stats
                 col1, col2, col3 = st.columns(3)
                 with col1:
-                    st.metric("Avg Salary", f"${df_with_salary['salary_avg'].mean():,.0f}")
+                    st.metric("Avg Salary", f"${df_salary_computed['salary_avg'].mean():,.0f}")
                 with col2:
-                    st.metric("Min Salary", f"${df_with_salary['salary_avg'].min():,.0f}")
+                    st.metric("Min Salary", f"${df_salary_computed['salary_avg'].min():,.0f}")
                 with col3:
-                    st.metric("Max Salary", f"${df_with_salary['salary_avg'].max():,.0f}")
+                    st.metric("Max Salary", f"${df_salary_computed['salary_avg'].max():,.0f}")
             else:
                 st.info("No valid salary data to display.")
 
@@ -128,6 +157,7 @@ if apps:
     status_emojis = {
         "not_applied": "⏳",
         "applied": "✅",
+        "easy_apply": "🟦",
         "screening": "📋",
         "phone_screen": "📞",
         "interview": "🗣️",
@@ -178,6 +208,7 @@ if apps:
         colors = {
             "rejected": "background-color: #ffcccc; color: #990000",  # Red
             "applied": "background-color: #ccffcc; color: #006600",  # Green
+            "easy_apply": "background-color: #cce5ff; color: #004499",  # Light blue
             "not_applied": "background-color: #ffffcc; color: #996600",  # Yellow
             "interviewing": "background-color: #cce5ff; color: #004080",  # Blue
             "offer": "background-color: #e6ccff; color: #660099",  # Purple
@@ -435,8 +466,9 @@ How it works:
         """)
 
     active_with_url = [
-        a for a in tracker_db.list_applications(job_status="active") if a.get("jd_url")
+        a for a in _cached_list_applications(job_status="active") if a.get("jd_url")
     ]
+
     st.caption(f"Active jobs with URLs ready to check: {len(active_with_url)}")
 
     if st.button("Check All Active Job URLs"):

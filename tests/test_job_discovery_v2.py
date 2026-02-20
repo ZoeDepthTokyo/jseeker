@@ -470,10 +470,10 @@ def test_rank_by_relevance_then_freshness():
         # Rank discoveries
         ranked = rank_discoveries_by_tag_weight([disc1, disc2, disc3])
 
-        # Verify order: relevance first, then freshness (with no resume match influence)
-        assert ranked[0].title == "Fresh High Priority"  # 80 weight, today
-        assert ranked[1].title == "Old High Priority"  # 80 weight, week ago
-        assert ranked[2].title == "Fresh Low Priority"  # 30 weight, today
+        # Verify order: recency-first, composite score as tiebreaker within same date
+        assert ranked[0].title == "Fresh High Priority"  # 80 weight, today (highest score same-day)
+        assert ranked[1].title == "Fresh Low Priority"  # 30 weight, today (same date, lower score)
+        assert ranked[2].title == "Old High Priority"  # 80 weight, week ago (oldest)
 
 
 def test_per_country_limit():

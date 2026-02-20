@@ -16,6 +16,18 @@ import streamlit as st
 from jseeker.resume_sources import load_resume_sources, save_resume_sources
 from jseeker.tracker import tracker_db
 
+
+@st.cache_data(ttl=300)
+def _cached_load_resume_sources():
+    """Cache resume sources config for 5 minutes."""
+    return load_resume_sources()
+
+
+@st.cache_data(ttl=60)
+def _cached_list_all_resumes():
+    """Cache resume list for 60 seconds."""
+    return tracker_db.list_all_resumes()
+
 st.title("Resume Library")
 
 # --- PDF Template Upload ---
@@ -244,7 +256,7 @@ with st.expander("Upload PDF Templates", expanded=False):
 with st.expander("Base Resume References", expanded=False):
     st.caption("Track which source files are used as Base A/B/C and LinkedIn PDF.")
 
-    current_sources = load_resume_sources()
+    current_sources = _cached_load_resume_sources()
 
     # Show current status
     st.markdown("**Current Status:**")
@@ -317,7 +329,7 @@ with st.expander("Database Maintenance", expanded=False):
                 st.info("All company names are already clean.")
 
 # --- Resume Table ---
-resumes = tracker_db.list_all_resumes()
+resumes = _cached_list_all_resumes()
 
 if not resumes:
     st.info("No resumes generated yet. Go to New Resume to create one.")

@@ -24,9 +24,6 @@ jobs:
       - name: ruff lint
         run: ruff check .
 
-      - name: ruff format check
-        run: ruff format --check .
-
       - name: black format check
         run: black --check --line-length=100 .
 

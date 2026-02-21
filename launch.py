@@ -14,7 +14,6 @@ Usage:
     python launch.py --check-only
 """
 
-import sys
 from pathlib import Path
 
 if __name__ == "__main__":

@@ -26,6 +26,21 @@ def _get_db_path() -> Path:
     return settings.db_path
 
 
+def _connect_db(db_path: str | Path, **kwargs) -> sqlite3.Connection:
+    """Create a SQLite connection with WAL mode enabled.
+
+    Args:
+        db_path: Path to the database file.
+        **kwargs: Additional arguments to pass to sqlite3.connect().
+
+    Returns:
+        A sqlite3.Connection with WAL mode enabled.
+    """
+    conn = sqlite3.connect(str(db_path), **kwargs)
+    conn.execute("PRAGMA journal_mode=WAL;")
+    return conn
+
+
 def _normalize_discovery_status(status: str | DiscoveryStatus | None) -> str:
     """Normalize discovery status values for consistent filtering."""
     allowed = {s.value for s in DiscoveryStatus}
@@ -47,7 +62,7 @@ def init_db(db_path: Path = None) -> None:
         db_path = _get_db_path()
     db_path.parent.mkdir(parents=True, exist_ok=True)
 
-    conn = sqlite3.connect(str(db_path))
+    conn = _connect_db(db_path)
     c = conn.cursor()
 
     c.execute("""CREATE TABLE IF NOT EXISTS companies (
@@ -299,7 +314,7 @@ def init_db(db_path: Path = None) -> None:
 def _run_migrations(db_path: Path) -> None:
     """Run all pending database migrations."""
     try:
-        conn = sqlite3.connect(str(db_path))
+        conn = _connect_db(db_path)
         c = conn.cursor()
 
         # Check if market column exists in job_discoveries
@@ -439,7 +454,7 @@ def queue_application(
     if db_path is None:
         db_path = _get_db_path()
     init_db(db_path)
-    conn = sqlite3.connect(str(db_path), timeout=30.0)
+    conn = _connect_db(db_path, timeout=30.0)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
     c.execute(
@@ -467,7 +482,7 @@ def get_queued_applications(limit: int = 10, db_path: Path = None) -> list[dict]
     if db_path is None:
         db_path = _get_db_path()
     init_db(db_path)
-    conn = sqlite3.connect(str(db_path), timeout=30.0)
+    conn = _connect_db(db_path, timeout=30.0)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
     c.execute(
@@ -497,7 +512,7 @@ def update_queue_status(
     """
     if db_path is None:
         db_path = _get_db_path()
-    conn = sqlite3.connect(str(db_path), timeout=30.0)
+    conn = _connect_db(db_path, timeout=30.0)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
 
@@ -535,7 +550,7 @@ def get_queue_stats(db_path: Path = None) -> dict:
     if db_path is None:
         db_path = _get_db_path()
     init_db(db_path)
-    conn = sqlite3.connect(str(db_path), timeout=30.0)
+    conn = _connect_db(db_path, timeout=30.0)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
     c.execute("SELECT status, COUNT(*) as count FROM apply_queue GROUP BY status")
@@ -576,7 +591,7 @@ def log_apply_error(
     """
     if db_path is None:
         db_path = _get_db_path()
-    conn = sqlite3.connect(str(db_path), timeout=30.0)
+    conn = _connect_db(db_path, timeout=30.0)
     c = conn.cursor()
     c.execute(
         """INSERT INTO apply_errors
@@ -607,7 +622,7 @@ def check_recurring_errors(
     """
     if db_path is None:
         db_path = _get_db_path()
-    conn = sqlite3.connect(str(db_path), timeout=30.0)
+    conn = _connect_db(db_path, timeout=30.0)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
     c.execute(
@@ -635,7 +650,7 @@ def check_dedup(job_url: str, db_path: Path = None) -> bool:
     if db_path is None:
         db_path = _get_db_path()
     init_db(db_path)
-    conn = sqlite3.connect(str(db_path), timeout=30.0)
+    conn = _connect_db(db_path, timeout=30.0)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
     # Check apply_queue for a successfully completed auto-apply attempt.
@@ -672,8 +687,9 @@ class TrackerDB:
         - 30 second timeout to prevent "database is locked" errors
         - check_same_thread=False for thread safety
         - Row factory for dict-like access
+        - WAL mode enabled for concurrency
         """
-        conn = sqlite3.connect(str(self.db_path), timeout=30.0, check_same_thread=False)
+        conn = _connect_db(self.db_path, timeout=30.0, check_same_thread=False)
         conn.row_factory = sqlite3.Row
 
         # Health check: verify connection is usable
@@ -682,7 +698,7 @@ class TrackerDB:
         except sqlite3.Error:
             conn.close()
             # Retry once if health check fails
-            conn = sqlite3.connect(str(self.db_path), timeout=30.0, check_same_thread=False)
+            conn = _connect_db(self.db_path, timeout=30.0, check_same_thread=False)
             conn.row_factory = sqlite3.Row
 
         return conn

@@ -15,6 +15,10 @@ from jseeker.models import ATSPlatform, JDRequirement, ParsedJD
 
 logger = logging.getLogger(__name__)
 
+# Sentinel returned by extract_jd_from_url when extraction fails completely.
+# UI layers should check `text == JD_EXTRACTION_FAILED` and show a paste fallback.
+JD_EXTRACTION_FAILED = "__JD_EXTRACTION_FAILED__"
+
 # ATS detection patterns (domain → platform)
 ATS_DETECTION = {
     "greenhouse.io": ATSPlatform.GREENHOUSE,
@@ -323,18 +327,25 @@ def _clean_extracted_text(text: str) -> str:
 
 
 def _extract_with_playwright(
-    url: str, selectors: list[str], platform: str = "generic", wait_ms: int = 3000
+    url: str,
+    selectors: list[str],
+    platform: str = "generic",
+    wait_ms: int = 3000,
+    retry_wait_ms: int = 8000,
 ) -> str:
     """Extract JD text from a JS-rendered page using Playwright.
 
     Launches a headless browser, navigates to the URL, tries each selector
     in order, and returns the first match with sufficient text content.
+    If the first pass yields insufficient text (<200 chars), retries once
+    with a longer wait (retry_wait_ms) for slow-rendering ATS pages.
 
     Args:
         url: Job posting URL.
         selectors: CSS selectors to try in priority order.
         platform: Name for logging (e.g., "workday", "ashby").
         wait_ms: Extra wait after page load for JS rendering (ms).
+        retry_wait_ms: Wait time (ms) for retry pass when first attempt is too short.
 
     Returns:
         Extracted JD text, or empty string if extraction fails.
@@ -345,6 +356,41 @@ def _extract_with_playwright(
         logger.warning(f"_extract_with_playwright[{platform}] | Playwright not installed")
         return ""
 
+    def _try_extract(page, wait: int) -> str:
+        """Inner extraction attempt with given wait time."""
+        text = ""
+        for selector in selectors:
+            try:
+                page.wait_for_selector(selector, timeout=8000)
+                el = page.query_selector(selector)
+                if el:
+                    candidate = el.inner_text()
+                    if len(candidate) >= 180:
+                        text = candidate
+                        logger.info(
+                            f"_extract_with_playwright[{platform}] | selector '{selector}' matched {len(text)} chars"
+                        )
+                        return text
+            except Exception:
+                continue
+
+        # No selector matched — wait for JS and try fallback body selectors
+        logger.debug(
+            f"_extract_with_playwright[{platform}] | selectors failed, waiting {wait}ms for JS render"
+        )
+        page.wait_for_timeout(wait)
+        for fallback_sel in ["main", "article", "[role='main']", "body"]:
+            el = page.query_selector(fallback_sel)
+            if el:
+                candidate = el.inner_text()
+                if len(candidate) >= 180:
+                    logger.info(
+                        f"_extract_with_playwright[{platform}] | fallback '{fallback_sel}' matched {len(candidate)} chars"
+                    )
+                    return candidate
+
+        return text
+
     try:
         logger.info(
             f"_extract_with_playwright[{platform}] | launching browser for url={url[:100]}..."
@@ -354,40 +400,20 @@ def _extract_with_playwright(
             page = browser.new_page()
             page.goto(url, timeout=20000, wait_until="domcontentloaded")
 
-            # Try each selector with a wait
-            text = ""
-            for selector in selectors:
-                try:
-                    page.wait_for_selector(selector, timeout=8000)
-                    el = page.query_selector(selector)
-                    if el:
-                        candidate = el.inner_text()
-                        if len(candidate) >= 180:
-                            text = candidate
-                            logger.info(
-                                f"_extract_with_playwright[{platform}] | selector '{selector}' matched {len(text)} chars"
-                            )
-                            break
-                except Exception:
-                    continue
+            # First pass
+            text = _try_extract(page, wait_ms)
 
-            # If no selector worked, wait for JS and try body content
-            if len(text) < 180:
-                logger.debug(
-                    f"_extract_with_playwright[{platform}] | selectors failed, waiting {wait_ms}ms for JS render"
+            # Retry with longer wait if result is too short (slow ATS renderers)
+            if len(text) < 200:
+                logger.info(
+                    f"_extract_with_playwright[{platform}] | first pass too short ({len(text)} chars), "
+                    f"retrying with {retry_wait_ms}ms wait"
                 )
-                page.wait_for_timeout(wait_ms)
-                # Try main/article/section before full body
-                for fallback_sel in ["main", "article", "[role='main']", "body"]:
-                    el = page.query_selector(fallback_sel)
-                    if el:
-                        candidate = el.inner_text()
-                        if len(candidate) >= 180:
-                            text = candidate
-                            logger.info(
-                                f"_extract_with_playwright[{platform}] | fallback '{fallback_sel}' matched {len(text)} chars"
-                            )
-                            break
+                text = _try_extract(page, retry_wait_ms)
+                if text:
+                    logger.info(
+                        f"_extract_with_playwright[{platform}] | retry succeeded ({len(text)} chars)"
+                    )
 
             browser.close()
             return text.strip()
@@ -397,14 +423,22 @@ def _extract_with_playwright(
 
 
 # Platform-specific selectors (ordered by priority)
+# Workday: primary data-automation-id selectors, then class-based fallbacks.
+# Updated 2025-02: added newer dynamic CSS class patterns observed in Workday v2024+.
 _WORKDAY_SELECTORS = [
     '[data-automation-id="jobPostingDescription"]',
     '[data-automation-id="jobPostingRequirements"]',
+    '[data-automation-id="job-posting-details"]',
+    '[data-automation-id="jobPostingPage"]',
     ".css-cygeeu",
     '[class*="jobDescription"]',
     '[class*="JobDescription"]',
     '[class*="job-description"]',
-    'div[data-automation-id="jobPostingPage"]',
+    '[class*="jobDetails"]',
+    '[class*="JobDetails"]',
+    'section[data-automation-id]',
+    "div.wd-popup-content",
+    "[data-uxi-widget-type='richText']",
 ]
 
 _ASHBY_SELECTORS = [
@@ -431,8 +465,15 @@ _VITERBIT_SELECTORS = [
 
 
 def _extract_workday_jd(url: str) -> str:
-    """Extract JD from Workday pages using Playwright for JS rendering."""
-    return _extract_with_playwright(url, _WORKDAY_SELECTORS, platform="workday", wait_ms=4000)
+    """Extract JD from Workday pages using Playwright for JS rendering.
+
+    Uses a 5s base wait and 10s retry wait to handle Workday's slow JS rendering.
+    Workday pages often require 4-8 seconds after domcontentloaded before
+    data-automation-id elements are populated with content.
+    """
+    return _extract_with_playwright(
+        url, _WORKDAY_SELECTORS, platform="workday", wait_ms=5000, retry_wait_ms=10000
+    )
 
 
 def _extract_ashby_jd(url: str) -> str:
@@ -1754,7 +1795,24 @@ def process_jd(raw_text: str, jd_url: str = "", use_semantic_cache: bool = True)
         )
         detected_language = location_language
 
-    logger.info(f"process_jd | final: language={detected_language} market={detected_market}")
+    # Step 9: Build all_locations list — scan for additional city/country patterns in the raw text
+    all_locations: list[str] = []
+    if jd_location:
+        all_locations.append(jd_location)
+    # Scan for "City, STATE" or "City, Country" patterns in text
+    _loc_pattern = re.compile(r"\b([A-Z][a-zA-Z\s]{2,25}),\s*([A-Z]{2}|[A-Z][a-zA-Z]{3,20})\b")
+    for match in _loc_pattern.finditer(raw_text):
+        candidate = match.group(0).strip()
+        if candidate not in all_locations:
+            all_locations.append(candidate)
+
+    # source_market = the market where the job was sourced from (same as detected market)
+    source_market = detected_market
+
+    logger.info(
+        f"process_jd | final: language={detected_language} market={detected_market} "
+        f"source_market={source_market} all_locations={all_locations[:5]}"
+    )
 
     return ParsedJD(
         raw_text=raw_text,
@@ -1777,4 +1835,6 @@ def process_jd(raw_text: str, jd_url: str = "", use_semantic_cache: bool = True)
         jd_url=jd_url,
         language=detected_language,
         market=detected_market,
+        all_locations=all_locations,
+        source_market=source_market,
     )

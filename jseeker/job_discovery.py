@@ -251,6 +251,10 @@ def _parse_indeed(
 ) -> list[JobDiscovery]:
     """Parse Indeed search results.
 
+    Note: Indeed increasingly requires JS rendering and uses CloudFlare anti-bot
+    protection. Static HTML scraping returns 0 results on blocked responses.
+    The fallback anchor-based parser handles partial responses.
+
     Args:
         soup: BeautifulSoup object of the Indeed search results page
         source: Source identifier (clean: "indeed", not "indeed_us")
@@ -261,10 +265,18 @@ def _parse_indeed(
     """
     results = []
 
-    # Try multiple card selectors
-    job_cards = soup.find_all("div", class_=re.compile("job_seen_beacon|cardOutline"))
+    # Try multiple card selectors (ordered by recency — newer patterns first)
+    # 2024/2025: Indeed uses data-jk and mosaic-provider-jobcards containers
+    job_cards = soup.find_all("li", attrs={"data-jk": True})
     if not job_cards:
         job_cards = soup.find_all("div", attrs={"data-jk": True})
+    if not job_cards:
+        job_cards = soup.find_all("div", class_=re.compile("job_seen_beacon|cardOutline"))
+    if not job_cards:
+        # 2024 mosaic layout: cards inside ul#mosaic-provider-jobcards
+        mosaic = soup.find("ul", id=re.compile("mosaic-provider-jobcards"))
+        if mosaic:
+            job_cards = mosaic.find_all("li")
     if not job_cards:
         job_cards = soup.find_all("li", class_=re.compile("css-"))
     if not job_cards:
@@ -273,28 +285,39 @@ def _parse_indeed(
     logger.info("Indeed parser: found %d job cards", len(job_cards))
 
     for card in job_cards[:20]:  # Limit to 20 results
-        # Title - try multiple selectors
-        title_elem = card.find("h2", class_=re.compile("jobTitle"))
+        # Title - ordered by recency (2024 patterns first)
+        title_elem = card.find("a", class_=re.compile("jcs-JobTitle"))
         if not title_elem:
-            title_elem = card.find("a", class_=re.compile("jcs-JobTitle"))
+            title_elem = card.find("h2", class_=re.compile("jobTitle"))
         if not title_elem:
-            # Look for span with id starting with jobTitle
             title_elem = card.find("span", id=re.compile("^jobTitle"))
+        if not title_elem:
+            # 2024: title inside a span[title] attribute within an anchor
+            title_elem = card.find("a", attrs={"data-jk": True})
 
-        # Company - try multiple selectors
+        # Company - ordered by recency
         company_elem = card.find("span", attrs={"data-testid": "company-name"})
         if not company_elem:
             company_elem = card.find("span", class_=re.compile("companyName"))
         if not company_elem:
             company_elem = card.find("span", class_=re.compile("css-1h7lukg"))
+        if not company_elem:
+            # 2024: employer name in a link
+            company_elem = card.find("a", attrs={"data-testid": "company-name"})
 
         # Location - try multiple selectors
         location_elem = card.find("div", attrs={"data-testid": "text-location"})
         if not location_elem:
             location_elem = card.find("div", class_=re.compile("companyLocation"))
+        if not location_elem:
+            location_elem = card.find("span", class_=re.compile("companyLocation"))
 
-        # Link - try data-jk attribute first, then any href
-        link_elem = card.find("a", attrs={"data-jk": True})
+        # Link - try data-jk attribute first, then jcs-JobTitle href, then any href
+        link_elem = card.find("a", class_=re.compile("jcs-JobTitle"))
+        if not link_elem:
+            link_elem = card.find("a", attrs={"data-jk": True})
+        if not link_elem:
+            link_elem = card.find("a", href=re.compile(r"/viewjob|/rc/clk|/pagead"))
         if not link_elem:
             link_elem = card.find("a", href=True)
 
@@ -302,8 +325,17 @@ def _parse_indeed(
         date_elem = card.find("span", class_=re.compile("date"))
         if not date_elem:
             date_elem = card.find("span", attrs={"data-testid": "myJobsStateDate"})
+        if not date_elem:
+            date_elem = card.find("span", attrs={"data-testid": "jobsearch-JobMetadataFooter"})
 
-        title = title_elem.get_text(strip=True) if title_elem else ""
+        # Extract title text — prefer get_text(), fall back to title attribute
+        if title_elem:
+            title = title_elem.get_text(strip=True)
+            if not title and title_elem.get("title"):
+                title = title_elem["title"].strip()
+        else:
+            title = ""
+
         company = company_elem.get_text(strip=True) if company_elem else ""
         location = location_elem.get_text(strip=True) if location_elem else ""
         posting_date = (
@@ -437,6 +469,11 @@ def _parse_linkedin(soup: BeautifulSoup, source: str) -> list[JobDiscovery]:
 def _parse_wellfound(soup: BeautifulSoup, source: str) -> list[JobDiscovery]:
     """Parse Wellfound jobs from generic anchor-based markup.
 
+    NOTE (2024): Wellfound migrated to an auth-gated model. Public job searches
+    now require login. Static HTML scraping returns 0 meaningful job cards.
+    This parser is DEFERRED — requires authenticated session or official API access.
+    Adding rotating proxies would not help since the block is login-gate, not IP-based.
+
     Args:
         soup: BeautifulSoup object of the Wellfound search results page
         source: Source identifier (clean: "wellfound", not "wellfound_us")
@@ -446,6 +483,15 @@ def _parse_wellfound(soup: BeautifulSoup, source: str) -> list[JobDiscovery]:
     """
     results = []
     seen_urls = set()
+
+    # Check for auth-gate indicators
+    page_text = soup.get_text(strip=True).lower()
+    if "sign in" in page_text or "log in" in page_text or "create account" in page_text:
+        logger.warning(
+            "Wellfound parser: auth gate detected — Wellfound requires login for job search. "
+            "Source deferred until authenticated session or API access is available."
+        )
+        return []
 
     all_anchors = soup.find_all("a", href=True)
     logger.info("Wellfound parser: checking %d anchors", len(all_anchors))
@@ -1024,7 +1070,10 @@ def import_discovery_to_application(discovery_id: int) -> Optional[int]:
     return app_id
 
 
-def generate_resume_from_discovery(discovery_id: int) -> Optional[dict]:
+def generate_resume_from_discovery(
+    discovery_id: int,
+    progress_callback: Optional[callable] = None,
+) -> Optional[dict]:
     """Generate a full resume from a job discovery.
 
     Fetches JD from URL, runs full pipeline (parse -> match -> adapt -> score -> render),
@@ -1032,6 +1081,8 @@ def generate_resume_from_discovery(discovery_id: int) -> Optional[dict]:
 
     Args:
         discovery_id: ID of the discovery record to generate from.
+        progress_callback: Optional callable(pct: int, message: str) invoked at each
+            major step to report progress (0-100).
 
     Returns:
         Dict with application_id, resume_id, company, role, ats_score, relevance_score,
@@ -1040,6 +1091,12 @@ def generate_resume_from_discovery(discovery_id: int) -> Optional[dict]:
     from jseeker.jd_parser import extract_jd_from_url
     from jseeker.pipeline import run_pipeline
     from config import settings
+
+    def _report(pct: int, msg: str) -> None:
+        if progress_callback:
+            progress_callback(pct, msg)
+
+    _report(5, "Fetching job description...")
 
     discoveries = tracker_db.list_discoveries()
     disc = None
@@ -1054,6 +1111,8 @@ def generate_resume_from_discovery(discovery_id: int) -> Optional[dict]:
         )
         return None
 
+    _report(20, "Parsing job description...")
+
     # Extract JD text from URL
     try:
         jd_text, metadata = extract_jd_from_url(disc["url"])
@@ -1067,6 +1126,8 @@ def generate_resume_from_discovery(discovery_id: int) -> Optional[dict]:
         )
         return None
 
+    _report(40, "Adapting resume to role...")
+
     # Run full pipeline
     try:
         result = run_pipeline(jd_text=jd_text, jd_url=disc["url"], output_dir=settings.output_dir)
@@ -1074,12 +1135,18 @@ def generate_resume_from_discovery(discovery_id: int) -> Optional[dict]:
         logger.error("Pipeline failed for discovery %s: %s", discovery_id, e)
         return None
 
+    _report(60, "Resume adapted")
+    _report(75, "Scoring ATS compatibility...")
+    _report(90, "Rendering PDF + DOCX...")
+
     # Create Application + Resume in tracker
     created = tracker_db.create_from_pipeline(result)
     tracker_db.update_application(created["application_id"], resume_status="exported")
 
     # Update discovery status to imported
     tracker_db.update_discovery_status(discovery_id, "imported")
+
+    _report(100, "Complete")
 
     return {
         "application_id": created["application_id"],

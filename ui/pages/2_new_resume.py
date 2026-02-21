@@ -28,6 +28,14 @@ from jseeker.tracker import tracker_db
 
 st.title("New Resume")
 
+# --- Auto-queue banner ---
+_queued = tracker_db.get_auto_queued_discoveries()
+if _queued:
+    st.info(f"**{len(_queued)} job(s) queued for resume generation** (starred from Discovery)")
+    with st.expander(f"View queued jobs ({len(_queued)})", expanded=False):
+        for _q in _queued[:10]:
+            st.caption(f"- **{_q.get('title', 'Unknown')}** @ {_q.get('company', 'Unknown')} — {_q.get('source', '')}")
+
 # --- Budget Display and Check ---
 try:
     monthly_cost = tracker_db.get_monthly_cost()

@@ -387,6 +387,22 @@ def _run_migrations(db_path: Path) -> None:
                 logger = logging.getLogger(__name__)
                 logger.debug("Migration error (may be expected): %s", e)
 
+        # Add auto_queued column to job_discoveries
+        c.execute("PRAGMA table_info(job_discoveries)")
+        disc_columns = [row[1] for row in c.fetchall()]
+
+        if "auto_queued" not in disc_columns:
+            try:
+                c.execute(
+                    "ALTER TABLE job_discoveries ADD COLUMN auto_queued INTEGER DEFAULT 0"
+                )
+                conn.commit()
+                logger = logging.getLogger(__name__)
+                logger.info("Added auto_queued column to job_discoveries table")
+            except sqlite3.OperationalError as e:
+                logger = logging.getLogger(__name__)
+                logger.debug("Migration error (may be expected): %s", e)
+
         conn.close()
     except Exception as e:
         logger = logging.getLogger(__name__)
@@ -1183,6 +1199,35 @@ class TrackerDB:
         )
         conn.commit()
         conn.close()
+
+    def set_auto_queued(self, discovery_id: int, queued: bool) -> None:
+        """Mark a discovery as queued (or dequeued) for resume generation.
+
+        Args:
+            discovery_id: Discovery ID to update.
+            queued: True to queue, False to dequeue.
+        """
+        conn = self._conn()
+        conn.execute(
+            "UPDATE job_discoveries SET auto_queued = ? WHERE id = ?",
+            (1 if queued else 0, discovery_id),
+        )
+        conn.commit()
+        conn.close()
+
+    def get_auto_queued_discoveries(self) -> list[dict]:
+        """Return discoveries queued for resume gen (auto_queued=1, not yet imported).
+
+        Returns:
+            List of discovery dicts ordered by created_at descending.
+        """
+        conn = self._conn()
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute(
+            "SELECT * FROM job_discoveries WHERE auto_queued = 1 AND status != 'imported' ORDER BY discovered_at DESC"
+        ).fetchall()
+        conn.close()
+        return [dict(r) for r in rows]
 
     # ── Search Tags ────────────────────────────────────────────────
 

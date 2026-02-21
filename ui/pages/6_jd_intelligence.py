@@ -86,7 +86,9 @@ with tab2:
     conn.row_factory = sqlite3.Row
     jd_rows = conn.execute(
         "SELECT pruned_text_hash, title, company, created_at "
-        "FROM jd_cache ORDER BY created_at DESC LIMIT 50"
+        "FROM jd_cache WHERE title IS NOT NULL AND title != '' "
+        "AND company IS NOT NULL AND company != '' "
+        "ORDER BY created_at DESC LIMIT 50"
     ).fetchall()
     conn.close()
 
@@ -98,6 +100,9 @@ with tab2:
             f"({(r['created_at'] or '')[:10]})": r["pruned_text_hash"]
             for r in jd_rows
         }
+        if not jd_options:
+            st.info("No parsed JDs found. Paste a job URL in New Resume first to analyze it here.")
+            st.stop()
         selected_label = st.selectbox(
             "Select a JD:", list(jd_options.keys()), key="intel_jd_select"
         )
@@ -172,6 +177,19 @@ with tab2:
                             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                             key="dl_intel_docx",
                         )
+
+            # Glassbox: analysis inputs expander
+            if hasattr(report, "keyword_matches") and (
+                report.keyword_matches or report.keyword_misses
+            ):
+                with st.expander("Analysis Inputs"):
+                    col1, col2 = st.columns(2)
+                    col1.caption("**Matched Keywords**")
+                    for kw in report.keyword_matches:
+                        col1.caption(f"+ {kw}")
+                    col2.caption("**Missing Keywords**")
+                    for kw in report.keyword_misses:
+                        col2.caption(f"- {kw}")
 
 with tab3:
     st.subheader("Salary Sweet Spot")

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from jseeker.llm import llm
@@ -66,6 +67,51 @@ def generate_outreach(
     )
 
 
+def _load_resume_blocks_context() -> str:
+    """Load additional resume context from YAML blocks (experience highlights, skills).
+
+    Returns:
+        Condensed string with key experience bullets and top skills for cover letter context.
+    """
+    import yaml
+
+    blocks_dir = Path(__file__).parent.parent / "data" / "resume_blocks"
+    context_parts: list[str] = []
+
+    # Load experience highlights (top 3 bullets from first 2 roles)
+    exp_path = blocks_dir / "experience.yaml"
+    if exp_path.exists():
+        try:
+            data = yaml.safe_load(exp_path.read_text(encoding="utf-8"))
+            roles = data.get("experience", []) if isinstance(data, dict) else []
+            for role in roles[:2]:
+                bullets = role.get("bullets", [])
+                for b in bullets[:2]:
+                    text = b.get("text", b) if isinstance(b, dict) else str(b)
+                    if text:
+                        context_parts.append(f"- {text[:150]}")
+        except Exception:
+            pass
+
+    # Load top skills
+    skills_path = blocks_dir / "skills.yaml"
+    if skills_path.exists():
+        try:
+            data = yaml.safe_load(skills_path.read_text(encoding="utf-8"))
+            skill_names: list[str] = []
+            for cat_data in (data.get("skills", {}) if isinstance(data, dict) else {}).values():
+                for item in cat_data.get("items", [])[:5]:
+                    name = item.get("name", "") if isinstance(item, dict) else str(item)
+                    if name:
+                        skill_names.append(name)
+            if skill_names:
+                context_parts.append(f"Skills: {', '.join(skill_names[:15])}")
+        except Exception:
+            pass
+
+    return "\n".join(context_parts) if context_parts else "See candidate summary above."
+
+
 def generate_cover_letter(
     parsed_jd: "ParsedJD",
     adapted_resume: "AdaptedResume",
@@ -85,10 +131,8 @@ def generate_cover_letter(
         language: Language code ("en" or "es").
 
     Returns:
-        Cover letter body text (3 paragraphs, under 300 words).
+        Cover letter body text (3 paragraphs, under 200 words).
     """
-    from pathlib import Path
-
     prompt_path = Path(__file__).parent.parent / "data" / "prompts" / "cover_letter_writer.txt"
     template = prompt_path.read_text(encoding="utf-8")
 
@@ -110,6 +154,9 @@ def generate_cover_letter(
     if hasattr(adapted_resume, "summary"):
         adapted_summary = adapted_resume.summary or ""
 
+    # Load additional context from resume blocks beyond just the summary
+    additional_context = _load_resume_blocks_context()
+
     prompt = template.format(
         role_title=parsed_jd.title or "this role",
         company=parsed_jd.company or "this company",
@@ -122,6 +169,7 @@ def generate_cover_letter(
         or "Strong alignment with the company mission and growth trajectory",
         culture_tone=culture_tone,
         language=language,
+        additional_context=additional_context,
     )
 
     return llm.call_sonnet(prompt, task="cover_letter")

@@ -18,10 +18,6 @@ contact:
       level: "native"
     - lang: "Spanish"
       level: "native"
-    - lang: "Italian"
-      level: "elementary"
-    - lang: "Japanese"
-      level: "elementary"
 
   # Location adaptation by market (used by adapter.py)
   # Note: adapter.py now uses job location for address adaptation, not just market

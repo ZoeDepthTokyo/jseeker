@@ -125,6 +125,65 @@ def get_address_for_location(location: str, market: str) -> str:
     return market_address
 
 
+_MARKET_TO_LANGUAGE = {
+    "mx": "es",
+    "es": "es",
+    "latam": "es",
+    "us": "en",
+    "ca": "en",
+    "uk": "en",
+    "dk": "en",
+    "au": "en",
+    "fr": "fr",
+}
+
+_SPANISH_MARKETS: frozenset[str] = frozenset({"es", "mx", "latam"})
+
+_US_CITIES_KEYWORDS: frozenset[str] = frozenset(
+    {
+        "california",
+        "san francisco",
+        "new york",
+        "seattle",
+        "austin",
+        "los angeles",
+        "chicago",
+        "boston",
+        "denver",
+    }
+)
+
+
+def resolve_resume_markets(parsed_jd: "ParsedJD") -> list[dict]:
+    """Return list of {market, language, address} for resume generation.
+
+    Primary market comes from source_market (where job was listed).
+    If source is Spanish-speaking AND job has US locations, also return US variant.
+
+    Args:
+        parsed_jd: Parsed job description with source_market and all_locations fields.
+
+    Returns:
+        List of dicts, each with 'market', 'language', and 'address' keys.
+        Always has at least one entry (the primary market).
+    """
+    primary_market = getattr(parsed_jd, "source_market", "") or parsed_jd.market or "us"
+    primary_lang = _MARKET_TO_LANGUAGE.get(primary_market, "en")
+    primary_addr = get_address_for_location(parsed_jd.location or "", primary_market)
+
+    markets = [{"market": primary_market, "language": primary_lang, "address": primary_addr}]
+
+    # If sourced from Spanish market AND job has US cities → add US variant
+    if primary_market in _SPANISH_MARKETS:
+        all_locs = getattr(parsed_jd, "all_locations", []) or []
+        all_locs_str = " ".join(all_locs).lower()
+        if any(city in all_locs_str for city in _US_CITIES_KEYWORDS):
+            us_addr = get_address_for_location("california", "us")
+            markets.append({"market": "us", "language": "en", "address": us_addr})
+
+    return markets
+
+
 def _load_prompt(name: str) -> str:
     from config import settings
 
@@ -602,16 +661,16 @@ def adapt_resume(
                 }
             )
 
-    # 4. Adapt contact address based on JD location
+    # 4. Adapt contact address based on JD location and source market
     logger.info("adapt_resume | step 4: adapting contact address for job location")
     adapted_contact = corpus.contact.model_copy()
     job_location = parsed_jd.location or ""
-    market = parsed_jd.market or "us"
-    localized_address = get_address_for_location(job_location, market)
+    effective_market = getattr(parsed_jd, "source_market", "") or parsed_jd.market or "us"
+    localized_address = get_address_for_location(job_location, effective_market)
     adapted_contact.locations = [localized_address]
     logger.info(
         f"adapt_resume | address adapted for job_location='{job_location}' "
-        f"market={market} -> {localized_address}"
+        f"effective_market={effective_market} -> {localized_address}"
     )
 
     elapsed = time.time() - _start

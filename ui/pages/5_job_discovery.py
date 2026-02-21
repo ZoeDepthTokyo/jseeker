@@ -715,6 +715,8 @@ time_window = st.radio(
 )
 st.session_state["discovery_time_window"] = time_window
 
+hide_known = st.toggle("Hide already tracked", value=True, key="hide_tracked_toggle")
+
 # Apply filters
 status_value = None if status_filter == "All" else status_filter
 market_value = None if market_filter == "All" else market_filter
@@ -752,6 +754,10 @@ if time_window != "All time":
         except (ValueError, TypeError):
             return None
     _all_ranked = [d for d in _all_ranked if (_parse_posting_date(d) or _cutoff) >= _cutoff]
+
+# Hide jobs already in tracker
+if hide_known and _known_app_urls:
+    _all_ranked = [d for d in _all_ranked if d.get("url", "") not in _known_app_urls]
 
 # Apply filters in-memory on the ranked cache (no DB re-query needed)
 def _filter_discoveries(ranked_list, status, search, market, location_val, source):
@@ -1145,9 +1151,10 @@ if discoveries:
             if status == "new":
                 if action_cols[0].button("Star", key=f"star_{disc['id']}"):
                     tracker_db.update_discovery_status(disc["id"], "starred")
+                    tracker_db.set_auto_queued(disc["id"], True)
                     # Update cached list in-place to avoid re-ranking
                     _update_cached_discovery_status(disc["id"], "starred")
-                    st.toast("⭐ Starred!")
+                    st.toast("Starred + queued for resume gen")
                     st.rerun()
                 if action_cols[1].button("Dismiss", key=f"dismiss_{disc['id']}"):
                     tracker_db.update_discovery_status(disc["id"], "dismissed")
@@ -1170,21 +1177,24 @@ if discoveries:
 
             if status in ("new", "starred"):
                 if action_cols[3].button("Generate Resume", key=f"gen_{disc['id']}"):
-                    with st.spinner(f"Generating resume for {disc.get('company', 'Unknown')}..."):
-                        from jseeker.job_discovery import generate_resume_from_discovery
+                    from jseeker.job_discovery import generate_resume_from_discovery
 
-                        result = generate_resume_from_discovery(disc["id"])
+                    with st.status(f"Generating resume for {disc.get('company', 'company')}...", expanded=True) as _gen_status:
+                        _gen_prog = st.progress(0, text="Starting...")
+                        result = generate_resume_from_discovery(
+                            disc["id"],
+                            progress_callback=lambda pct, msg: _gen_prog.progress(pct, text=msg)
+                        )
                         if result:
+                            _gen_status.update(
+                                label=f"Done — ATS: {result.get('ats_score', '?')}%",
+                                state="complete",
+                                expanded=False
+                            )
                             _update_cached_discovery_status(disc["id"], "imported")
-                            st.toast(f"Resume generated! ATS: {result['ats_score']}%")
-                            st.success(
-                                f"Resume created for {result['company']} - {result['role']} "
-                                f"(ATS: {result['ats_score']}%, Relevance: {result['relevance_score']}%)"
-                            )
+                            st.toast(f"Resume generated! ATS: {result.get('ats_score', '?')}%")
                         else:
-                            st.error(
-                                "Failed to generate resume. JD extraction may have failed — try manual entry in New Resume."
-                            )
+                            _gen_status.update(label="Failed — try manual entry in New Resume", state="error")
                     st.rerun()
 
             if disc.get("url"):

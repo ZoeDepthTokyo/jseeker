@@ -433,15 +433,18 @@ with tab1:
 
     with col_a:
         if st.button("New Resume", width="stretch"):
-            st.switch_page("pages/2_new_resume.py")
+            _ui_pages = Path(__file__).parent.parent.parent / "ui" / "pages"
+            st.switch_page(str(_ui_pages / "2_new_resume.py"))
 
     with col_b:
         if st.button("View Tracker", width="stretch"):
-            st.switch_page("pages/4_tracker.py")
+            _ui_pages = Path(__file__).parent.parent.parent / "ui" / "pages"
+            st.switch_page(str(_ui_pages / "4_tracker.py"))
 
     with col_c:
         if st.button("Discover Jobs", width="stretch"):
-            st.switch_page("pages/5_job_discovery.py")
+            _ui_pages = Path(__file__).parent.parent.parent / "ui" / "pages"
+            st.switch_page(str(_ui_pages / "5_job_discovery.py"))
 
 
 # ════════════════════════════════════════════════════════════════════

@@ -116,6 +116,31 @@ def aggregate_jd_corpus(db_path=None) -> dict:
     }
 
 
+def _load_all_resume_skills() -> list[str]:
+    """Load all skill names from resume_blocks/skills.yaml.
+
+    Returns:
+        Flat list of skill name strings from all categories.
+    """
+    import yaml
+
+    skills_path = Path(__file__).parent.parent / "data" / "resume_blocks" / "skills.yaml"
+    if not skills_path.exists():
+        return []
+    try:
+        data = yaml.safe_load(skills_path.read_text(encoding="utf-8"))
+        names: list[str] = []
+        for cat_data in (data.get("skills", {}) if isinstance(data, dict) else {}).values():
+            for item in cat_data.get("items", []):
+                name = item.get("name", "") if isinstance(item, dict) else str(item)
+                if name:
+                    names.append(name)
+        return names
+    except Exception:
+        logger.warning("_load_all_resume_skills: failed to load skills.yaml")
+        return []
+
+
 def generate_ideal_candidate_brief(
     parsed_jd,
     adapted_resume,
@@ -169,10 +194,16 @@ def generate_ideal_candidate_brief(
         else ""
     )
 
-    jd_kws = {kw for kw in (parsed_jd.ats_keywords or [])}
-    resume_kws = set((getattr(adapted_resume, "skills", None) or []))
-    missing = list(jd_kws - resume_kws)[:10]
-    keyword_coverage = len(jd_kws & resume_kws) / max(len(jd_kws), 1)
+    jd_kws = {kw.lower() for kw in (parsed_jd.ats_keywords or [])}
+    resume_kws_adapted = {kw.lower() for kw in (getattr(adapted_resume, "skills", None) or [])}
+
+    # Load all resume block skills for richer matching
+    all_resume_skills = _load_all_resume_skills()
+    all_resume_kws = resume_kws_adapted | {s.lower() for s in all_resume_skills}
+
+    missing = list(jd_kws - all_resume_kws)[:10]
+    matched = list(jd_kws & all_resume_kws)
+    keyword_coverage = len(matched) / max(len(jd_kws), 1)
 
     top_agg_kws = ", ".join(kw for kw, _ in aggregate.get("top_keywords", [])[:15])
 
@@ -206,6 +237,9 @@ def generate_ideal_candidate_brief(
         salary_angle=data.get("salary_angle", ""),
         keyword_coverage=keyword_coverage,
         salary_insight=_build_salary_insight(parsed_jd, aggregate),
+        input_skills=sorted(all_resume_skills)[:30],
+        keyword_matches=sorted(matched),
+        keyword_misses=sorted(missing),
     )
 
     tracker_db.save_intelligence(

@@ -53,6 +53,41 @@ def _cached_cost_data(db_path_str: str):
 
 
 @st.cache_data(ttl=60)
+def _cached_cost_efficiency(db_path_str: str) -> tuple[list[dict], list[dict]]:
+    """Cache cost-per-day and model-mix data for 60 seconds.
+
+    Returns:
+        Tuple of (daily_cost_data, model_mix_data)
+    """
+    import sqlite3 as _sqlite3
+
+    conn = _sqlite3.connect(db_path_str)
+    c = conn.cursor()
+
+    # Cost per day trend
+    c.execute("""
+        SELECT DATE(timestamp) as date, SUM(cost_usd) as cost, COUNT(*) as calls
+        FROM api_costs
+        GROUP BY DATE(timestamp)
+        ORDER BY date ASC
+    """)
+    daily_cost_data = [{"date": row[0], "cost": row[1], "calls": row[2]} for row in c.fetchall()]
+
+    # Model mix
+    c.execute("""
+        SELECT model, SUM(cost_usd) as cost, COUNT(*) as calls
+        FROM api_costs
+        WHERE model IS NOT NULL AND model != ''
+        GROUP BY model
+        ORDER BY cost DESC
+    """)
+    model_mix_data = [{"model": row[0], "cost": row[1], "calls": row[2]} for row in c.fetchall()]
+
+    conn.close()
+    return daily_cost_data, model_mix_data
+
+
+@st.cache_data(ttl=60)
 def _cached_list_applications_analytics():
     """Cache applications for analytics tab for 60 seconds."""
     return tracker_db.list_applications()
@@ -288,6 +323,50 @@ with tab1:
 
     except Exception as exc:
         st.error(f"Failed to load cost data: {exc}")
+
+    # ── Section 2b: Cost Trend + Model Mix ────────────────────────────────────
+
+    st.markdown("---")
+    st.subheader("Cost Trend & Model Mix")
+
+    try:
+        daily_cost_data, model_mix_data = _cached_cost_efficiency(str(settings.db_path))
+
+        if daily_cost_data:
+            col1, col2 = st.columns(2)
+
+            with col1:
+                daily_df = pd.DataFrame(daily_cost_data)
+                fig_daily = px.line(
+                    daily_df,
+                    x="date",
+                    y="cost",
+                    title="Daily API Cost",
+                    labels={"date": "Date", "cost": "Cost ($)"},
+                )
+                fig_daily.update_traces(mode="lines+markers")
+                st.plotly_chart(fig_daily, use_container_width=True)
+
+            with col2:
+                if model_mix_data:
+                    mix_df = pd.DataFrame(model_mix_data)
+                    fig_mix = px.bar(
+                        mix_df,
+                        x="model",
+                        y="cost",
+                        title="Cost by Model",
+                        labels={"model": "Model", "cost": "Total Cost ($)"},
+                        text="calls",
+                    )
+                    fig_mix.update_traces(texttemplate="%{text} calls", textposition="outside")
+                    st.plotly_chart(fig_mix, use_container_width=True)
+                else:
+                    st.info("No model data yet.")
+        else:
+            st.info("No cost trend data yet. Generate resumes to populate.")
+
+    except Exception as exc:
+        st.error(f"Failed to load cost efficiency data: {exc}")
 
     # ── Section 3: Pattern Schema & Learned Tags ─────────────────────────────
 

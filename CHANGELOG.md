@@ -5,6 +5,43 @@ All notable changes to jSeeker will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] — 2026-02-21
+
+### Added
+- `PROJECT.md`: full engineering handover document (north star, architecture, design decisions, rationale, gotchas, version history, how to run)
+- Multi-location source-market rule: resume location + language now derived from job source market, not arbitrary location from list (fixes Barcelona-sourced job showing Toronto)
+- `resolve_resume_markets()` in adapter.py: modular multi-market rule returning primary + optional US variant for Spanish-sourced multi-location jobs
+- `ParsedJD.all_locations` and `ParsedJD.source_market` fields for location context
+- Progress bar (`st.status` + `st.progress`) for Generate Resume in Job Discovery — reuses same 7-step pattern as New Resume page
+- `progress_callback` param on `generate_resume_from_discovery()` for transparent progress reporting
+- "Hide already tracked" toggle in Discovery (default ON) — applied/imported jobs hidden from results by default
+- `auto_queued` column in `job_discoveries` table + `set_auto_queued()` / `get_auto_queued_discoveries()` in TrackerDB
+- Star → auto-queue: starring a job now queues it for resume gen; toast updated to "Starred + queued for resume gen"
+- Auto-queue banner in New Resume page showing count + list of queued jobs
+- Analytics: cost trend (daily cost line chart), model mix (Haiku vs Sonnet bar chart) in `7_analytics.py`
+- Ideal Candidate glassbox: `IntelligenceReport` gains `input_skills`, `keyword_matches`, `keyword_misses`; "🔍 Analysis Inputs" expander in JD Intelligence UI
+- Cover letter: upgraded prompt (200 words max, banned buzzwords, direct value opener, one company-specific detail); feeds full resume blocks context
+- JD extraction: retry logic (re-attempt when <200 chars returned) already in place via `_extract_with_playwright`
+- `autojs/ui/pipeline.py`: Pipeline automation dashboard (moved from jSeeker main UI)
+- `autojs/launch.py`: starts autojs dashboard on port 8503
+
+### Changed
+- Pipeline page moved from jSeeker nav to autojs project — jSeeker nav now 6 pages (cleaner)
+- `ui/app.py` sidebar: added "🤖 Automation Dashboard → :8503" link
+- Cover letter model: uses Sonnet (was defaulting to Haiku for some paths)
+
+### Fixed
+- Removed Italian and Japanese from resume languages (`contact.yaml`) — only English + Spanish remain
+- JD Intelligence "Select a JD" dropdown now filters NULL title/company from `jd_cache` — no more "Unknown @ Unknown" entries
+- Empty-state message when no parsed JDs available: "No parsed JDs found. Paste a job URL in New Resume first"
+- Resume location now uses `source_market` → correct market/language for job sourced from Barcelona (Spanish → Mexico address, not Toronto)
+
+### Investigated / Deferred
+- Indeed scraper: Cloudflare anti-bot blocks static HTML — deferred (needs rotating proxies + Playwright)
+- Wellfound scraper: migrated to auth-gated login wall — deferred (needs API or authenticated session)
+
+---
+
 ## [0.3.15] — 2026-02-20
 
 ### Added

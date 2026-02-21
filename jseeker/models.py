@@ -150,6 +150,8 @@ class ParsedJD(BaseModel):
     alternate_source_url: str = ""  # URL where full JD was fetched (if different from jd_url)
     language: str = "en"  # "en" or "es" — auto-detected from JD
     market: str = "us"  # "us", "mx", "ca", "uk", "es", "dk", "fr"
+    all_locations: list[str] = Field(default_factory=list)  # All location mentions found in JD text
+    source_market: str = ""  # Market inferred from job source/listing location
 
 
 # ── Resume Block Models ────────────────────────────────────────────────
@@ -327,6 +329,10 @@ class IntelligenceReport(BaseModel):
     keyword_coverage: float = 0.0
     salary_insight: dict = Field(default_factory=dict)
     created_at: Optional[datetime] = None
+    # Glassbox: analysis inputs for transparency
+    input_skills: list[str] = Field(default_factory=list)
+    keyword_matches: list[str] = Field(default_factory=list)
+    keyword_misses: list[str] = Field(default_factory=list)
 
 
 # ── Tracker ────────────────────────────────────────────────────────────

@@ -38,6 +38,8 @@ st.sidebar.title("JSEEKER")
 st.sidebar.caption("The Shape-Shifting Resume Engine")
 st.sidebar.caption(f"Version {jseeker.__version__}")
 st.sidebar.markdown("---")
+st.sidebar.markdown("[Automation Dashboard](http://localhost:8503)")
+st.sidebar.markdown("---")
 
 # Session cost display
 try:

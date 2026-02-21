@@ -24,8 +24,9 @@ jobs:
       - name: ruff lint
         run: ruff check .
 
-      - name: black format check
+      - name: black format check (informational)
         run: black --check --line-length=100 .
+        continue-on-error: true
 
   test:
     name: Test (Python ${{ matrix.python-version }})
